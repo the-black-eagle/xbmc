@@ -4002,100 +4002,6 @@ bool CMusicDatabase::GetSourcesNav(const std::string& strBaseDir, CFileItemList&
   return false;
 }
 
-bool CMusicDatabase::GetBoxsetsNav(const std::string& strBaseDir, CFileItemList& items, const Filter& filter)
-{
-  CLog::Log(LOGNOTICE, "GetBoxsetsNav - StrBaseDir = [%s]", strBaseDir.c_str());
-//  GetBoxsetsAlbums(strBaseDir, items);
-//return true;
-
-  try
-  {
-    unsigned int querytime = 0;
-    unsigned int time = XbmcThreads::SystemClockMillis();
-    int total = -1;
-
-    if (NULL == m_pDB.get()) return false;
-    if (NULL == m_pDS.get()) return false;
-
-    Filter extFilter = filter;
-    CMusicDbUrl musicUrl;
-    SortDescription sorting;
-    if (!musicUrl.FromString(strBaseDir) )
-      return false;
-
-      // get boxsets from albumlist
-    std::string strSQL = "SELECT albumview.* FROM albumview";
-    extFilter.AppendWhere("albumview.bBoxedSet = 1");
-
-    if (!BuildSQL(strSQL, extFilter, strSQL))
-      return false;
-
-   CLog::Log(LOGDEBUG, "%s query: %s", __FUNCTION__, strSQL.c_str());
-    querytime = XbmcThreads::SystemClockMillis();
-    if (!m_pDS->query(strSQL))
-      return false;
-    int iRowsFound = m_pDS->num_rows();
-    if (iRowsFound == 0)
-    {
-      m_pDS->close();
-      return true;
-    }
-    querytime = XbmcThreads::SystemClockMillis() - querytime;
-
-    // store the total value of items as a property
-    if (total < iRowsFound)
-      total = iRowsFound;
-    items.SetProperty("total", total);
-
-
-    DatabaseResults results;
-    results.reserve(iRowsFound);
-
-    // Random order with limits already applied in SQL, just fetch results from dataset
-//    sorting = sortDescription;
-//    if (limitedInSQL && sortDescription.sortBy == SortByRandom)
-//      sorting.sortBy = SortByNone;
-//    if (!SortUtils::SortFromDataset(sorting, MediaTypeAlbum, m_pDS, results))
-//      return false;
-
-    // get data from returned rows
-    items.Reserve(results.size());
-    const dbiplus::query_data &data = m_pDS->get_result_set().records;
-    for (const auto &i : results)
-    {
-      unsigned int targetRow = (unsigned int)i.at(FieldRow).asInteger();
-      const dbiplus::sql_record* const record = data.at(targetRow);
-
-      try
-      {
-        CMusicDbUrl itemUrl = musicUrl;
-        std::string path = StringUtils::Format("%i/", record->at(album_idAlbum).get_asInt());
-        itemUrl.AppendPath(path);
-
-        CFileItemPtr pItem(new CFileItem(itemUrl.ToString(), GetAlbumFromDataset(record)));
-        pItem->SetIconImage("DefaultAlbumCover.png");
-        items.Add(pItem);
-      }
-      catch (...)
-      {
-        m_pDS->close();
-        CLog::Log(LOGERROR, "%s - out of memory getting listing (got %i)", __FUNCTION__, items.Size());
-      }
-    }
-
-    // cleanup
-    m_pDS->close();
-    CLog::Log(LOGDEBUG, "{0}: Time to fill list with albums {1}ms query took {2}ms",
-      __FUNCTION__, XbmcThreads::SystemClockMillis() - time, querytime);
-    return true;
-  }
-  catch (...)
-  {
-    m_pDS->close();
-    CLog::Log(LOGERROR, "%s (%s) failed", __FUNCTION__, filter.where.c_str());
-  }
-  return false;
-}
 
 bool CMusicDatabase::GetYearsNav(const std::string& strBaseDir, CFileItemList& items, const Filter &filter /* = Filter() */)
 {
@@ -7571,7 +7477,12 @@ void CMusicDatabase::UpdateTables(int version)
     // and filled as part of scanning anyway so simply force full rescan.
     MigrateSources();
   }
-
+  if (version < 73)
+  {
+    // add bBoxedSet to album table, add strDiscSubtitles to song table
+    m_pDS->exec("ALTER TABLE album ADD bBoxedSet INTEGER \n");
+    m_pDS->exec("ALTER TABLE song ADD strDiscSubtitle TEXT \n");
+  }
   // Set the verion of tag scanning required.
   // Not every schema change requires the tags to be rescanned, set to the highest schema version
   // that needs this. Forced rescanning (of music files that have not changed since they were
@@ -7580,9 +7491,9 @@ void CMusicDatabase::UpdateTables(int version)
   // The original db version when the tags were scanned, and the minimal db version needed are
   // later used to determine if a forced rescan should be prompted
 
-  // The last schema change needing forced rescanning was 60.
-  // Mostly because of the new tags processed by v17 rather than a schema change.
-  SetMusicNeedsTagScan(60);
+  // The last schema change needing forced rescanning was 73.
+  // This is because Kodi can now read and process extra tags involved in the creation of box sets.
+  SetMusicNeedsTagScan(73);
 
   // After all updates, store the original db version.
   // This indicates the version of tag processing that was used to populate db
@@ -7591,7 +7502,7 @@ void CMusicDatabase::UpdateTables(int version)
 
 int CMusicDatabase::GetSchemaVersion() const
 {
-  return 72;
+  return 73;
 }
 
 int CMusicDatabase::GetMusicNeedsTagScan()
@@ -9127,7 +9038,7 @@ bool CMusicDatabase::GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList
       path += StringUtils::Format("%s/", disctitle.c_str());
       pItem->SetPath(path);
       pItem->SetLabel(disctitle.c_str());
-      pItem->SetIconImage("DefaultAlbumCover.png");
+      pItem->SetArt("icon", "DefaultAlbumCover.png");
       items.Add(pItem);
     }
   }

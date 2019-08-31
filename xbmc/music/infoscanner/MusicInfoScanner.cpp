@@ -954,7 +954,6 @@ void CMusicInfoScanner::CheckBoxSets(VECALBUMS &albums)
           if (song.strDiscSubtitle != m_oldDiscSubtitle)
           {
             m_oldDiscSubtitle = song.strDiscSubtitle;
-//            album.strDiscTitles.append(song.strDiscSubtitle).append(CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator);
             count ++;
             if (count > 2)
               album.bBoxedSet = true;
@@ -966,7 +965,6 @@ void CMusicInfoScanner::CheckBoxSets(VECALBUMS &albums)
           song.strDiscSubtitle = StringUtils::Format("Disc %i", discno); // create dummy titles
           if (discno != old_discno)
           {
-//            album.strDiscTitles.append(song.strDiscSubtitle).append(CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator);
             old_discno = discno;
             album.bBoxedSet = true;
           }

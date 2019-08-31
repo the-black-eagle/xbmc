@@ -232,18 +232,17 @@ public:
    \param strArtistSort the album artist name(s) sort string
    \param strGenre the album genre(s)
    \param year the year
-   \param set the set (if any) that the album belongs to
+   \param bBoxedSet if the album is a boxset
    \param strRecordLabel the recording label
    \param strType album type (Musicbrainz release type e.g. "Broadcast, Soundtrack, live"),
    \param bCompilation if the album is a compilation
    \param releaseType "album" or "single"
-   \param strDiscSubtitle the titles of discs (if any) in the set
    \return the id of the album
    */
   int  AddAlbum(const std::string& strAlbum, const std::string& strMusicBrainzAlbumID,
                 const std::string& strReleaseGroupMBID,
                 const std::string& strArtist, const std::string& strArtistSort,
-                const std::string& strGenre, int year, bool idSet,
+                const std::string& strGenre, int year, bool bBoxedSet,
                 const std::string& strRecordLabel, const std::string& strType,
                 bool bCompilation, CAlbum::ReleaseType releaseType );
 
@@ -455,7 +454,6 @@ public:
   bool GetGenresNav(const std::string& strBaseDir, CFileItemList& items, const Filter &filter = Filter(), bool countOnly = false);
   bool GetSourcesNav(const std::string& strBaseDir, CFileItemList& items, const Filter &filter = Filter(), bool countOnly = false);
   bool GetYearsNav(const std::string& strBaseDir, CFileItemList& items, const Filter &filter = Filter());
-  bool GetBoxsetsNav(const std::string& strBaseDir, CFileItemList& items, const Filter &filter = Filter());
   bool GetRolesNav(const std::string& strBaseDir, CFileItemList& items, const Filter &filter = Filter());
   bool GetArtistsNav(const std::string& strBaseDir, CFileItemList& items, bool albumArtistsOnly = false, int idGenre = -1, int idAlbum = -1, int idSong = -1, const Filter &filter = Filter(), const SortDescription &sortDescription = SortDescription(), bool countOnly = false);
   bool GetCommonNav(const std::string &strBaseDir, const std::string &table, const std::string &labelField, CFileItemList &items, const Filter &filter /* = Filter() */, bool countOnly /* = false */);
@@ -807,7 +805,6 @@ private:
     album_strReleaseType,
     album_dtDateAdded,
     album_dtLastPlayed,
-    album_iDiscNo, // filled on the fly
     album_enumCount // end of the enum, do not add past here
   } AlbumFields;
 
