@@ -2004,7 +2004,7 @@ msgstr ""
 
 #: addons/skin.estuary/xml/Variables.xml
 msgctxt "#427"
-msgid "Disc"
+msgid "Disc Number"
 msgstr ""
 
 msgctxt "#428"
@@ -2192,7 +2192,11 @@ msgctxt "#470"
 msgid "Credits"
 msgstr ""
 
-#empty strings from id 471 to 473
+msgctxt "#471"
+msgid "Disc Title"
+msgstr ""
+
+#empty strings from id 472 to 473
 
 msgctxt "#474"
 msgid "Off"
@@ -2389,7 +2393,7 @@ msgctxt "#519"
 msgid "Launch in..."
 msgstr ""
 
-#empty string with id 520
+#: empty string 520
 
 #: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeOverview.cpp
 msgctxt "#521"
@@ -12764,7 +12768,8 @@ msgctxt "#20340"
 msgid "Do you want to remove all items within this path from your library?"
 msgstr ""
 
-#empty string with id 20341
+#: empty string #20341
+
 
 #: xbmc/dialogs/GUIDialogMediaFilter.cpp
 #: xbmc/dialogs/GUIDialogSmartPlaylistEditor.cpp
@@ -21145,8 +21150,12 @@ msgctxt "#38073"
 msgid "Do you want to refresh information for this item now?"
 msgstr ""
 
-#empty strings from id 38074 to 38099
-#strings 38074 to 38099 reserved for music library
+msgctxt "#38074"
+msgid "Box-sets"
+msgstr ""
+
+#empty strings from id 38075 to 38099
+#strings 38075 to 38099 reserved for music library
 
 #. Description of section #14200 "Player""
 #: system/settings/settings.xml

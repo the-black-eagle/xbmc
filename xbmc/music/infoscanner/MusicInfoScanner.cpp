@@ -148,6 +148,7 @@ void CMusicInfoScanner::Process()
           {
             // Set local art for added album disc sets and primary album artists
             RetrieveLocalArt();
+//            CreateBoxSets();
 
             if (m_flags & SCAN_ONLINE)
               // Download additional album and artist information for the recently added albums.
@@ -300,7 +301,7 @@ void CMusicInfoScanner::Start(const std::string& strDirectory, int flags)
   }
   else
   {
-    m_pathsToScan.insert(strDirectory);    
+    m_pathsToScan.insert(strDirectory);
     m_idSourcePath = m_musicDatabase.GetSourceFromPath(strDirectory);
   }
   m_musicDatabase.Close();
@@ -617,8 +618,6 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
   {
     CMusicInfoTag& tag = *items[i]->GetMusicInfoTag();
     CSong song(*items[i]);
-
-    // keep the db-only fields intact on rescan...
     if (songsMap != NULL)
     {
       MAPSONGS::iterator it = songsMap->find(items[i]->GetPath());
@@ -631,7 +630,6 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
         if (song.strThumb.empty()) song.strThumb = it->second.strThumb;
       }
     }
-
     if (!tag.GetMusicBrainzAlbumID().empty())
     {
       VECALBUMS::iterator it;
@@ -657,6 +655,8 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
    In the case where the album artist is unknown, we use the primary artist
    (i.e. first artist from each song).
    */
+
+
   for (auto& songsByAlbumName : songsByAlbumNames)
   {
     VECSONGS& songs = songsByAlbumName.second;
@@ -667,7 +667,7 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
     bool tracksOverlap = false;
     bool hasAlbumArtist = false;
     bool isCompilation = true;
-
+    std::string old_DiscSubtitle;
     std::map<std::string, std::vector<CSong *> > artists;
     for (VECSONGS::iterator song = songs.begin(); song != songs.end(); ++song)
     {
@@ -677,6 +677,8 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
 
       if (!song->bCompilation)
         isCompilation = false;
+      if (song->strDiscSubtitle != old_DiscSubtitle)
+        old_DiscSubtitle = song->strDiscSubtitle;
 
       // get primary artist
       std::string primary;
@@ -823,6 +825,7 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
         album.strType = k->strAlbumType;
         album.songs.push_back(*k);
       }
+//      album.strDiscTitles = t_discTitles;
       albums.push_back(album);
     }
   }
@@ -886,6 +889,7 @@ int CMusicInfoScanner::RetrieveMusicInfo(const std::string& strDirectory, CFileI
   */
   FindArtForAlbums(albums, items.GetPath());
 
+  CheckBoxSets(albums);
   /* Strategy: Having scanned tags and made a list of albums, add them to the library. Only then try
   to scrape additional album and artist information. Music is often tagged to a mixed standard
   - some albums have mbid tags, some don't. Once all the music files have been added to the library,
@@ -917,6 +921,60 @@ int CMusicInfoScanner::RetrieveMusicInfo(const std::string& strDirectory, CFileI
     numAdded += album.songs.size();
   }
   return numAdded;
+}
+
+void CMusicInfoScanner::CheckBoxSets(VECALBUMS &albums)
+{
+  /* Strategy: Having scanned the tags of the albums to add to the library,
+   * check for disc subtitles. If an album only has one subtitled disc, we don't
+   * consider it a boxset as its most likely a 'live'version of the album or a 'bonus disc'.
+   * Single disc subtitles are still added to the database so they can be displayed by
+   * skins at appropriate times,  If 'boxset' was added to the albumreleasetype then add the
+   * album regardless of any other rules. */
+
+  std::string m_oldDiscSubtitle;
+  int count;
+  int discno;
+  int old_discno = 0;
+  for(auto& album : albums)
+  {
+    if (album.bCompilation  && !album.bBoxedSet)
+    {
+      album.bBoxedSet = false;
+      continue; // skip compilations that haven't had the boxset tag added to them
+    }
+    //
+    count = 0;
+    for (auto& song : album.songs)
+    {
+      if (!song.strDiscSubtitle.empty())
+      {
+        if (song.strDiscSubtitle != "dummy")
+        {
+          if (song.strDiscSubtitle != m_oldDiscSubtitle)
+          {
+            m_oldDiscSubtitle = song.strDiscSubtitle;
+//            album.strDiscTitles.append(song.strDiscSubtitle).append(CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator);
+            count ++;
+            if (count > 2)
+              album.bBoxedSet = true;
+          }
+        }
+        else
+        {
+          discno = song.iTrack >> 16;
+          song.strDiscSubtitle = StringUtils::Format("Disc %i", discno); // create dummy titles
+          if (discno != old_discno)
+          {
+//            album.strDiscTitles.append(song.strDiscSubtitle).append(CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator);
+            old_discno = discno;
+            album.bBoxedSet = true;
+          }
+        }
+      }
+      if (count < 3 && !album.bBoxedSet)  // must have more than 2 titled discs to be considered a boxset unless tag was set
+        album.bBoxedSet = false;    }
+  }
 }
 
 void MUSIC_INFO::CMusicInfoScanner::ScrapeInfoAddedAlbums()
@@ -1454,7 +1512,7 @@ CMusicInfoScanner::DownloadAlbumInfo(const CAlbum& album,
   CInfoScanner::INFO_TYPE result = CInfoScanner::NO_NFO;
   CNfoFile nfoReader;
   existsNFO = XFILE::CFile::Exists(strNfo);
-  // When on GUI ask user if they want to ignore nfo and refresh from Internet  
+  // When on GUI ask user if they want to ignore nfo and refresh from Internet
   if (existsNFO && pDialog && CGUIDialogYesNo::ShowAndGetInput(10523, 20446))
   {
     existsNFO = false;
@@ -1741,7 +1799,7 @@ CMusicInfoScanner::DownloadArtistInfo(const CArtist& artist,
       CLog::Log(LOGDEBUG, "%s not have path, nfo file not possible", artist.strArtist.c_str());
   }
 
-  // When on GUI ask user if they want to ignore nfo and refresh from Internet  
+  // When on GUI ask user if they want to ignore nfo and refresh from Internet
   if (existsNFO && pDialog && CGUIDialogYesNo::ShowAndGetInput(21891, 20446))
   {
     existsNFO = false;

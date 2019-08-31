@@ -42,7 +42,10 @@ namespace XFILE
       NODE_TYPE_YEAR,
       NODE_TYPE_YEAR_ALBUM,
       NODE_TYPE_YEAR_SONG,
-      NODE_TYPE_SINGLES
+      NODE_TYPE_SINGLES,
+      NODE_TYPE_BOXSETS,  //23
+      NODE_TYPE_BOXSET_DISCS,
+      NODE_TYPE_BOXSET_DISC_SONGS
     } NODE_TYPE;
 
     typedef struct {
@@ -90,5 +93,3 @@ namespace XFILE
     };
   }
 }
-
-

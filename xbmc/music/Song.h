@@ -142,6 +142,8 @@ public:
    */
   bool ArtMatches(const CSong &right) const;
 
+  const std::string GetDiscSubtitle() const;
+
   /*! \brief Set artist credits using the arrays of tag values.
     If strArtistSort (as from ARTISTSORT tag) is already set then individual
     artist sort names are also processed.
@@ -173,6 +175,7 @@ public:
   int iTrack;
   int iDuration;
   int iYear;
+  std::string strDiscSubtitle;
   int iTimesPlayed;
   CDateTime lastPlayed;
   CDateTime dateAdded;

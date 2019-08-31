@@ -19,6 +19,8 @@ CQueryParams::CQueryParams()
   m_idGenre=-1;
   m_idSong=-1;
   m_year=-1;
+  m_disc=-1;
+
 }
 
 void CQueryParams::SetQueryParam(NODE_TYPE NodeType, const std::string& strNodeName)
@@ -36,12 +38,16 @@ void CQueryParams::SetQueryParam(NODE_TYPE NodeType, const std::string& strNodeN
   case NODE_TYPE_ARTIST:
     m_idArtist=idDb;
     break;
+  case NODE_TYPE_BOXSET_DISCS:
+    m_disc=idDb;
+    break;
   case NODE_TYPE_ALBUM_RECENTLY_PLAYED:
   case NODE_TYPE_ALBUM_RECENTLY_ADDED:
   case NODE_TYPE_ALBUM_COMPILATIONS:
   case NODE_TYPE_ALBUM_TOP100:
   case NODE_TYPE_ALBUM:
   case NODE_TYPE_YEAR_ALBUM:
+  case NODE_TYPE_BOXSETS:
     m_idAlbum=idDb;
     break;
   case NODE_TYPE_ALBUM_RECENTLY_ADDED_SONGS:
@@ -51,6 +57,7 @@ void CQueryParams::SetQueryParam(NODE_TYPE NodeType, const std::string& strNodeN
   case NODE_TYPE_YEAR_SONG:
   case NODE_TYPE_SONG:
   case NODE_TYPE_SONG_TOP100:
+  case NODE_TYPE_BOXSET_DISC_SONGS:
     m_idSong=idDb;
   default:
     break;

@@ -18,6 +18,9 @@
 #include "DirectoryNodeAlbumTop100.h"
 #include "DirectoryNodeAlbumTop100Song.h"
 #include "DirectoryNodeArtist.h"
+#include "DirectoryNodeBoxsets.h"
+#include "DirectoryNodeBoxsetDiscs.h"
+#include "DirectoryNodeBoxsetDiscSongs.h"
 #include "DirectoryNodeGrouped.h"
 #include "DirectoryNodeOverview.h"
 #include "DirectoryNodeRoot.h"
@@ -32,6 +35,7 @@
 #include "URL.h"
 #include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
+#include "utils/log.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
@@ -91,6 +95,7 @@ void CDirectoryNode::GetDatabaseInfo(const std::string& strPath, CQueryParams& p
 //  Create a node object
 CDirectoryNode* CDirectoryNode::CreateNode(NODE_TYPE Type, const std::string& strName, CDirectoryNode* pParent)
 {
+//  CLog::Log(LOGNOTICE, "Creating a node of value %i", Type);
   switch (Type)
   {
   case NODE_TYPE_ROOT:
@@ -102,6 +107,12 @@ CDirectoryNode* CDirectoryNode::CreateNode(NODE_TYPE Type, const std::string& st
   case NODE_TYPE_ROLE:
   case NODE_TYPE_YEAR:
     return new CDirectoryNodeGrouped(Type, strName, pParent);
+  case NODE_TYPE_BOXSETS:
+    return new CDirectoryNodeBoxsets(strName, pParent);
+  case NODE_TYPE_BOXSET_DISCS:
+    return new CDirectoryNodeBoxsetDiscs(strName, pParent);
+  case NODE_TYPE_BOXSET_DISC_SONGS:
+    return new CDirectoryNodeBoxsetDiscSongs(strName, pParent);
   case NODE_TYPE_ARTIST:
     return new CDirectoryNodeArtist(strName, pParent);
   case NODE_TYPE_ALBUM:

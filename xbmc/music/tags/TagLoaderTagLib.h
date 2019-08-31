@@ -44,9 +44,9 @@ protected:
   static void AddArtistRole(MUSIC_INFO::CMusicInfoTag &tag, const std::string& strRole, const std::vector<std::string> &values);
   static void AddArtistRole(MUSIC_INFO::CMusicInfoTag &tag, const std::vector<std::string> &values);
   static void AddArtistInstrument(MUSIC_INFO::CMusicInfoTag &tag, const std::vector<std::string> &values);
+  static void SetDiscSubtitle(MUSIC_INFO::CMusicInfoTag &tag, const std::vector<std::string> &values);
   static int POPMtoXBMC(int popm);
 
 template<typename T>
    static bool ParseTag(T *tag, EmbeddedArt *art, MUSIC_INFO::CMusicInfoTag& infoTag);
 };
-

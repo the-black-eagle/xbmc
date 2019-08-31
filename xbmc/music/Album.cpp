@@ -54,6 +54,8 @@ CAlbum::CAlbum(const CFileItem& item)
   strType = tag.GetMusicBrainzReleaseType();
   bCompilation = tag.GetCompilation();
   iTimesPlayed = 0;
+  bBoxedSet = tag.GetBoxset();
+
   dateAdded.Reset();
   lastPlayed.Reset();
   releaseType = tag.GetAlbumReleaseType();
@@ -292,6 +294,8 @@ void CAlbum::MergeScrapedAlbum(const CAlbum& source, bool override /* = true */)
   if (override)
     bCompilation = source.bCompilation;
   //  iTimesPlayed = source.iTimesPlayed; // times played is derived from songs
+  if (override)
+    bBoxedSet = source.bBoxedSet;
 
   if ((override && !source.strArtistSort.empty()) || strArtistSort.empty())
     strArtistSort = source.strArtistSort;
@@ -480,6 +484,7 @@ bool CAlbum::Load(const TiXmlElement *album, bool append, bool prioritise)
   XMLUtils::GetStringArray(album, "mood", moods, prioritise, itemSeparator);
   XMLUtils::GetStringArray(album, "theme", themes, prioritise, itemSeparator);
   XMLUtils::GetBoolean(album, "compilation", bCompilation);
+  XMLUtils::GetBoolean(album, "boxset", bBoxedSet);
 
   XMLUtils::GetString(album,"review",strReview);
   XMLUtils::GetString(album,"releasedate",m_strDateOfRelease);
@@ -594,6 +599,7 @@ bool CAlbum::Save(TiXmlNode *node, const std::string &tag, const std::string& st
   XMLUtils::SetStringArray(album,                "mood", moods);
   XMLUtils::SetStringArray(album,               "theme", themes);
   XMLUtils::SetBoolean(album,      "compilation", bCompilation);
+  XMLUtils::SetBoolean(album,                  "boxset", bBoxedSet);
 
   XMLUtils::SetString(album,      "review", strReview);
   XMLUtils::SetString(album,        "type", strType);
@@ -637,4 +643,3 @@ bool CAlbum::Save(TiXmlNode *node, const std::string &tag, const std::string& st
 
   return true;
 }
-
