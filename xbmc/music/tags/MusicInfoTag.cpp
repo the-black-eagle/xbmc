@@ -16,7 +16,6 @@
 #include "utils/Archive.h"
 #include "utils/StringUtils.h"
 #include "utils/Variant.h"
-#include "utils/log.h"
 
 #include <algorithm>
 
@@ -933,6 +932,7 @@ void CMusicInfoTag::Clear()
   m_lastPlayed.Reset();
   m_dateAdded.Reset();
   m_bCompilation = false;
+  m_bBoxedSet = false;
   m_strComment.clear();
   m_strMood.clear();
   m_strRecordLabel.clear();

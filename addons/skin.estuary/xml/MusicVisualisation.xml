@@ -78,6 +78,15 @@
 						<scroll>true</scroll>
 					</control>
 					<control type="label">
+						<top>120</top>
+						<width>1600</width>
+						<height>40</height>
+						<label>$INFO[MusicPlayer.DiscName,Disc:,]</label>
+						<font>40</font>
+						<shadowcolor>black</shadowcolor>
+						<scroll>true</scroll>
+					</control>
+					<control type="label">
 						<top>127</top>
 						<width>1600</width>
 						<height>40</height>

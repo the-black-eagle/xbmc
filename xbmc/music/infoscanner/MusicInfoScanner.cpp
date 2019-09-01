@@ -148,7 +148,6 @@ void CMusicInfoScanner::Process()
           {
             // Set local art for added album disc sets and primary album artists
             RetrieveLocalArt();
-//            CreateBoxSets();
 
             if (m_flags & SCAN_ONLINE)
               // Download additional album and artist information for the recently added albums.
@@ -825,7 +824,6 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
         album.strType = k->strAlbumType;
         album.songs.push_back(*k);
       }
-//      album.strDiscTitles = t_discTitles;
       albums.push_back(album);
     }
   }
@@ -938,11 +936,8 @@ void CMusicInfoScanner::CheckBoxSets(VECALBUMS &albums)
   int old_discno = 0;
   for(auto& album : albums)
   {
-    if (album.bCompilation  && !album.bBoxedSet)
-    {
-      album.bBoxedSet = false;
+    if (album.bCompilation && !album.bBoxedSet)
       continue; // skip compilations that haven't had the boxset tag added to them
-    }
     //
     count = 0;
     for (auto& song : album.songs)
@@ -971,7 +966,8 @@ void CMusicInfoScanner::CheckBoxSets(VECALBUMS &albums)
         }
       }
       if (count < 3 && !album.bBoxedSet)  // must have more than 2 titled discs to be considered a boxset unless tag was set
-        album.bBoxedSet = false;    }
+        album.bBoxedSet = false;
+    }
   }
 }
 

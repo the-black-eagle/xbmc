@@ -8,7 +8,6 @@
 
 #include "MusicDatabase.h"
 
-#include <sstream>
 #include "Album.h"
 #include "Application.h"
 #include "Artist.h"
@@ -9066,7 +9065,6 @@ bool CMusicDatabase::GetBoxsetDiscSongs(const std::string& strBaseDir, CFileItem
   start = end + 1; // set start to end of albumID field + '/'
   end = strBaseDir.find("/", start + 1);
   std::string strDiscName = strBaseDir.substr(start, (strBaseDir.length() -1) - start);
-  CLog::Log(LOGNOTICE, "%s - Album ID [%i] strDiscName [%s]", __FUNCTION__, idAlbum, strDiscName.c_str());
   if (idAlbum == -1)
     return false;
   if (m_pDB.get() == NULL || m_pDS.get() == NULL)

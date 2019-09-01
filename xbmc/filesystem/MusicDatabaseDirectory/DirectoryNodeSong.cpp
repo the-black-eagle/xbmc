@@ -10,7 +10,6 @@
 
 #include "QueryParams.h"
 #include "music/MusicDatabase.h"
-#include "utils/log.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 

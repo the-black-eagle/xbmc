@@ -35,7 +35,6 @@
 #include "URL.h"
 #include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
-#include "utils/log.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
@@ -95,7 +94,6 @@ void CDirectoryNode::GetDatabaseInfo(const std::string& strPath, CQueryParams& p
 //  Create a node object
 CDirectoryNode* CDirectoryNode::CreateNode(NODE_TYPE Type, const std::string& strName, CDirectoryNode* pParent)
 {
-//  CLog::Log(LOGNOTICE, "Creating a node of value %i", Type);
   switch (Type)
   {
   case NODE_TYPE_ROOT:
