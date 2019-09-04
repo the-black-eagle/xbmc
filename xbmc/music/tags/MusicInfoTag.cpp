@@ -932,7 +932,7 @@ void CMusicInfoTag::Clear()
   m_lastPlayed.Reset();
   m_dateAdded.Reset();
   m_bCompilation = false;
-  m_bBoxedSet = false;
+  m_bBoxset = false;
   m_strComment.clear();
   m_strMood.clear();
   m_strRecordLabel.clear();

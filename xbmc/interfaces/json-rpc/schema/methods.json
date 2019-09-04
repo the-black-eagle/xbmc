@@ -785,7 +785,8 @@
         ]
       },
       { "name": "includesingles", "type": "boolean", "default": false },
-      { "name": "allroles", "type": "boolean", "default":false, "description": "Whether or not to include all roles when filtering by artist, rather than the default of excluding other contributions. When true it overrides any role filter value." }
+      { "name": "allroles", "type": "boolean", "default":false, "description": "Whether or not to include all roles when filtering by artist, rather than the default of excluding other contributions. When true it overrides any role filter value." },
+      { "name": "boxset", "type": "boolean", "default": false, "description": "When true only returns albums that are also boxsets"}
     ],
     "returns": {
       "type": "object",

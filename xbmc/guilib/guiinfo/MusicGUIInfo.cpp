@@ -142,8 +142,8 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
           return true;
         }
         break;
-      case MUSICPLAYER_DISC_NAME:
-      case LISTITEM_DISC_NAME:
+      case MUSICPLAYER_DISC_TITLE:
+      case LISTITEM_DISC_TITLE:
         value = tag->GetDiscSubtitle();
         return true;
       case MUSICPLAYER_ARTIST:

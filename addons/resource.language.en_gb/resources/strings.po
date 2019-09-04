@@ -2004,7 +2004,7 @@ msgstr ""
 
 #: addons/skin.estuary/xml/Variables.xml
 msgctxt "#427"
-msgid "Disc Number"
+msgid "Disc"
 msgstr ""
 
 msgctxt "#428"
@@ -2192,11 +2192,8 @@ msgctxt "#470"
 msgid "Credits"
 msgstr ""
 
-msgctxt "#471"
-msgid "Disc Title"
-msgstr ""
 
-#empty strings from id 472 to 473
+#empty strings from id 471 to 473
 
 msgctxt "#474"
 msgid "Off"
@@ -8526,7 +8523,17 @@ msgctxt "#15311"
 msgid "Path:"
 msgstr ""
 
-#empty strings from id 15312 to 15999
+#: addons/skin.estuary/xml/Variables.xml
+msgctxt "#15312"
+msgid "Disc number"
+msgstr ""
+
+#: addons/skin.estuary/xml/Variables.xml
+msgctxt "#15313"
+msgid "Disc title"
+msgstr ""
+
+#empty strings from id 15314 to 15999
 
 #: system/settings/settings.xml
 msgctxt "#16000"
