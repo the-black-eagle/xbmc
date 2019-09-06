@@ -901,7 +901,7 @@ int CMusicDatabase::AddAlbum(const std::string& strAlbum, const std::string& str
       else
         strSQL += PrepareSQL(" strArtistSort = '%s'", strArtistSort.c_str());
 
-      strSQL += PrepareSQL(", strGenres = '%s', iYear=%i, bBoxedSet=%i strLabel = '%s', strType = '%s', "
+      strSQL += PrepareSQL(", strGenres = '%s', iYear=%i, bBoxedSet=%i, strLabel = '%s', strType = '%s', "
         "bCompilation=%i, strReleaseType = '%s', lastScraped = NULL "
         "WHERE idAlbum=%i",
         strGenre.c_str(),
@@ -8967,7 +8967,7 @@ bool CMusicDatabase::GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList
     if (NULL == m_pDB.get()) return false;
     if (NULL == m_pDS.get()) return false;
     std::string strSQL;
-    strSQL=PrepareSQL("SELECT DISTINCT strDiscSubtitle FROM song where song.idAlbum = %i ORDER BY iTrack", idAlbum);
+    strSQL=PrepareSQL("SELECT DISTINCT strDiscSubtitle FROM song where song.idAlbum = %i AND strDiscSubtitle != '' ORDER BY iTrack", idAlbum);
     // run query
     if (!m_pDS->query(strSQL)) return false;
     int iRowsFound = m_pDS->num_rows();
@@ -9052,7 +9052,7 @@ bool CMusicDatabase::GetBoxsetDiscSongs(const std::string& strBaseDir, CFileItem
   try
   {
     int total = -1;
-    std::string strSQL = PrepareSQL("SELECT songview.* from songview WHERE songview.strDiscSubtitle LIKE '%s' AND songview.idAlbum = %i ", strDiscName.c_str(), idAlbum) ;
+    std::string strSQL = PrepareSQL("SELECT songview.* from songview WHERE songview.strDiscSubtitle = '%s' AND songview.idAlbum = %i ", strDiscName.c_str(), idAlbum) ;
     SortDescription sorting;
     CLog::Log(LOGDEBUG, "%s query = %s", __FUNCTION__, strSQL.c_str());
     // run query
