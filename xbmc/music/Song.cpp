@@ -57,6 +57,7 @@ CSong::CSong(CFileItem& item)
   userrating = tag.GetUserrating();
   votes = tag.GetVotes();
   iYear = stTime.wYear;
+  strDiscSubtitle = tag.GetDiscSubtitle();
   iTrack = tag.GetTrackAndDiscNumber();
   iDuration = tag.GetDuration();
   strRecordLabel = tag.GetRecordLabel();
@@ -221,6 +222,7 @@ void CSong::Serialize(CVariant& value) const
   value["duration"] = iDuration;
   value["track"] = iTrack;
   value["year"] = iYear;
+  value['discsubtitle'] = strDiscSubtitle;
   value["musicbrainztrackid"] = strMusicBrainzTrackID;
   value["comment"] = strComment;
   value["mood"] = strMood;
@@ -254,6 +256,7 @@ void CSong::Clear()
   iTrack = 0;
   iDuration = 0;
   iYear = 0;
+  strDiscSubtitle.clear();
   iStartOffset = 0;
   iEndOffset = 0;
   idSong = -1;
@@ -348,4 +351,10 @@ bool CSong::ArtMatches(const CSong &right) const
 {
   return (right.strThumb == strThumb &&
           embeddedArt.Matches(right.embeddedArt));
+}
+const std::string CSong::GetDiscSubtitle() const
+{
+  if (!strDiscSubtitle.empty())
+    return strDiscSubtitle;
+  return "";
 }

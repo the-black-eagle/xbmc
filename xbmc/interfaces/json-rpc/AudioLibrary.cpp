@@ -180,6 +180,9 @@ JSONRPC_STATUS CAudioLibrary::GetAlbums(const std::string &method, ITransportLay
 
   if (parameterObject["includesingles"].asBoolean())
     musicUrl.AddOption("show_singles", true);
+  
+  if(parameterObject["boxset"].asBoolean())
+    musicUrl.AddOption("boxset", true);
 
   bool allroles = false;
   if (parameterObject["allroles"].isBoolean())
@@ -220,9 +223,9 @@ JSONRPC_STATUS CAudioLibrary::GetAlbums(const std::string &method, ITransportLay
   std::set<std::string> fields;
   if (parameterObject.isMember("properties") && parameterObject["properties"].isArray())
   {
-    for (CVariant::const_iterator_array field = parameterObject["properties"].begin_array(); 
-      field != parameterObject["properties"].end_array(); field++)
-      fields.insert(field->asString());
+    for (CVariant::const_iterator_array field = parameterObject["properties"].begin_array();
+    field != parameterObject["properties"].end_array(); field++)
+    fields.insert(field->asString());
   }
 
   if (!musicdatabase.GetAlbumsByWhereJSON(fields, musicUrl.ToString(), result, total, sorting))

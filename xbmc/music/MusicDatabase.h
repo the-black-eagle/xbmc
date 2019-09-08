@@ -128,6 +128,7 @@ public:
    \param iTrack [in] the track number and disc number of the song
    \param iDuration [in] the duration of the song
    \param iYear [in] the year of the song
+   \param strDiscSubtitle [in] subtitle of a disc if it belongs to a box-set
    \param iTimesPlayed [in] the number of times the song has been played
    \param iStartOffset [in] the start offset of the song (when using a single audio file with a .cue)
    \param iEndOffset [in] the end offset of the song (when using a single audio file with .cue)
@@ -148,6 +149,7 @@ public:
               const std::string &artistDisp, const std::string &artistSort,
               const std::vector<std::string>& genres,
               int iTrack, int iDuration, int iYear,
+              const std::string& strDiscSubtitle,
               const int iTimesPlayed, int iStartOffset, int iEndOffset,
               const CDateTime& dtLastPlayed, float rating, int userrating, int votes,
               const ReplayGain& replayGain);
@@ -174,6 +176,7 @@ public:
    \param iTrack [in] the track number and disc number of the song
    \param iDuration [in] the duration of the song
    \param iYear [in] the year of the song
+   \param strDiscSubtitle [in] subtitle of a disc if it belongs to a box-set
    \param iTimesPlayed [in] the number of times the song has been played
    \param iStartOffset [in] the start offset of the song (when using a single audio file with a .cue)
    \param iEndOffset [in] the end offset of the song (when using a single audio file with .cue)
@@ -191,6 +194,7 @@ public:
                  const std::string &artistDisp, const std::string &artistSort,
                  const std::vector<std::string>& genres,
                  int iTrack, int iDuration, int iYear,
+                 const std::string& strDiscSubtitle,
                  int iTimesPlayed, int iStartOffset, int iEndOffset,
                  const CDateTime& dtLastPlayed, float rating, int userrating, int votes, const ReplayGain& replayGain);
 
@@ -202,6 +206,7 @@ public:
   bool SetSongUserrating(const std::string &filePath, int userrating);
   bool SetSongUserrating(int idSong, int userrating);
   bool SetSongVotes(const std::string &filePath, int votes);
+  bool GetSongByDiscSubtitleAndAlbum(const std::string& strDiscSubtitle, int idAlbum);
   int  GetSongByArtistAndAlbumAndTitle(const std::string& strArtist, const std::string& strAlbum, const std::string& strTitle);
 
   /////////////////////////////////////////////////
@@ -227,6 +232,7 @@ public:
    \param strArtistSort the album artist name(s) sort string
    \param strGenre the album genre(s)
    \param year the year
+   \param bBoxedSet if the album is a boxset
    \param strRecordLabel the recording label
    \param strType album type (Musicbrainz release type e.g. "Broadcast, Soundtrack, live"),
    \param bCompilation if the album is a compilation
@@ -236,9 +242,9 @@ public:
   int  AddAlbum(const std::string& strAlbum, const std::string& strMusicBrainzAlbumID,
                 const std::string& strReleaseGroupMBID,
                 const std::string& strArtist, const std::string& strArtistSort,
-                const std::string& strGenre, int year,
+                const std::string& strGenre, int year, bool bBoxedSet,
                 const std::string& strRecordLabel, const std::string& strType,
-                bool bCompilation, CAlbum::ReleaseType releaseType);
+                bool bCompilation, CAlbum::ReleaseType releaseType );
 
   /*! \brief retrieve an album, optionally with all songs.
    \param idAlbum the database id of the album.
@@ -256,7 +262,8 @@ public:
                    const std::string& strThemes, const std::string& strReview,
                    const std::string& strImage, const std::string& strLabel,
                    const std::string& strType,
-                   float fRating, int iUserrating, int iVotes, int iYear, bool bCompilation,
+                   float fRating, int iUserrating, int iVotes, int iYear, bool bBoxedSet,
+                   bool bCompilation,
                    CAlbum::ReleaseType releaseType,
                    bool bScrapedMBID);
   bool ClearAlbumLastScrapedTime(int idAlbum);
@@ -282,6 +289,7 @@ public:
   int  GetAlbumByMatch(const CAlbum &album);
   std::string GetAlbumById(int id);
   bool SetAlbumUserrating(const int idAlbum, int userrating);
+
 
   /////////////////////////////////////////////////
   // Artist CRUD
@@ -418,8 +426,17 @@ public:
   bool GetCompilationAlbums(const std::string& strBaseDir, CFileItemList& items);
   bool GetCompilationSongs(const std::string& strBaseDir, CFileItemList& items);
   int  GetCompilationAlbumsCount();
-
   int GetSinglesCount();
+
+  ////////////////////////////////////////////////
+  // Boxsets
+  ////////////////////////////////////////////////
+  bool GetBoxsetsAlbums(const std::string& strBaseDir, CFileItemList& items);
+  bool GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList& items, int idAlbum = -1, const SortDescription &sortDescription = SortDescription());
+  bool GetBoxsetDiscSongs(const std::string& strBaseDir, CFileItemList& items);
+  int  GetBoxsetsCount();
+  bool RemoveBoxset(int albumId);
+////////////////////////////////////////////////
 
   int GetArtistCountForRole(int role);
   int GetArtistCountForRole(const std::string& strRole);
@@ -464,7 +481,7 @@ public:
   unsigned int GetRandomSongIDs(const Filter &filter, std::vector<std::pair<int, int> > &songIDs);
 
   /////////////////////////////////////////////////
-  // JSON-RPC 
+  // JSON-RPC
   /////////////////////////////////////////////////
   bool GetGenresJSON(CFileItemList& items, bool bSources = false);
   bool GetArtistsByWhereJSON(const std::set<std::string>& fields, const std::string& baseDir,
@@ -664,7 +681,7 @@ private:
   void GetFileItemFromDataset(CFileItem* item, const CMusicDbUrl &baseUrl);
   void GetFileItemFromDataset(const dbiplus::sql_record* const record, CFileItem* item, const CMusicDbUrl &baseUrl);
   void GetFileItemFromArtistCredits(VECARTISTCREDITS& artistCredits, CFileItem* item);
-    
+
   bool CleanupSongs(CGUIDialogProgress* progressDialog = nullptr);
   bool CleanupSongsByIds(const std::string &strSongIds);
   bool CleanupPaths();
@@ -690,26 +707,26 @@ private:
   \param sortAttributes the sort attributes e.g. SortAttributeIgnoreArticle
   \param strField original name or title field that articles could be removed from
   \param strSortField sort name or title field to be used instead of original (when data not null)
-  \return SQL string e.g. 
-  CASE WHEN strArtistSort IS NOT NULL THEN strArtistSort    
+  \return SQL string e.g.
+  CASE WHEN strArtistSort IS NOT NULL THEN strArtistSort
   WHEN strField LIKE 'the ' OR strField LIKE 'the_' ESCAPE '_' THEN SUBSTR(strArtist, 5)
   ELSE strField
   END AS strAlias
   */
-  std::string SortnameBuildSQL(const std::string& strAlias, const SortAttribute& sortAttributes, 
+  std::string SortnameBuildSQL(const std::string& strAlias, const SortAttribute& sortAttributes,
     const std::string& strField, const std::string& strSortField);
 
   /*! \brief Build SQL for sorting field naturally and case insensitvely (in SQLite).
   \param strField field name
   \param sortOrder the sort order
-  \return SQL string e.g.   
-  CASE WHEN CAST(strTitle AS INTEGER) = 0 THEN 100000000 
+  \return SQL string e.g.
+  CASE WHEN CAST(strTitle AS INTEGER) = 0 THEN 100000000
   ELSE CAST(strTitle AS INTEGER) END DESC, strTitle COLLATE NOCASE DESC
   */
   std::string AlphanumericSortSQL(const std::string& strField, const SortOrder& sortOrder);
 
   /*! \brief Checks that source table matches sources.xml
-  returns true when they do 
+  returns true when they do
   */
   bool CheckSources(VECSOURCES& sources);
 
@@ -733,6 +750,7 @@ private:
     song_iTrack,
     song_iDuration,
     song_iYear,
+    song_strDiscSubtitle,
     song_strFileName,
     song_strMusicBrainzTrackID,
     song_iTimesPlayed,
@@ -747,6 +765,7 @@ private:
     song_strAlbum,
     song_strPath,
     song_bCompilation,
+    song_bBoxedSet,
     song_strAlbumArtists,
     song_strAlbumArtistSort,
     song_strAlbumReleaseType,
@@ -768,6 +787,7 @@ private:
     album_strArtistSort,
     album_strGenres,
     album_iYear,
+    album_bBoxedSet,
     album_strMoods,
     album_strStyles,
     album_strThemes,
@@ -869,7 +889,7 @@ private:
   // Fields fetched by GetSongsByWhereJSON,  order same as in JSONtoDBSong
   static enum _JoinToSongFields
   {
-    // Used by GetSongsByWhereJSON 
+    // Used by GetSongsByWhereJSON
     joinToSongs_idAlbumArtist = 0,
     joinToSongs_strAlbumArtist,
     joinToSongs_strAlbumArtistMBID,

@@ -95,6 +95,8 @@ protected:
    */
   static void FindArtForAlbums(VECALBUMS &albums, const std::string &path);
 
+  static void CheckBoxSets(VECALBUMS &albums);
+
   /*! \brief Scrape additional album information and update the database.
    Search for the given album using the given scraper.
    If info is found, update the database and artwork with the new

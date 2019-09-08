@@ -142,6 +142,7 @@ void CMusicDatabase::CreateTables()
               " strReleaseGroupMBID text, "
               " strArtistDisp text, strArtistSort text, strGenres text, "
               " iYear integer, "
+              " bBoxedSet INTEGER NOT NULL DEFAULT 0, "
               " bCompilation integer not null default '0', "
               " strMoods text, strStyles text, strThemes text, "
               " strReview text, strImage text, strLabel text, "
@@ -183,7 +184,7 @@ void CMusicDatabase::CreateTables()
               " idAlbum integer, idPath integer, "
               " strArtistDisp text, strArtistSort text, strGenres text, strTitle varchar(512), "
               " iTrack integer, iDuration integer, iYear integer, "
-              " strFileName text, strMusicBrainzTrackID text, "
+              " strDiscSubtitle text, strFileName text, strMusicBrainzTrackID text, "
               " iTimesPlayed integer, iStartOffset integer, iEndOffset integer, "
               " lastplayed varchar(20) default NULL, "
               " rating FLOAT NOT NULL DEFAULT 0, votes INTEGER NOT NULL DEFAULT 0, "
@@ -300,6 +301,7 @@ void CMusicDatabase::CreateViews()
               "        strTitle, "
               "        iTrack, iDuration, "
               "        song.iYear AS iYear, "
+              "        song.strDiscSubtitle as strDiscSubtitle, "
               "        strFileName, "
               "        strMusicBrainzTrackID, "
               "        iTimesPlayed, iStartOffset, iEndOffset, "
@@ -312,6 +314,7 @@ void CMusicDatabase::CreateViews()
               "        strAlbum, "
               "        strPath, "
               "        album.bCompilation AS bCompilation,"
+              "        album.bBoxedSet AS bBoxedSet, "
               "        album.strArtistDisp AS strAlbumArtists,"
               "        album.strArtistSort AS strAlbumArtistSort,"
               "        album.strReleaseType AS strAlbumReleaseType,"
@@ -334,6 +337,7 @@ void CMusicDatabase::CreateViews()
               "        album.strArtistSort AS strArtistSort, "
               "        album.strGenres AS strGenres, "
               "        album.iYear AS iYear, "
+              "        album.bBoxedSet AS bBoxedSet, "
               "        album.strMoods AS strMoods, "
               "        album.strStyles AS strStyles, "
               "        strThemes, "
@@ -423,6 +427,7 @@ bool CMusicDatabase::AddAlbum(CAlbum& album, int idSource)
                            album.GetAlbumArtistSort(),
                            album.GetGenreString(),
                            album.iYear,
+                           album.bBoxedSet,
                            album.strLabel, album.strType,
                            album.bCompilation, album.releaseType);
 
@@ -450,6 +455,7 @@ bool CMusicDatabase::AddAlbum(CAlbum& album, int idSource)
                            song->GetArtistSort(),
                            song->genre,
                            song->iTrack, song->iDuration, song->iYear,
+                           song->strDiscSubtitle,
                            song->iTimesPlayed, song->iStartOffset,
                            song->iEndOffset,
                            song->lastPlayed,
@@ -511,7 +517,8 @@ bool CMusicDatabase::UpdateAlbum(CAlbum& album)
               album.strReview,
               album.thumbURL.m_xml.c_str(),
               album.strLabel, album.strType,
-              album.fRating, album.iUserrating, album.iVotes, album.iYear, album.bCompilation, album.releaseType,
+              album.fRating, album.iUserrating, album.iVotes, album.iYear, album.bBoxedSet,
+              album.bCompilation, album.releaseType,
               album.bScrapedMBID);
 
   if (!album.bArtistSongMerge)
@@ -557,6 +564,7 @@ int CMusicDatabase::AddSong(const int idAlbum,
                             const std::string &artistDisp, const std::string &artistSort,
                             const std::vector<std::string>& genres,
                             int iTrack, int iDuration, int iYear,
+                            const std::string& strDiscSubtitle,
                             const int iTimesPlayed, int iStartOffset, int iEndOffset,
                             const CDateTime& dtLastPlayed, float rating, int userrating, int votes,
                             const ReplayGain& replayGain)
@@ -596,16 +604,17 @@ int CMusicDatabase::AddSong(const int idAlbum,
       m_pDS->close();
       strSQL=PrepareSQL("INSERT INTO song ("
                                           "idSong,idAlbum,idPath,strArtistDisp,"
-                                          "strTitle,iTrack,iDuration,iYear,strFileName,"
+                                          "strTitle,iTrack,iDuration,iYear, strDiscSubtitle, strFileName,"
                                           "strMusicBrainzTrackID, strArtistSort, "
                                           "iTimesPlayed,iStartOffset, "
                                           "iEndOffset,lastplayed,rating,userrating,votes,comment,mood,strReplayGain"
-                        ") values (NULL, %i, %i, '%s', '%s', %i, %i, %i, '%s'",
+                        ") values (NULL, %i, %i, '%s', '%s', %i, %i, %i,'%s', '%s'",
                     idAlbum,
                     idPath,
                     artistDisp.c_str(),
                     strTitle.c_str(),
                     iTrack, iDuration, iYear,
+                    strDiscSubtitle.c_str(),
                     strFileName.c_str());
 
       if (strMusicBrainzTrackID.empty())
@@ -632,7 +641,7 @@ int CMusicDatabase::AddSong(const int idAlbum,
       idSong = m_pDS->fv("idSong").get_asInt();
       m_pDS->close();
       UpdateSong( idSong, strTitle, strMusicBrainzTrackID, strPathAndFileName, strComment, strMood, strThumb,
-                  artistDisp, artistSort, genres, iTrack, iDuration, iYear, iTimesPlayed, iStartOffset, iEndOffset,
+                  artistDisp, artistSort, genres, iTrack, iDuration, iYear, strDiscSubtitle, iTimesPlayed, iStartOffset, iEndOffset,
                   dtLastPlayed, rating, userrating, votes, replayGain);
     }
 
@@ -716,6 +725,7 @@ bool CMusicDatabase::UpdateSong(CSong& song, bool bArtists /*= true*/)
                     song.iTrack,
                     song.iDuration,
                     song.iYear,
+                    song.strDiscSubtitle,
                     song.iTimesPlayed,
                     song.iStartOffset,
                     song.iEndOffset,
@@ -760,6 +770,7 @@ int CMusicDatabase::UpdateSong(int idSong,
                                const std::string &artistDisp, const std::string &artistSort,
                                const std::vector<std::string>& genres,
                                int iTrack, int iDuration, int iYear,
+                               const std::string& strDiscSubtitle,
                                int iTimesPlayed, int iStartOffset, int iEndOffset,
                                const CDateTime& dtLastPlayed, float rating, int userrating, int votes,
                                const ReplayGain& replayGain)
@@ -773,12 +784,13 @@ int CMusicDatabase::UpdateSong(int idSong,
   int idPath = AddPath(strPath);
 
   strSQL = PrepareSQL("UPDATE song SET idPath = %i, strArtistDisp = '%s', strGenres = '%s', "
-      " strTitle = '%s', iTrack = %i, iDuration = %i, iYear = %i, strFileName = '%s'",
+      " strTitle = '%s', iTrack = %i, iDuration = %i, iYear = %i, strDiscSubtitle = '%s', strFileName = '%s'",
       idPath,
       artistDisp.c_str(),
       StringUtils::Join(genres, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator).c_str(),
       strTitle.c_str(),
       iTrack, iDuration, iYear,
+      strDiscSubtitle.c_str(),
       strFileName.c_str());
   if (strMusicBrainzTrackID.empty())
     strSQL += PrepareSQL(", strMusicBrainzTrackID = NULL");
@@ -810,7 +822,7 @@ int CMusicDatabase::UpdateSong(int idSong,
 int CMusicDatabase::AddAlbum(const std::string& strAlbum, const std::string& strMusicBrainzAlbumID,
                              const std::string& strReleaseGroupMBID,
                              const std::string& strArtist, const std::string& strArtistSort,
-                             const std::string& strGenre, int year,
+                             const std::string& strGenre, int year, bool bBoxedSet,
                              const std::string& strRecordLabel, const std::string& strType,
                              bool bCompilation, CAlbum::ReleaseType releaseType)
 {
@@ -833,13 +845,14 @@ int CMusicDatabase::AddAlbum(const std::string& strAlbum, const std::string& str
     {
       m_pDS->close();
       // doesnt exists, add it
-      strSQL = PrepareSQL("INSERT INTO album (idAlbum, strAlbum, strArtistDisp, strGenres, iYear, "
+      strSQL = PrepareSQL("INSERT INTO album (idAlbum, strAlbum, strArtistDisp, strGenres, iYear, bBoxedSet, "
         "strLabel, strType, bCompilation, strReleaseType, strMusicBrainzAlbumID, strReleaseGroupMBID, strArtistSort) "
-        "values(NULL, '%s', '%s', '%s', %i, '%s', '%s', %i, '%s'",
+        "values(NULL, '%s', '%s', '%s', %i, %i, '%s', '%s', %i, '%s'",
         strAlbum.c_str(),
         strArtist.c_str(),
         strGenre.c_str(),
         year,
+        bBoxedSet,
         strRecordLabel.c_str(),
         strType.c_str(),
         bCompilation,
@@ -888,11 +901,12 @@ int CMusicDatabase::AddAlbum(const std::string& strAlbum, const std::string& str
       else
         strSQL += PrepareSQL(" strArtistSort = '%s'", strArtistSort.c_str());
 
-      strSQL += PrepareSQL(", strGenres = '%s', iYear=%i, strLabel = '%s', strType = '%s', "
+      strSQL += PrepareSQL(", strGenres = '%s', iYear=%i, bBoxedSet=%i, strLabel = '%s', strType = '%s', "
         "bCompilation=%i, strReleaseType = '%s', lastScraped = NULL "
         "WHERE idAlbum=%i",
         strGenre.c_str(),
         year,
+        bBoxedSet,
         strRecordLabel.c_str(),
         strType.c_str(),
         bCompilation,
@@ -921,7 +935,8 @@ int  CMusicDatabase::UpdateAlbum(int idAlbum,
                                  const std::string& strThemes, const std::string& strReview,
                                  const std::string& strImage, const std::string& strLabel,
                                  const std::string& strType,
-                                 float fRating, int iUserrating, int iVotes, int iYear, bool bCompilation,
+                                 float fRating, int iUserrating, int iVotes, int iYear, bool bBoxedSet,
+                                 bool bCompilation,
                                  CAlbum::ReleaseType releaseType,
                                  bool bScrapedMBID)
 {
@@ -934,13 +949,13 @@ int  CMusicDatabase::UpdateAlbum(int idAlbum,
                       " strMoods = '%s', strStyles = '%s', strThemes = '%s', "
                       " strReview = '%s', strImage = '%s', strLabel = '%s', "
                       " strType = '%s', fRating = %f, iUserrating = %i, iVotes = %i,"
-                      " iYear = %i, bCompilation = %i, strReleaseType = '%s', "
+                      " iYear = %i, bBoxedSet = %i, bCompilation = %i, strReleaseType = '%s', "
                       " lastScraped = '%s', bScrapedMBID = %i",
                       strAlbum.c_str(), strArtist.c_str(), strGenre.c_str(),
                       strMoods.c_str(), strStyles.c_str(), strThemes.c_str(),
                       strReview.c_str(), strImage.c_str(), strLabel.c_str(),
                       strType.c_str(), fRating, iUserrating, iVotes,
-                      iYear, bCompilation,
+                      iYear, bBoxedSet, bCompilation,
                       CAlbum::ReleaseTypeToString(releaseType).c_str(),
                       CDateTime::GetCurrentDateTime().GetAsDBDateTime().c_str(),
                       bScrapedMBID);
@@ -1923,6 +1938,35 @@ bool CMusicDatabase::GetArtistsBySong(int idSong, std::vector<int> &artists)
   return false;
 }
 
+bool CMusicDatabase::GetSongByDiscSubtitleAndAlbum(const std::string& strDiscSubtitle, int idAlbum)
+{
+  try
+  {
+    std::string strSQL;
+    strSQL = PrepareSQL("SELECT idSong FROM song WHERE strDiscSubtitle = '%s' AND idAlbum = %i", strDiscSubtitle, idAlbum);
+    if (!m_pDS->query(strSQL))
+      return false;
+    if (m_pDS->num_rows() == 0)
+    {
+      m_pDS->close();
+      return false;
+    }
+
+    while (!m_pDS->eof())
+    {
+//      songs.push_back(m_pDS->fv("idSong").get_asInt());
+      m_pDS->next();
+    }
+    m_pDS->close();
+    return true;
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s(%i, %s) failed", __FUNCTION__, idAlbum, strDiscSubtitle);
+  }
+  return false;
+}
+
 bool CMusicDatabase::GetGenresByArtist(int idArtist, CFileItem* item)
 {
   try
@@ -2132,6 +2176,7 @@ CSong CMusicDatabase::GetSongFromDataset(const dbiplus::sql_record* const record
   song.iTrack = record->at(offset + song_iTrack).get_asInt() ;
   song.iDuration = record->at(offset + song_iDuration).get_asInt() ;
   song.iYear = record->at(offset + song_iYear).get_asInt() ;
+  song.strDiscSubtitle = record->at(offset + song_strDiscSubtitle).get_asString();
   song.strTitle = record->at(offset + song_strTitle).get_asString();
   song.iTimesPlayed = record->at(offset + song_iTimesPlayed).get_asInt();
   song.lastPlayed.SetFromDBDateTime(record->at(offset + song_lastplayed).get_asString());
@@ -2175,6 +2220,7 @@ void CMusicDatabase::GetFileItemFromDataset(const dbiplus::sql_record* const rec
   stTime.wYear = static_cast<unsigned short>(record->at(song_iYear).get_asInt());
   item->GetMusicInfoTag()->SetReleaseDate(stTime);
   item->GetMusicInfoTag()->SetTitle(record->at(song_strTitle).get_asString());
+  item->GetMusicInfoTag()->SetDiscSubtitle(record->at(song_strDiscSubtitle).get_asString());
   item->SetLabel(record->at(song_strTitle).get_asString());
   item->m_lStartOffset = record->at(song_iStartOffset).get_asInt64();
   item->SetProperty("item_start", item->m_lStartOffset);
@@ -2191,6 +2237,7 @@ void CMusicDatabase::GetFileItemFromDataset(const dbiplus::sql_record* const rec
   std::string strRealPath = URIUtils::AddFileToFolder(record->at(song_strPath).get_asString(), record->at(song_strFileName).get_asString());
   item->GetMusicInfoTag()->SetURL(strRealPath);
   item->GetMusicInfoTag()->SetCompilation(record->at(song_bCompilation).get_asInt() == 1);
+  item->GetMusicInfoTag()->SetBoxset(record->at(song_bBoxedSet).get_asInt() == 1);
   // get the album artist string from songview (not the album_artist and artist tables)
   item->GetMusicInfoTag()->SetAlbumArtist(record->at(song_strAlbumArtists).get_asString());
   item->GetMusicInfoTag()->SetAlbumReleaseType(CAlbum::ReleaseTypeFromString(record->at(song_strAlbumReleaseType).get_asString()));
@@ -2270,6 +2317,7 @@ CAlbum CMusicDatabase::GetAlbumFromDataset(const dbiplus::sql_record* const reco
   album.iUserrating = record->at(offset + album_iUserrating).get_asInt();
   album.iVotes = record->at(offset + album_iVotes).get_asInt();
   album.iYear = record->at(offset + album_iYear).get_asInt();
+  album.bBoxedSet = record->at(offset + album_bBoxedSet).get_asInt() == 1;
   album.strReview = record->at(offset + album_strReview).get_asString();
   album.styles = StringUtils::Split(record->at(offset + album_strStyles).get_asString(), itemSeparator);
   album.moods = StringUtils::Split(record->at(offset + album_strMoods).get_asString(), itemSeparator);
@@ -5515,6 +5563,7 @@ static const translateJSONField JSONtoDBAlbum[] = {
   { "votes",                    "integer", true,  "iVotes",                 "" },
   { "userrating",              "unsigned", true,  "iUserrating",            "" },
   { "year",                     "integer", true,  "iYear",                  "" },
+  { "boxset",                   "boolean", true,  "bBoxedSet",              "" },
   { "musicbrainzalbumid",        "string", true,  "strMusicBrainzAlbumID",  "" },
   { "displayartist",             "string", true,  "strArtists",             "" }, //strArtistDisp in album table
   { "compilation",              "boolean", true,  "bCompilation",           "" },
@@ -7407,7 +7456,12 @@ void CMusicDatabase::UpdateTables(int version)
     // and filled as part of scanning anyway so simply force full rescan.
     MigrateSources();
   }
-
+  if (version < 73)
+  {
+    // add bBoxedSet to album table, add strDiscSubtitles to song table
+    m_pDS->exec("ALTER TABLE album ADD bBoxedSet INTEGER \n");
+    m_pDS->exec("ALTER TABLE song ADD strDiscSubtitle TEXT \n");
+  }
   // Set the verion of tag scanning required.
   // Not every schema change requires the tags to be rescanned, set to the highest schema version
   // that needs this. Forced rescanning (of music files that have not changed since they were
@@ -7416,9 +7470,9 @@ void CMusicDatabase::UpdateTables(int version)
   // The original db version when the tags were scanned, and the minimal db version needed are
   // later used to determine if a forced rescan should be prompted
 
-  // The last schema change needing forced rescanning was 60.
-  // Mostly because of the new tags processed by v17 rather than a schema change.
-  SetMusicNeedsTagScan(60);
+  // The last schema change needing forced rescanning was 73.
+  // This is because Kodi can now read and process extra tags involved in the creation of box sets.
+  SetMusicNeedsTagScan(73);
 
   // After all updates, store the original db version.
   // This indicates the version of tag processing that was used to populate db
@@ -7427,7 +7481,7 @@ void CMusicDatabase::UpdateTables(int version)
 
 int CMusicDatabase::GetSchemaVersion() const
 {
-  return 72;
+  return 73;
 }
 
 int CMusicDatabase::GetMusicNeedsTagScan()
@@ -8886,6 +8940,138 @@ bool CMusicDatabase::GetGenresJSON(CFileItemList& items, bool bSources)
     CLog::Log(LOGERROR, "%s (%s) failed", __FUNCTION__, strSQL.c_str());
   }
   return false;
+}
+
+bool CMusicDatabase::GetBoxsetsAlbums(const std::string& strBaseDir, CFileItemList& items)
+{
+  CMusicDbUrl musicUrl;
+
+  if (!musicUrl.FromString(strBaseDir))
+    return false;
+
+  musicUrl.AddOption("boxset", true);
+
+  Filter filter;
+  return GetAlbumsByWhere(musicUrl.ToString(), filter, items);
+}
+
+bool CMusicDatabase::GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList& items, int idAlbum, const SortDescription &sortDescription)
+{
+  // Need to get the single album - must only be one album holding a boxset
+  // then split the disc names from strDiscTitles, count how many there are
+  // and loop around that many times to create a view with 'i' number of boxes,
+  // titled by the subtitles
+
+  try
+  {
+    if (NULL == m_pDB.get()) return false;
+    if (NULL == m_pDS.get()) return false;
+    std::string strSQL;
+    strSQL=PrepareSQL("SELECT DISTINCT strDiscSubtitle FROM song where song.idAlbum = %i AND strDiscSubtitle != '' ORDER BY iTrack", idAlbum);
+    // run query
+    if (!m_pDS->query(strSQL)) return false;
+    int iRowsFound = m_pDS->num_rows();
+    if (iRowsFound < 2) // can't only be one disc title for a set
+    {
+      m_pDS->close();
+      return -1;
+    }
+    std::vector<std::string> titlevector;
+     while (!m_pDS->eof())
+    {
+      titlevector.push_back(m_pDS->fv("strDiscSubtitle").get_asString().c_str());
+      m_pDS->next();
+    }
+    m_pDS->close();
+    items.SetProperty("total", iRowsFound);
+
+    CMusicDbUrl musicUrl;
+    std::string temp_path;
+    temp_path = "musicdb://boxsets/";
+    musicUrl.FromString(strBaseDir);
+    musicUrl.RemoveOption("boxset");
+    temp_path += StringUtils::Format("%i/", idAlbum);
+    strSQL=PrepareSQL("SELECT albumview.* FROM albumview WHERE albumview.idAlbum = %i", idAlbum);
+    if (!m_pDS->query(strSQL)) return false;
+    int iAlbumsFound = m_pDS->num_rows();
+    if (iAlbumsFound != 1) // must only be one album
+    {
+      m_pDS->close();
+      return -1;
+    }
+    DatabaseResults results;
+    results.reserve(iAlbumsFound);
+    if (!SortUtils::SortFromDataset(sortDescription, MediaTypeSong, m_pDS, results))
+      return false;
+    const dbiplus::sql_record* const record = m_pDS->get_sql_record();
+    CMusicDbUrl itemUrl;
+    new CFileItem(itemUrl.ToString(), GetAlbumFromDataset(record));
+
+    for (const auto &disctitle : titlevector) // loop to construct the discs for the gui
+    {
+      CFileItemPtr pItem(new CFileItem(itemUrl.ToString() , GetAlbumFromDataset(record)));
+      std::string path;
+      path = temp_path;
+      path += StringUtils::Format("%s/", disctitle.c_str());
+      musicUrl.FromString(path);
+      pItem->SetPath(path);
+      pItem->SetLabel(disctitle.c_str());
+      pItem->SetArt("icon", "DefaultAlbumCover.png");
+      items.Add(pItem);
+    }
+  }
+  catch (...)
+  {
+    m_pDS->close();
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+  m_pDS->close();
+  return true;
+}
+
+bool CMusicDatabase::GetBoxsetDiscSongs(const std::string& strBaseDir, CFileItemList& items)
+{
+  CMusicDbUrl musicUrl;
+  Filter filter;
+  SortDescription sorting;
+  std::string buildUrl;
+  std::string tmp;
+  std::string strDiscName;
+  unsigned int start;
+  unsigned int end;
+  int idAlbum;
+
+  if (!musicUrl.FromString(strBaseDir))
+  {
+    CLog::Log(LOGERROR, "%s - error getting musicUrl from [%s]", __FUNCTION__, strBaseDir.c_str());
+    return false;
+  }
+  start = strBaseDir.find("boxsets/");
+  if (start == std::string::npos)
+    return false;
+
+  end = strBaseDir.find("/", start + 9); // 9 is 'boxsets/' + 1
+  tmp = strBaseDir.substr(start + 8, end - 18); // 8 = 'boxsets/', 18 = 'musicdb://boxsets/'
+  idAlbum = atoi(tmp.c_str());
+  start = end + 1; // set start to end of albumID field + '/'
+  end = strBaseDir.find("/", start + 1);
+  strDiscName = strBaseDir.substr(start, (strBaseDir.length() -1) - start);
+  if (idAlbum == -1)
+    return false;
+
+  buildUrl = "musicdb://boxsets/";
+  buildUrl += StringUtils::Format("%i/", idAlbum);
+  buildUrl += StringUtils::Format("%s/", strDiscName);
+  musicUrl.FromString(buildUrl);
+  musicUrl.AddOption("disctitle", strDiscName.c_str());
+  GetFilter(musicUrl, filter, sorting);
+  GetSongsByWhere(musicUrl.ToString(), filter, items);
+  return true;
+}
+
+int CMusicDatabase::GetBoxsetsCount()
+{
+  return strtol(GetSingleValue("album", "count(idAlbum)", "bBoxedSet = 1").c_str(), NULL, 10);
 }
 
 bool CMusicDatabase::GetCompilationAlbums(const std::string& strBaseDir, CFileItemList& items)
@@ -10366,6 +10552,8 @@ void CMusicDatabase::SetPropertiesFromAlbum(CFileItem& item, const CAlbum& album
     item.SetProperty("album_userrating", album.iUserrating);
   if (album.iVotes > 0)
     item.SetProperty("album_votes", album.iVotes);
+if (album.bBoxedSet )
+    item.SetProperty("album_bBoxedSet", true);
   item.SetProperty("album_releasetype", CAlbum::ReleaseTypeToString(album.releaseType));
 }
 
@@ -10932,6 +11120,10 @@ bool CMusicDatabase::GetFilter(CDbUrl &musicUrl, Filter &filter, SortDescription
     if (option != options.end())
       filter.AppendWhere(PrepareSQL("albumview.bCompilation = %i", option->second.asBoolean() ? 1 : 0));
 
+    option = options.find("boxset");
+    if (option != options.end())
+      filter.AppendWhere(PrepareSQL("albumview.bBoxedSet = %i", option->second.asBoolean() ? 1 : 0));
+
     if (idSource > 0)
       filter.AppendWhere(PrepareSQL("EXISTS(SELECT 1 FROM album_source "
         "WHERE album_source.idAlbum = albumview.idAlbum AND album_source.idSource = %i)", idSource));
@@ -11034,6 +11226,10 @@ bool CMusicDatabase::GetFilter(CDbUrl &musicUrl, Filter &filter, SortDescription
     option = options.find("compilation");
     if (option != options.end())
       filter.AppendWhere(PrepareSQL("songview.bCompilation = %i", option->second.asBoolean() ? 1 : 0));
+
+    option = options.find("disctitle");
+    if (option != options.end())
+      filter.AppendWhere(PrepareSQL("songview.strDiscSubtitle = '%s'", option->second.asString().c_str()));
 
     if (idSong > 0)
       filter.AppendWhere(PrepareSQL("songview.idSong = %i", idSong));
