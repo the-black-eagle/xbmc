@@ -8991,7 +8991,6 @@ bool CMusicDatabase::GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList
     musicUrl.FromString(strBaseDir);
     musicUrl.RemoveOption("boxset");
     temp_path += StringUtils::Format("%i/", idAlbum);
-
     strSQL=PrepareSQL("SELECT albumview.* FROM albumview WHERE albumview.idAlbum = %i", idAlbum);
     if (!m_pDS->query(strSQL)) return false;
     int iAlbumsFound = m_pDS->num_rows();
@@ -9014,6 +9013,7 @@ bool CMusicDatabase::GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList
       std::string path;
       path = temp_path;
       path += StringUtils::Format("%s/", disctitle.c_str());
+      musicUrl.FromString(path);
       pItem->SetPath(path);
       pItem->SetLabel(disctitle.c_str());
       pItem->SetArt("icon", "DefaultAlbumCover.png");
@@ -9032,86 +9032,40 @@ bool CMusicDatabase::GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList
 bool CMusicDatabase::GetBoxsetDiscSongs(const std::string& strBaseDir, CFileItemList& items)
 {
   CMusicDbUrl musicUrl;
-  int idAlbum;
   Filter filter;
-  //  Parse out the album ID from the base directory
-  unsigned int start = strBaseDir.find("boxsets/");
+  SortDescription sorting;
+  std::string buildUrl;
+  std::string tmp;
+  std::string strDiscName;
+  unsigned int start;
+  unsigned int end;
+  int idAlbum;
+
+  if (!musicUrl.FromString(strBaseDir))
+  {
+    CLog::Log(LOGERROR, "%s - error getting musicUrl from [%s]", __FUNCTION__, strBaseDir.c_str());
+    return false;
+  }
+  start = strBaseDir.find("boxsets/");
   if (start == std::string::npos)
-    idAlbum = -1;
-  unsigned int end = strBaseDir.find("/", start + 9); // 9 is 'boxsets/' + 1
-  std::string tmp = strBaseDir.substr(start + 8, end - 18); // 8 = 'boxsets/', 18 = 'musicdb://boxsets/'
+    return false;
+
+  end = strBaseDir.find("/", start + 9); // 9 is 'boxsets/' + 1
+  tmp = strBaseDir.substr(start + 8, end - 18); // 8 = 'boxsets/', 18 = 'musicdb://boxsets/'
   idAlbum = atoi(tmp.c_str());
   start = end + 1; // set start to end of albumID field + '/'
   end = strBaseDir.find("/", start + 1);
-  std::string strDiscName = strBaseDir.substr(start, (strBaseDir.length() -1) - start);
+  strDiscName = strBaseDir.substr(start, (strBaseDir.length() -1) - start);
   if (idAlbum == -1)
     return false;
-  if (m_pDB.get() == NULL || m_pDS.get() == NULL)
-    return false;
 
-  try
-  {
-    int total = -1;
-    std::string strSQL = PrepareSQL("SELECT songview.* from songview WHERE songview.strDiscSubtitle = '%s' AND songview.idAlbum = %i ", strDiscName.c_str(), idAlbum) ;
-    SortDescription sorting;
-    CLog::Log(LOGDEBUG, "%s query = %s", __FUNCTION__, strSQL.c_str());
-    // run query
-    if (!m_pDS->query(strSQL))
-      return false;
-
-    int iRowsFound = m_pDS->num_rows();
-    if (iRowsFound == 0)
-    {
-      m_pDS->close();
-      return true;
-    }
-
-    // store the total value of items as a property
-    if (total < iRowsFound)
-      total = iRowsFound;
-    items.SetProperty("total", total);
-
-    DatabaseResults results;
-    results.reserve(iRowsFound);
-    if (!SortUtils::SortFromDataset(sorting, MediaTypeSong, m_pDS, results))
-      return false;
-
-    // get data from returned rows
-    items.Reserve(results.size());
-    const dbiplus::query_data &data = m_pDS->get_result_set().records;
-    int count = 0;
-    for (const auto &i : results)
-    {
-      unsigned int targetRow = (unsigned int)i.at(FieldRow).asInteger();
-      const dbiplus::sql_record* const record = data.at(targetRow);
-
-      try
-      {
-        CFileItemPtr item(new CFileItem);
-        GetFileItemFromDataset(record, item.get(), musicUrl);
-        // HACK for sorting by database returned order
-        item->m_iprogramCount = ++count;
-        items.Add(item);
-      }
-      catch (...)
-      {
-        m_pDS->close();
-        CLog::Log(LOGERROR, "%s: out of memory loading query: %s", __FUNCTION__, filter.where.c_str());
-        return (items.Size() > 0);
-      }
-    }
-
-    // cleanup
-    m_pDS->close();
-    return true;
-  }
-  catch (...)
-  {
-    // cleanup
-    m_pDS->close();
-    CLog::Log(LOGERROR, "%s(%s) failed", __FUNCTION__, filter.where.c_str());
-    return false;
-  }
+  buildUrl = "musicdb://boxsets/";
+  buildUrl += StringUtils::Format("%i/", idAlbum);
+  buildUrl += StringUtils::Format("%s/", strDiscName);
+  musicUrl.FromString(buildUrl);
+  musicUrl.AddOption("disctitle", strDiscName.c_str());
+  GetFilter(musicUrl, filter, sorting);
+  GetSongsByWhere(musicUrl.ToString(), filter, items);
   return true;
 }
 
@@ -11272,6 +11226,10 @@ bool CMusicDatabase::GetFilter(CDbUrl &musicUrl, Filter &filter, SortDescription
     option = options.find("compilation");
     if (option != options.end())
       filter.AppendWhere(PrepareSQL("songview.bCompilation = %i", option->second.asBoolean() ? 1 : 0));
+
+    option = options.find("disctitle");
+    if (option != options.end())
+      filter.AppendWhere(PrepareSQL("songview.strDiscSubtitle = '%s'", option->second.asString().c_str()));
 
     if (idSong > 0)
       filter.AppendWhere(PrepareSQL("songview.idSong = %i", idSong));
