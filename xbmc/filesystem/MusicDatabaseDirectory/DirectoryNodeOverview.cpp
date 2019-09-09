@@ -30,8 +30,8 @@ namespace XFILE
                                 { NODE_TYPE_ALBUM_COMPILATIONS,    "compilations",         521 },
                                 { NODE_TYPE_ROLE,                  "roles",              38033 },
                                 { NODE_TYPE_SOURCE,                "sources",            39031 },
-                                { NODE_TYPE_BOXSETS,               "boxsets",            38074 },
-                              };
+                                { NODE_TYPE_DISC,                  "discs",              14087 },
+                                };
   };
 };
 
@@ -66,15 +66,12 @@ bool CDirectoryNodeOverview::GetContent(CFileItemList& items) const
 
   bool hasSingles = (musicDatabase.GetSinglesCount() > 0);
   bool hasCompilations = (musicDatabase.GetCompilationAlbumsCount() > 0);
-  bool hasBoxsets = (musicDatabase.GetBoxsetsCount() > 0);
 
   for (unsigned int i = 0; i < sizeof(OverviewChildren) / sizeof(Node); ++i)
   {
     if (i == 3 && !hasSingles)
       continue;
     if (i == 9 && !hasCompilations)
-      continue;
-    if (i == 12 && !hasBoxsets)
       continue;
 
     CFileItemPtr pItem(new CFileItem(g_localizeStrings.Get(OverviewChildren[i].label)));

@@ -22,6 +22,20 @@ CDirectoryNodeAlbum::CDirectoryNodeAlbum(const std::string& strName, CDirectoryN
 
 NODE_TYPE CDirectoryNodeAlbum::GetChildType() const
 {
+  if (GetName() == "-1")
+    return NODE_TYPE_SONG;
+
+  //! @todo: This makes all multi-disc albums album > disc > song, make disc level optional
+  CMusicDatabase musicdatabase;
+  if (musicdatabase.Open())
+  {
+    int iDiscTotal = -1;
+    iDiscTotal = musicdatabase.GetAlbumDiscCount(GetID());
+    musicdatabase.Close();
+    if (iDiscTotal > 1)
+      return NODE_TYPE_DISC;
+  }
+
   return NODE_TYPE_SONG;
 }
 
@@ -29,6 +43,7 @@ std::string CDirectoryNodeAlbum::GetLocalizedName() const
 {
   if (GetID() == -1)
     return g_localizeStrings.Get(15102); // All Albums
+                                         
   CMusicDatabase db;
   if (db.Open())
     return db.GetAlbumById(GetID());

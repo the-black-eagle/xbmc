@@ -18,9 +18,7 @@
 #include "DirectoryNodeAlbumTop100.h"
 #include "DirectoryNodeAlbumTop100Song.h"
 #include "DirectoryNodeArtist.h"
-#include "DirectoryNodeBoxsets.h"
 #include "DirectoryNodeBoxsetDiscs.h"
-#include "DirectoryNodeBoxsetDiscSongs.h"
 #include "DirectoryNodeGrouped.h"
 #include "DirectoryNodeOverview.h"
 #include "DirectoryNodeRoot.h"
@@ -105,16 +103,12 @@ CDirectoryNode* CDirectoryNode::CreateNode(NODE_TYPE Type, const std::string& st
   case NODE_TYPE_ROLE:
   case NODE_TYPE_YEAR:
     return new CDirectoryNodeGrouped(Type, strName, pParent);
+  case NODE_TYPE_DISC:
+    return new CDirectoryNodeBoxsetDiscs(strName, pParent);
   case NODE_TYPE_ARTIST:
     return new CDirectoryNodeArtist(strName, pParent);
   case NODE_TYPE_ALBUM:
     return new CDirectoryNodeAlbum(strName, pParent);
-  case NODE_TYPE_BOXSETS:
-    return new CDirectoryNodeBoxsets(strName, pParent);
-  case NODE_TYPE_BOXSET_DISCS:
-    return new CDirectoryNodeBoxsetDiscs(strName, pParent);
-  case NODE_TYPE_BOXSET_DISC_SONGS:
-    return new CDirectoryNodeBoxsetDiscSongs(strName, pParent);
   case NODE_TYPE_SONG:
     return new CDirectoryNodeSong(strName, pParent);
   case NODE_TYPE_SINGLES:

@@ -23,8 +23,7 @@ namespace XFILE
       long GetGenreId() { return m_idGenre; }
       long GetSongId() { return m_idSong; }
       long GetYear() { return m_year; }
-      long GetDisc() { return m_idAlbum; }
-
+      long GetDisc() { return m_disc; }
     protected:
       void SetQueryParam(NODE_TYPE NodeType, const std::string& strNodeName);
 

@@ -8,9 +8,7 @@ set(SOURCES DirectoryNodeAlbumCompilations.cpp
             DirectoryNodeAlbumTop100.cpp
             DirectoryNodeAlbumTop100Song.cpp
             DirectoryNodeArtist.cpp
-            DirectoryNodeBoxsets.cpp
-            DirectoryNodeBoxsetDiscs.cpp
-            DirectoryNodeBoxsetDiscSongs.cpp
+            DirectoryNodeBoxsetDiscs.cpp           
             DirectoryNode.cpp
             DirectoryNodeGrouped.cpp
             DirectoryNodeOverview.cpp
@@ -34,9 +32,7 @@ set(HEADERS DirectoryNode.h
             DirectoryNodeAlbumTop100.h
             DirectoryNodeAlbumTop100Song.h
             DirectoryNodeArtist.h
-            DirectoryNodeBoxsets.h
             DirectoryNodeBoxsetDiscs.h
-            DirectoryNodeBoxsetDiscSongs.h
             DirectoryNodeGrouped.h
             DirectoryNodeOverview.h
             DirectoryNodeRoot.h

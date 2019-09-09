@@ -222,7 +222,7 @@ void CSong::Serialize(CVariant& value) const
   value["duration"] = iDuration;
   value["track"] = iTrack;
   value["year"] = iYear;
-  value['discsubtitle'] = strDiscSubtitle;
+  //value['disctitle'] = strDiscSubtitle;
   value["musicbrainztrackid"] = strMusicBrainzTrackID;
   value["comment"] = strComment;
   value["mood"] = strMood;

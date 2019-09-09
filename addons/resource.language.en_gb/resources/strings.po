@@ -7786,6 +7786,7 @@ msgctxt "#14086"
 msgid "Playback"
 msgstr ""
 
+#: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeOverview.cpp
 #: system/settings/settings.xml
 msgctxt "#14087"
 msgid "Discs"
@@ -8399,12 +8400,14 @@ msgstr ""
 #: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeRcentlyAdded.cpp
 #: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeRcentlyPlayed.cpp
 #: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeYearAlbum.cpp
+#: xbmc/music/windows/MusicFileItemListModifier.cpp
 msgctxt "#15102"
 msgid "* All albums"
 msgstr ""
 
 #: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNode.cpp
 #: xbmc/filesystem/MusicDatabaseDirectory/DirectoryNodeArtist.cpp
+#: xbmc/music/windows/MusicFileItemListModifier.cpp
 msgctxt "#15103"
 msgid "* All artists"
 msgstr ""
@@ -12764,7 +12767,7 @@ msgctxt "#20340"
 msgid "Do you want to remove all items within this path from your library?"
 msgstr ""
 
-#empty string with id 20341
+#empty string with id #20341
 
 #: xbmc/dialogs/GUIDialogMediaFilter.cpp
 #: xbmc/dialogs/GUIDialogSmartPlaylistEditor.cpp
@@ -21145,8 +21148,7 @@ msgctxt "#38073"
 msgid "Do you want to refresh information for this item now?"
 msgstr ""
 
-#. Label for boxset navigation
-#: xbmc/filesystem/MusicDatabaseDirectory.cpp
+#: system/library/music/musicroles/boxsets.xml
 msgctxt "#38074"
 msgid "boxsets"
 msgstr ""

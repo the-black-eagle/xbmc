@@ -14,22 +14,29 @@
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodeBoxsetDiscs::CDirectoryNodeBoxsetDiscs(const std::string& strName, CDirectoryNode* pParent)
-  : CDirectoryNode(NODE_TYPE_BOXSET_DISCS, strName, pParent)
+CDirectoryNodeBoxsetDiscs::CDirectoryNodeBoxsetDiscs(const std::string& strName,
+                                                     CDirectoryNode* pParent)
+  : CDirectoryNode(NODE_TYPE_DISC, strName, pParent)
 {
-
 }
 
 NODE_TYPE CDirectoryNodeBoxsetDiscs::GetChildType() const
 {
-  return NODE_TYPE_BOXSET_DISC_SONGS;
+  return NODE_TYPE_SONG;
 }
 
 std::string CDirectoryNodeBoxsetDiscs::GetLocalizedName() const
 {
 
   if (GetID() == -1)
-    return g_localizeStrings.Get(15102); // All Albums
+    return g_localizeStrings.Get(38075); // "All discs" 
+
+  // ! @todo: Find better approach, use the label of the item we click?
+  CQueryParams params;
+  CollectQueryParams(params);
+  CMusicDatabase db;
+  if (db.Open())
+    return db.GetBoxsetDiscById(params.GetAlbumId(), params.GetDisc());
   return "";
 }
 
@@ -41,8 +48,8 @@ bool CDirectoryNodeBoxsetDiscs::GetContent(CFileItemList& items) const
 
   CQueryParams params;
   CollectQueryParams(params);
-
-  bool bSuccess=musicdatabase.GetBoxsetDiscs(BuildPath(), items, params.GetAlbumId());
+  
+  bool bSuccess = musicdatabase.GetBoxsetDiscs(BuildPath(), items, params.GetAlbumId());
 
   musicdatabase.Close();
 

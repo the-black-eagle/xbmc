@@ -162,7 +162,6 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
   case NODE_TYPE_ALBUM_COMPILATIONS:
   case NODE_TYPE_ALBUM:
   case NODE_TYPE_YEAR_ALBUM:
-  case NODE_TYPE_BOXSETS:
     {
       // album
       AddSortMethod(SortByAlbum, sortAttribute, 558, LABEL_MASKS("%F", "", strAlbum, "%A"));  // Filename, empty | Userdefined (default=%B), Artist
@@ -256,7 +255,6 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
   case NODE_TYPE_ALBUM_TOP100_SONGS:
   case NODE_TYPE_YEAR_SONG:
   case NODE_TYPE_SONG:
-  case NODE_TYPE_BOXSET_DISC_SONGS:
     {
       AddSortMethod(SortByTrackNumber, 554, LABEL_MASKS(strTrack, "%D"));  // Userdefined, Duration| empty, empty
       AddSortMethod(SortByTitle, sortAttribute, 556, LABEL_MASKS("%T - %A", "%D"));  // Title, Artist, Duration| empty, empty

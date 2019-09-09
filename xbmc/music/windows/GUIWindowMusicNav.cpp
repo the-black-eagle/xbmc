@@ -241,8 +241,8 @@ std::string CGUIWindowMusicNav::GetQuickpathName(const std::string& strPath) con
     return "Singles";
   else if (path == "special://musicplaylists/")
     return "Playlists";
-  else if (path == "musicdb://boxsets/")
-    return "Boxsets";
+  else if (path == "musicdb://discs/")
+    return "discs";
   else
   {
     CLog::Log(LOGERROR, "  CGUIWindowMusicNav::GetQuickpathName: Unknown parameter (%s)", strPath.c_str());
@@ -453,8 +453,7 @@ bool CGUIWindowMusicNav::GetDirectory(const std::string &strDirectory, CFileItem
         node == NODE_TYPE_ALBUM_TOP100 ||
         node == NODE_TYPE_ALBUM_COMPILATIONS ||
         node == NODE_TYPE_YEAR_ALBUM ||
-        node == NODE_TYPE_BOXSETS ||
-        node == NODE_TYPE_BOXSET_DISCS)
+        node == NODE_TYPE_DISC)  // ! @todo: own content type "discs"??
       items.SetContent("albums");
     else if (node == NODE_TYPE_ARTIST)
       items.SetContent("artists");
@@ -465,8 +464,7 @@ bool CGUIWindowMusicNav::GetDirectory(const std::string &strDirectory, CFileItem
              node == NODE_TYPE_ALBUM_RECENTLY_PLAYED_SONGS ||
              node == NODE_TYPE_ALBUM_COMPILATIONS_SONGS ||
              node == NODE_TYPE_ALBUM_TOP100_SONGS ||
-             node == NODE_TYPE_YEAR_SONG ||
-             node == NODE_TYPE_BOXSET_DISC_SONGS)
+             node == NODE_TYPE_YEAR_SONG)
       items.SetContent("songs");
     else if (node == NODE_TYPE_GENRE)
       items.SetContent("genres");

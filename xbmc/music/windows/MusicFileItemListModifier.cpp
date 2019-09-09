@@ -58,8 +58,8 @@ void CMusicFileItemListModifier::AddQueuingFolder(CFileItemList& items)
 
   auto nodeChildType = directoryNode->GetChildType();
 
-  // No need for "all" when overview node and child node albums or artists
-  if (directoryNode->GetType() == NODE_TYPE_OVERVIEW &&
+  // No need for "all" when overview node and child node albums or artists without options
+  if (directoryNode->GetType() == NODE_TYPE_OVERVIEW && musicUrl.GetOptions().empty() &&
      (nodeChildType == NODE_TYPE_ARTIST || nodeChildType == NODE_TYPE_ALBUM))
     return;
 
@@ -79,6 +79,13 @@ void CMusicFileItemListModifier::AddQueuingFolder(CFileItemList& items)
   case NODE_TYPE_ALBUM_TOP100:
   case NODE_TYPE_YEAR_ALBUM:
     pItem.reset(new CFileItem(g_localizeStrings.Get(15102)));  // "All Albums"
+    musicUrl.AppendPath("-1/");
+    pItem->SetPath(musicUrl.ToString());
+    break;
+
+  //  Disc node
+  case NODE_TYPE_DISC:
+    pItem.reset(new CFileItem(g_localizeStrings.Get(38075)));  // "All Discs"
     musicUrl.AppendPath("-1/");
     pItem->SetPath(musicUrl.ToString());
     break;

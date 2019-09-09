@@ -206,6 +206,7 @@ public:
   bool SetSongUserrating(const std::string &filePath, int userrating);
   bool SetSongUserrating(int idSong, int userrating);
   bool SetSongVotes(const std::string &filePath, int votes);
+  bool GetSongByDiscSubtitleAndAlbum(const std::string& strDiscSubtitle, int idAlbum);
   int  GetSongByArtistAndAlbumAndTitle(const std::string& strArtist, const std::string& strAlbum, const std::string& strTitle);
 
   /////////////////////////////////////////////////
@@ -287,6 +288,7 @@ public:
   int  GetAlbumByName(const std::string& strAlbum, const std::vector<std::string>& artist);
   int  GetAlbumByMatch(const CAlbum &album);
   std::string GetAlbumById(int id);
+  int GetAlbumDiscCount(int idAlbum);
   bool SetAlbumUserrating(const int idAlbum, int userrating);
 
   /////////////////////////////////////////////////
@@ -428,9 +430,8 @@ public:
   ////////////////////////////////////////////////
   // Boxsets
   ////////////////////////////////////////////////
-  bool GetBoxsetsAlbums(const std::string& strBaseDir, CFileItemList& items);
   bool GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList& items, int idAlbum = -1, const SortDescription &sortDescription = SortDescription());
-  bool GetBoxsetDiscSongs(const std::string& strBaseDir, CFileItemList& items);
+  std::string GetBoxsetDiscById(int idAlbum, int idDisc);
   int  GetBoxsetsCount();
 
   int GetSinglesCount();
