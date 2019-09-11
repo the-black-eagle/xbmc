@@ -72,7 +72,7 @@
 						<top>80</top>
 						<width>1600</width>
 						<height>40</height>
-						<label>$INFO[MusicPlayer.Album]$INFO[MusicPlayer.Year,[COLOR button_focus] [,][/COLOR]]</label>
+						<label>$INFO[MusicPlayer.Album]$INFO[MusicPlayer.DiscTitle, {,}]$INFO[MusicPlayer.Year,[COLOR button_focus] [,][/COLOR]]</label>
 						<font>font37</font>
 						<shadowcolor>black</shadowcolor>
 						<scroll>true</scroll>
