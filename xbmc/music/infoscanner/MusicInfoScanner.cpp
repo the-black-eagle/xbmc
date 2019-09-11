@@ -667,6 +667,7 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
     bool tracksOverlap = false;
     bool hasAlbumArtist = false;
     bool isCompilation = true;
+    std::string old_DiscSubtitle;
 
     std::map<std::string, std::vector<CSong *> > artists;
     for (VECSONGS::iterator song = songs.begin(); song != songs.end(); ++song)
@@ -677,6 +678,9 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
 
       if (!song->bCompilation)
         isCompilation = false;
+
+      if (song->strDiscSubtitle != old_DiscSubtitle)
+        old_DiscSubtitle = song->strDiscSubtitle;
 
       // get primary artist
       std::string primary;
@@ -867,6 +871,8 @@ int CMusicInfoScanner::RetrieveMusicInfo(const std::string& strDirectory, CFileI
   VECALBUMS albums;
   FileItemsToAlbums(scannedItems, albums, &songsMap);
 
+  CheckBoxSets(albums);
+
   /*
   Set thumb for songs and, if only one album in folder, store the thumb for
   the album (music db) and the folder path (in Textures db) too.
@@ -917,6 +923,64 @@ int CMusicInfoScanner::RetrieveMusicInfo(const std::string& strDirectory, CFileI
     numAdded += album.songs.size();
   }
   return numAdded;
+}
+
+void CMusicInfoScanner::CheckBoxSets(VECALBUMS& albums)
+{
+  /* Strategy: Having scanned the tags of the albums to add to the library,
+     check for disc subtitles. If an album only has one subtitled disc, we don't
+     consider it a boxset as it's most likely a 'live' version of the album or a 'bonus disc'.
+     Single disc subtitles are still added to the database so they can be displayed by
+     skins at appropriate times.  If 'boxset' was added to the albumreleasetype then add the
+     album regardless of any other rules, using 'dummy' as the contents of strDiscSubtitle as
+     a flag to do so */
+
+  std::string m_oldDiscSubtitle;
+  int discno;
+  int old_discno = 0;
+  for (auto& album : albums)
+  {
+    album.bBoxedSet = false;
+    if (album.strType.find("boxset") != std::string::npos)
+      album.bBoxedSet = true;
+    if (album.bCompilation && !album.bBoxedSet)
+      continue; // skip compilations that haven't had the boxset tag added to them
+
+    int count = 0;
+    for (auto& song : album.songs)
+    {
+      // Make dummy title if we are forcing a boxset and we have no title
+      if (album.bBoxedSet && song.strDiscSubtitle.empty())
+        song.strDiscSubtitle = "dummy";
+
+      if (!song.strDiscSubtitle.empty())
+      {
+        if (song.strDiscSubtitle != "dummy")
+        {
+          // not forcing a boxset so count individual disc titles
+          if (song.strDiscSubtitle != m_oldDiscSubtitle)
+          {
+            m_oldDiscSubtitle = song.strDiscSubtitle;
+            count++;
+            if (count > 2)
+              album.bBoxedSet = true;
+          }
+        }
+        else
+        {
+          discno = song.iTrack >> 16;
+          song.strDiscSubtitle = StringUtils::Format("%s %i", g_localizeStrings.Get(427),
+                                                     discno); // create dummy titles
+          if (discno != old_discno)
+          {
+            old_discno = discno;
+          }
+        }
+      }
+      if (count < 3 && !album.bBoxedSet) // must have more than 2 titled discs
+        album.bBoxedSet = false; // to be considered a boxset unless tag set in files
+    }
+  }
 }
 
 void MUSIC_INFO::CMusicInfoScanner::ScrapeInfoAddedAlbums()

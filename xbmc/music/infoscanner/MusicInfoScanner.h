@@ -78,6 +78,16 @@ protected:
   virtual void Process();
   bool DoScan(const std::string& strDirectory) override;
 
+  /*! \brief Checks disc titles to see if they form part of a boxset
+   If all the discs for an album have titles and there are three or more discs
+   then automatically mark the album as a boxset.  Otherwise, check to see if the
+   'boxset' tag was set in muzicbrainzreleasetype and if so, mark the album as a boxset and
+   use any disc titles that were in the tags. Create dummy titles for any discs without one.
+
+  \param albums [in/out] list of albums to check.
+  */
+  static void CheckBoxSets(VECALBUMS& albums);
+
   /*! \brief Find art for albums
    Based on the albums in the folder, finds whether we have unique album art
    and assigns to the album if we do.
