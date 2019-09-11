@@ -56,6 +56,7 @@ public:
     iVotes = -1;
     iYear = -1;
     bCompilation = false;
+    bBoxedSet  = false;
     iTimesPlayed = 0;
     dateAdded.Reset();
     lastPlayed.Reset();
@@ -155,6 +156,7 @@ public:
   int iUserrating = -1;
   int iVotes = -1;
   int iYear = -1;
+  bool bBoxedSet = false;
   bool bCompilation = false;
   int iTimesPlayed = 0;
   CDateTime dateAdded;

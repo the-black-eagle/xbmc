@@ -36,6 +36,7 @@ bool CMusicInfoTag::operator !=(const CMusicInfoTag& tag) const
   if (m_albumArtist != tag.m_albumArtist) return true;
   if (m_strAlbum != tag.m_strAlbum) return true;
   if (m_iDuration != tag.m_iDuration) return true;
+  if (m_strDiscSubtitle != tag.m_strDiscSubtitle) return true;
   if (m_iTrack != tag.m_iTrack) return true;
   if (m_albumReleaseType != tag.m_albumReleaseType) return true;
   return false;
@@ -99,6 +100,11 @@ const std::string& CMusicInfoTag::GetComposerSort() const
 const std::string& CMusicInfoTag::GetAlbum() const
 {
   return m_strAlbum;
+}
+
+const std::string& CMusicInfoTag::GetDiscSubtitle() const
+{
+  return m_strDiscSubtitle;
 }
 
 int CMusicInfoTag::GetAlbumId() const
@@ -219,6 +225,11 @@ const CDateTime &CMusicInfoTag::GetDateAdded() const
 bool CMusicInfoTag::GetCompilation() const
 {
   return m_bCompilation;
+}
+
+bool CMusicInfoTag::GetBoxset() const
+{
+  return m_bBoxset;
 }
 
 const EmbeddedArtInfo &CMusicInfoTag::GetCoverArtInfo() const
@@ -368,6 +379,11 @@ void CMusicInfoTag::SetDiscNumber(int iDiscNumber)
   m_iTrack = (m_iTrack & 0xffff) | (iDiscNumber << 16);
 }
 
+void CMusicInfoTag::SetDiscSubtitle(const std::string& strDiscSubtitle)
+{
+  m_strDiscSubtitle = strDiscSubtitle;
+}
+
 void CMusicInfoTag::SetTrackAndDiscNumber(int iTrackAndDisc)
 {
   m_iTrack = iTrackAndDisc;
@@ -459,6 +475,11 @@ void CMusicInfoTag::SetDateAdded(const CDateTime& dateAdded)
 void CMusicInfoTag::SetCompilation(bool compilation)
 {
   m_bCompilation = compilation;
+}
+
+void CMusicInfoTag::SetBoxset(bool boxset)
+{
+  m_bBoxset = boxset;
 }
 
 void CMusicInfoTag::SetLoaded(bool bOnOff)
@@ -614,6 +635,7 @@ void CMusicInfoTag::SetAlbum(const CAlbum& album)
   SetCompilation(album.bCompilation);
   SYSTEMTIME stTime;
   stTime.wYear = album.iYear;
+  SetBoxset(album.bBoxedSet);
   SetReleaseDate(stTime);
   SetAlbumReleaseType(album.releaseType);
   SetDateAdded(album.dateAdded);
@@ -910,6 +932,7 @@ void CMusicInfoTag::Clear()
   m_lastPlayed.Reset();
   m_dateAdded.Reset();
   m_bCompilation = false;
+  m_bBoxset = false;
   m_strComment.clear();
   m_strMood.clear();
   m_strRecordLabel.clear();
