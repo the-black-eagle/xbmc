@@ -784,12 +784,13 @@ int CMusicDatabase::UpdateSong(int idSong,
   int idPath = AddPath(strPath);
 
   strSQL = PrepareSQL("UPDATE song SET idPath = %i, strArtistDisp = '%s', strGenres = '%s', "
-      " strTitle = '%s', iTrack = %i, iDuration = %i, iYear = %i, strFileName = '%s'",
+      " strTitle = '%s', iTrack = %i, iDuration = %i, iYear = %i, strDiscSubtitle = '%s, strFileName = '%s'",
       idPath,
       artistDisp.c_str(),
       StringUtils::Join(genres, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator).c_str(),
       strTitle.c_str(),
       iTrack, iDuration, iYear,
+      strDiscSubtitle.c_str(),
       strFileName.c_str());
   if (strMusicBrainzTrackID.empty())
     strSQL += PrepareSQL(", strMusicBrainzTrackID = NULL");
@@ -8989,13 +8990,18 @@ bool CMusicDatabase::GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList
       m_pDS->close();
       return false;
     }
-
+    std::string oldDiscTitle = "";
      while (!m_pDS->eof())
     {
+      bool trueSet = false;
       int discnum = m_pDS->fv("iDisc").get_asInt();
       std::string strDiscSubtitle = m_pDS->fv("strDiscSubtitle").get_asString();
       if (strDiscSubtitle.empty())
-        strDiscSubtitle = StringUtils::Format("Disc %i", discnum);  //! @todo:  localize string
+        strDiscSubtitle = StringUtils::Format("%s %i", g_localizeStrings.Get(427), discnum);  //! @todo:  localize string
+      else
+      {
+        trueSet = true; // boxsets ALWAYS have a disc title
+      }
       //! @todo: append other filtering options to path - see GetAlbumsByWhere
       /*
       CMusicDbUrl itemUrl = musicUrl;
@@ -9006,6 +9012,23 @@ bool CMusicDatabase::GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList
       */
       std::string path;
       path = StringUtils::Format("musicdb://albums/%i/%i?discid=%i", idAlbum, discnum, discnum);
+      if (trueSet)
+      {
+       path = StringUtils::Format("musicdb://albums/%i/%i", idAlbum, discnum);
+       CMusicDbUrl temppath;  // build url using proper formatting for titles that contain punctuation and "/" etc
+       temppath.FromString(path);
+       temppath.AddOption("disctitle", strDiscSubtitle.c_str());
+       path = temppath.ToString();
+        if (oldDiscTitle == strDiscSubtitle)
+        {
+          m_pDS->next(); // Same disc title, so these discs are grouped together
+          continue;
+        }
+        else
+        {
+          oldDiscTitle = strDiscSubtitle;
+        }
+      }
       CFileItemPtr pItem(new CFileItem(path, album));
       pItem->SetLabel2(m_pDS->fv("iDisc").get_asString()); // GUI show label2 for disc sort order??
       pItem->GetMusicInfoTag()->SetDiscNumber(discnum);    // Skins show discnumber for "albums"?? Confluence does.
@@ -11208,6 +11231,10 @@ bool CMusicDatabase::GetFilter(CDbUrl &musicUrl, Filter &filter, SortDescription
     option = options.find("discid");
     if (option != options.end())
       idDisc = static_cast<int>(option->second.asInteger());
+
+    option = options.find("disctitle");
+    if (option != options.end())
+      filter.AppendWhere(PrepareSQL("songview.strDiscSubtitle = '%s'", option->second.asString().c_str()));
 
     if (idSong > 0)
       filter.AppendWhere(PrepareSQL("songview.idSong = %i", idSong));

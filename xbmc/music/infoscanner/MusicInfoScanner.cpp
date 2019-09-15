@@ -961,7 +961,7 @@ void CMusicInfoScanner::CheckBoxSets(VECALBUMS &albums)
         else
         {
           discno = song.iTrack >> 16;
-          song.strDiscSubtitle = StringUtils::Format("Disc %i", discno); // create dummy titles
+          song.strDiscSubtitle = StringUtils::Format("%s %i", g_localizeStrings.Get(427), discno); // create dummy titles
           if (discno != old_discno)
           {
             old_discno = discno;
