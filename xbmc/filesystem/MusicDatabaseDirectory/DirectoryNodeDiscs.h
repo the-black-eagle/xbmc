@@ -14,10 +14,10 @@ namespace XFILE
 {
   namespace MUSICDATABASEDIRECTORY
   {
-    class CDirectoryNodeBoxsetDiscs : public CDirectoryNode
+    class CDirectoryNodeDiscs : public CDirectoryNode
     {
     public:
-      CDirectoryNodeBoxsetDiscs(const std::string& strName, CDirectoryNode* pParent);
+      CDirectoryNodeDiscs(const std::string& strName, CDirectoryNode* pParent);
     protected:
       NODE_TYPE GetChildType() const override;
       bool GetContent(CFileItemList& items) const override;

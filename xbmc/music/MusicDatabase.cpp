@@ -8952,7 +8952,7 @@ bool CMusicDatabase::GetGenresJSON(CFileItemList& items, bool bSources)
   return false;
 }
 
-bool CMusicDatabase::GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList& items, int idAlbum, const SortDescription &sortDescription)
+bool CMusicDatabase::GetDiscsByWhere(const std::string& strBaseDir, CFileItemList& items, int idAlbum, const SortDescription &sortDescription)
 {
   // Get album details and fill item list with copy for each disc in box set 
   // adding disc number and subtitle per item

@@ -6,7 +6,7 @@
  *  See LICENSES/README.md for more information.
  */
 
-#include "DirectoryNodeBoxsetDiscs.h"
+#include "DirectoryNodeDiscs.h"
 
 #include "QueryParams.h"
 #include "guilib/LocalizeStrings.h"
@@ -14,18 +14,18 @@
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
-CDirectoryNodeBoxsetDiscs::CDirectoryNodeBoxsetDiscs(const std::string& strName,
+CDirectoryNodeDiscs::CDirectoryNodeDiscs(const std::string& strName,
                                                      CDirectoryNode* pParent)
   : CDirectoryNode(NODE_TYPE_DISC, strName, pParent)
 {
 }
 
-NODE_TYPE CDirectoryNodeBoxsetDiscs::GetChildType() const
+NODE_TYPE CDirectoryNodeDiscs::GetChildType() const
 {
   return NODE_TYPE_SONG;
 }
 
-std::string CDirectoryNodeBoxsetDiscs::GetLocalizedName() const
+std::string CDirectoryNodeDiscs::GetLocalizedName() const
 {
 
   if (GetID() == -1)
@@ -40,7 +40,7 @@ std::string CDirectoryNodeBoxsetDiscs::GetLocalizedName() const
   return "";
 }
 
-bool CDirectoryNodeBoxsetDiscs::GetContent(CFileItemList& items) const
+bool CDirectoryNodeDiscs::GetContent(CFileItemList& items) const
 {
   CMusicDatabase musicdatabase;
   if (!musicdatabase.Open())
@@ -49,7 +49,7 @@ bool CDirectoryNodeBoxsetDiscs::GetContent(CFileItemList& items) const
   CQueryParams params;
   CollectQueryParams(params);
   
-  bool bSuccess = musicdatabase.GetBoxsetDiscs(BuildPath(), items, params.GetAlbumId());
+  bool bSuccess = musicdatabase.GetDiscsByWhere(BuildPath(), items, params.GetAlbumId());
 
   musicdatabase.Close();
 

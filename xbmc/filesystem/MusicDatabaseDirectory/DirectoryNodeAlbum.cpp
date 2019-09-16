@@ -9,8 +9,11 @@
 #include "DirectoryNodeAlbum.h"
 
 #include "QueryParams.h"
+#include "ServiceBroker.h"
 #include "guilib/LocalizeStrings.h"
 #include "music/MusicDatabase.h"
+#include "settings/Settings.h"
+#include "settings/SettingsComponent.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
 
@@ -27,6 +30,8 @@ NODE_TYPE CDirectoryNodeAlbum::GetChildType() const
 
   //! @todo: This makes all multi-disc albums album > disc > song, make disc level optional
   CMusicDatabase musicdatabase;
+  if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_MUSICLIBRARY_SHOWDISCS))
+    return NODE_TYPE_SONG;
   if (musicdatabase.Open())
   {
     int iDiscTotal = -1;

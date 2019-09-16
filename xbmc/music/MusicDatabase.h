@@ -430,7 +430,7 @@ public:
   ////////////////////////////////////////////////
   // Boxsets
   ////////////////////////////////////////////////
-  bool GetBoxsetDiscs(const std::string& strBaseDir, CFileItemList& items, int idAlbum = -1, const SortDescription &sortDescription = SortDescription());
+  bool GetDiscsByWhere(const std::string& strBaseDir, CFileItemList& items, int idAlbum = -1, const SortDescription &sortDescription = SortDescription());
   std::string GetBoxsetDiscById(int idAlbum, int idDisc);
   int  GetBoxsetsCount();
 
