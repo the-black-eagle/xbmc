@@ -270,6 +270,7 @@ bool CMusicThumbLoader::FillLibraryArt(CFileItem &item)
     std::string fanartfallback;
     bool bDiscSetThumbSet = false;
     std::map<std::string, std::string> artmap;
+    std::map<std::string, std::string> discartmap;
     for (auto artitem : art)
     {
       /* Add art to artmap, naming according to media type.
@@ -289,6 +290,20 @@ bool CMusicThumbLoader::FillLibraryArt(CFileItem &item)
         artname = artitem.prefix + "." + artitem.artType;
       }
 
+     // Pull out art for this specific disc e.g. "thumb2", skip art for other discs
+      if (tag.GetType() == MediaTypeAlbum && tag.GetDiscNumber() > 0 && tag.GetType() == artitem.mediaType)
+      {
+        // Find any trailing digits
+        size_t startnum = artname.find_last_not_of("0123456789");
+        std::string digits = artname.substr(startnum + 1);
+        int num = atoi(digits.c_str());
+        if (num > 0 && startnum < artname.size())
+        {
+          if (num == tag.GetDiscNumber())
+            discartmap.insert(std::make_pair(artname.substr(0, startnum+1), artitem.url));
+          continue;
+        }
+      }
       artmap.insert(std::make_pair(artname, artitem.url));
 
       // Add fallback art for "thumb" and "fanart" art types only
@@ -318,6 +333,16 @@ bool CMusicThumbLoader::FillLibraryArt(CFileItem &item)
     }
     if (!fanartfallback.empty())
       item.SetArtFallback("fanart", fanartfallback);
+
+    // Insert or replace album art with specifc disc art when we have some
+    for (auto discart : discartmap)
+    {
+      std::map<std::string, std::string>::iterator it = artmap.find(discart.first);
+      if (it != artmap.end())
+        it->second = discart.second;
+      else
+        artmap.insert(discart);
+    }
 
     item.AppendArt(artmap);
   }
