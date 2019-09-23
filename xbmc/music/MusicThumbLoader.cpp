@@ -322,6 +322,17 @@ bool CMusicThumbLoader::FillLibraryArt(CFileItem &item)
             bDiscSetThumbSet = true;
           }
         }
+        else if (StringUtils::StartsWith(artitem.artType, "discart"))
+        {
+          int number = atoi(artitem.artType.substr(7).c_str());
+          if (number == 0)
+            item.SetArtFallback("discart", artname);
+          else if (number > 0 && tag.GetDiscNumber() == number)
+          {
+            item.SetArtFallback("discart", artname);
+            bDiscSetThumbSet = true;
+          }
+        }
       }
 
       // For albums and songs set fallback fanart from the artist.
@@ -356,7 +367,7 @@ bool CMusicThumbLoader::GetEmbeddedThumb(const std::string &path, EmbeddedArt &a
   CFileItem item(path, false);
   std::unique_ptr<IMusicInfoTagLoader> pLoader (CMusicInfoTagLoaderFactory::CreateLoader(item));
   CMusicInfoTag tag;
-  if (NULL != pLoader.get())
+  if (nullptr != pLoader)
     pLoader->Load(path, tag, &art);
 
   return !art.Empty();
