@@ -149,7 +149,7 @@ public:
               const std::string &artistDisp, const std::string &artistSort,
               const std::vector<std::string>& genres,
               int iTrack, int iDuration, int iYear,
-              const std::string& strDiscSubtitle,
+              std::string& strDiscSubtitle,
               const int iTimesPlayed, int iStartOffset, int iEndOffset,
               const CDateTime& dtLastPlayed, float rating, int userrating, int votes,
               const ReplayGain& replayGain);

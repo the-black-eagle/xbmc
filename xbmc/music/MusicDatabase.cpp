@@ -502,7 +502,19 @@ bool CMusicDatabase::AddAlbum(CAlbum& album, int idSource)
       PrepareSQL("UPDATE album SET iDisctotal = (SELECT COUNT(DISTINCT iTrack >> 16) FROM song "
                  "WHERE song.idAlbum = album.idAlbum) WHERE idAlbum = %i",
                  album.idAlbum));
-
+  // Set a non-compilation album as a boxset if it has three or more distinct disc titles
+  if (!album.bBoxedSet && !album.bCompilation)
+  {
+    std::string strSQL;
+    strSQL = PrepareSQL("SELECT COUNT(DISTINCT strDiscSubtitle) FROM song WHERE song.idAlbum = %i",
+                        album.idAlbum);
+    int numTitles = static_cast<int>(strtol(GetSingleValue(strSQL).c_str(), nullptr, 10));
+    if (numTitles >=3)
+    {
+      strSQL = PrepareSQL("UPDATE album SET bBoxedSet=1 WHERE album.idAlbum=%i", album.idAlbum);
+      m_pDS->exec(strSQL);
+    }
+  }
   CommitTransaction();
   return true;
 }
@@ -572,7 +584,7 @@ int CMusicDatabase::AddSong(const int idAlbum,
                             const std::string &artistDisp, const std::string &artistSort,
                             const std::vector<std::string>& genres,
                             int iTrack, int iDuration, int iYear,
-                            const std::string& strDiscSubtitle,
+                            std::string& strDiscSubtitle,
                             const int iTimesPlayed, int iStartOffset, int iEndOffset,
                             const CDateTime& dtLastPlayed, float rating, int userrating, int votes,
                             const ReplayGain& replayGain)
@@ -612,6 +624,14 @@ int CMusicDatabase::AddSong(const int idAlbum,
     if (m_pDS->num_rows() == 0)
     {
       m_pDS->close();
+
+      // As all discs in a boxset have to have a title, generate one in the form of 'Disc N'
+      bool isBoxset = IsAlbumBoxset(idAlbum);
+      if (isBoxset && strDiscSubtitle.empty())
+      {
+        int discno = iTrack >> 16;
+        strDiscSubtitle = StringUtils::Format("%s %i", g_localizeStrings.Get(427), discno);
+      }
       strSQL=PrepareSQL("INSERT INTO song ("
                                           "idSong,idAlbum,idPath,strArtistDisp,"
                                           "strTitle,iTrack,iDuration,iYear,strDiscSubtitle,strFileName,"
@@ -855,7 +875,8 @@ int CMusicDatabase::AddAlbum(const std::string& strAlbum, const std::string& str
                           strArtist.c_str(),
                           strAlbum.c_str());
     m_pDS->query(strSQL);
-
+    if (strType.find("boxset") != std::string::npos) //boxset flagged in album type
+      bBoxedSet = true;
     if (m_pDS->num_rows() == 0)
     {
       m_pDS->close();
