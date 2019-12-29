@@ -298,6 +298,7 @@ bool CMusicThumbLoader::FillLibraryArt(CFileItem &item)
         int num = atoi(digits.c_str());
         if (num > 0 && startnum < artitem.artType.size())
         {
+          discartmap.insert(std::make_pair(artitem.mediaType + "." + artitem.artType, artitem.url));
           if (num == tag.GetDiscNumber())
             discartmap.insert(std::make_pair(artitem.artType.substr(0, startnum + 1), artitem.url));
           continue;
