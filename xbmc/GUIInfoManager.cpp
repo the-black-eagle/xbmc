@@ -5853,6 +5853,28 @@ const infomap container_str[]  = {{ "property",         CONTAINER_PROPERTY },
 ///     @skinning_v19 **[New Infolabel]** \link ListItem_BPM `ListItem.BPM`\endlink
 ///     <p>
 ///   }
+///   \table_row3{   <b>`ListItem.BitRate`</b>,
+///                  \anchor ListItem_BitRate
+///                  _string_,
+///     @return The bitrate of a song. Actual rate for CBR, average rate for VBR.
+///     <p><hr>
+///     @skinning_v19 **[New Infolabel]** \link ListItem_BitRate `ListItem.BitRate`\endlink
+///     <p>
+///   }///   \table_row3{   <b>`ListItem.SampleRate`</b>,
+///                  \anchor ListItem_SampleRate
+///                  _string_,
+///     @return The sample rate of a song eg 44100, 48000, 96000 etc.
+///     <p><hr>
+///     @skinning_v19 **[New Infolabel]** \link ListItem_SampleRate `ListItem.SampleRate`\endlink
+///     <p>
+///   }///   \table_row3{   <b>`ListItem.NoOfChannels`</b>,
+///                  \anchor ListItem_No_Of_Channels
+///                  _string_,
+///     @return The number of audio channels of a song.
+///     <p><hr>
+///     @skinning_v19 **[New Infolabel]** \link ListItem_No_Of_Channels `ListItem.NoOfChannels`\endlink
+///     <p>
+///   }
 /// \table_end
 ///
 /// -----------------------------------------------------------------------------
@@ -6052,6 +6074,9 @@ const infomap listitem_labels[]= {{ "thumb",            LISTITEM_THUMB },
                                   { "releasedate",      LISTITEM_RELEASEDATE },
                                   { "originaldate",     LISTITEM_ORIGINALDATE },
                                   { "bpm",              LISTITEM_BPM },
+                                  { "bitrate",          LISTITEM_BITRATE },
+                                  { "samplerate",       LISTITEM_SAMPLERATE },
+                                  { "noofchannels",     LISTITEM_NO_OF_CHANNELS },
 };
 
 /// \page modules__infolabels_boolean_conditions
