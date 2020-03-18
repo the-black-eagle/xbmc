@@ -1136,19 +1136,21 @@ int64_t StringUtils::AlphaNumericCompare(const wchar_t* left, const wchar_t* rig
 }
 
 /*
-  Convert the UTF8 character to which z points into a 31-bit Unicode point.
-  Return how many bytes (0 to 3) of UTF8 data encode the character.
-  This only works right if z points to a well-formed UTF8 string.
+<
+ Convert the UTF8 character to which z points into a 31-bit Unicode point.
+ Return how many bytes (0 to 3) of UTF8 data encode the character.
+ This only works right if z points to a well-formed UTF8 string.
   Byte-0    Byte-1    Byte-2    Byte-3     Value
   0xxxxxxx                                 00000000 00000000 0xxxxxxx
   110yyyyy  10xxxxxx                       00000000 00000yyy yyxxxxxx
   1110zzzz  10yyyyyy  10xxxxxx             00000000 zzzzyyyy yyxxxxxx
   11110uuu  10uuzzzz  10yyyyyy  10xxxxxx   000uuuuu zzzzyyyy yyxxxxxx
 */
-static uint32_t UTF8ToUnicode(const unsigned char* z, int nKey, unsigned char& bytes)
+
+static uint32_t Utf8ToUnicode(const unsigned char* z, int nKey, unsigned char& bytes)
 {
   // Lookup table used decode the first byte of a multi-byte UTF8 character
-  // clang-format off
+  // clang format off
   static const unsigned char utf8Trans1[] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -1159,15 +1161,15 @@ static uint32_t UTF8ToUnicode(const unsigned char* z, int nKey, unsigned char& b
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x00, 0x01, 0x02, 0x03, 0x00, 0x01, 0x00, 0x00,
   };
-  // clang-format on
+  // clang format on
 
   uint32_t c;
-  bytes = 0;
-  c = z[0];
+  int index = 0;
+  c = z[index];
+  index++;
   if (c >= 0xc0)
   {
     c = utf8Trans1[c - 0xc0];
-    int index = 1;
     while (index < nKey && (z[index] & 0xc0) == 0x80)
     {
       c = (c << 6) + (0x3f & z[index]);
@@ -1175,22 +1177,14 @@ static uint32_t UTF8ToUnicode(const unsigned char* z, int nKey, unsigned char& b
     }
     if (c < 0x80 || (c & 0xFFFFF800) == 0xD800 || (c & 0xFFFFFFFE) == 0xFFFE)
       c = 0xFFFD;
-    bytes = static_cast<unsigned char>(index - 1);
   }
+  bytes = static_cast<unsigned char>(index - 1);
   return c;
 }
 
-/*
-  SQLite collating function, see sqlite3_create_collation
-  The equivalent of AlphaNumericCompare() but for comparing UTF8 encoded data
-
-  This only processes enough data to find a difference, and avoids expensive data conversions.
-  When sorting in memory item data is converted once to wstring in advance prior to sorting, the
-  SQLite callback function can not do that kind of preparation. Instead, in order to use
-  AlphaNumericCompare(), it would have to repeatedly convert the full input data to wstring for
-  every pair comparison made. That approach was found to be 10 times slower than using this
-  separate routine.
-*/
+// SQLite collating function, see sqlite3_create_collation
+// A version of AlphaNumericCompare() for comparing UTF8 encoded data
+// Working with bytes is 10 times faster than converting to wstring
 int StringUtils::AlphaNumericCollation(int nKey1, const void* pKey1, int nKey2, const void* pKey2)
 {
   // Get exact matches of shorter text to start of larger test fast
@@ -1206,49 +1200,48 @@ int StringUtils::AlphaNumericCollation(int nKey1, const void* pKey1, int nKey2, 
   unsigned char bytes;
   int64_t lnum, rnum;
   bool lsym, rsym;
-  int ld, rd;
   int i = 0;
   int j = 0;
+  int k = 0;
   // Looping Unicode point at a time through potentially 1 to 4 multi-byte encoded UTF8 data
   while (i < nKey1 && j < nKey2)
   {
     // Check if we have numerical values, compare only up to 15 digits
     if (isdigit(zA[i]) && isdigit(zB[j]))
     {
-      lnum = zA[i] - '0';
-      ld = i + 1;
-      while (ld < nKey1 && isdigit(zA[ld]) && ld < i + 15)
+      lnum = 0;
+      k = 0;
+      while (i < nKey1 && isdigit(zA[i]) && k < 15)
       {
         lnum *= 10;
-        lnum += zA[ld] - '0';
-        ld++;
+        lnum += zA[i] - '0';
+        k++;
+        i++;
       }
-      rnum = zB[j] - '0';
-      rd = j + 1;
-      while (rd < nKey2 && isdigit(zB[rd]) && rd < j + 15)
+      rnum = 0;
+      k = 0;
+      while (j < nKey2 && isdigit(zB[j]) && k < 15)
       {
         rnum *= 10;
-        rnum += zB[rd] - '0';
-        rd++;
+        rnum += zB[j] - '0';
+        k++;
+        j++;
       }
       // do we have numbers?
       if (lnum != rnum)
       { // yes - and they're different!
         return lnum - rnum;
       }
-      // Advance to after digits
-      i = ld;
-      j = rd;
-      continue;
+      continue; // i and j already advanced through digits
     }
     // Put ascii punctuation and symbols e.g. !#$&()*+,-./:;<=>?@[\]^_ `{|}~ before the other
     // alphanumeric ascii, rather than some being mixed between the numbers and letters, and
     // above all other unicode letters, symbols and punctuation.
     // (Locale collation of these chars varies across platforms)
-    lsym = (zA[i] >= 32 && zA[i] < '0') || (zA[i] > '9' && zA[i] < 'A') ||
-           (zA[i] > 'Z' && zA[i] < 'a') || (zA[i] > 'z' && zA[i] < 128);
-    rsym = (zB[j] >= 32 && zB[j] < '0') || (zB[j] > '9' && zB[j] < 'A') ||
-           (zB[j] > 'Z' && zB[j] < 'a') || (zB[j] > 'z' && zB[j] < 128);
+    lsym = (zA[i] < 128 && zA[i] > 'z') || (zA[i] < 'a' && zA[i] > 'Z') ||
+           (zA[i] < 'A' && zA[i] > '9') || (zA[i] < '0' && zA[i] >= 32);
+    rsym = (zB[j] < 128 && zB[j] > 'z') || (zB[j] < 'a' && zB[j] > 'Z') ||
+           (zB[j] < 'A' && zB[j] > '9') || (zB[j] < '0' && zB[j] >= 32);
     if (lsym && !rsym)
       return -1;
     if (!lsym && rsym)
@@ -1258,16 +1251,16 @@ int StringUtils::AlphaNumericCollation(int nKey1, const void* pKey1, int nKey2, 
       if (zA[i] != zB[j])
         return zA[i] - zB[j];
       else
-      { // Same symbol advance to next
+      {
         i++;
         j++;
         continue;
       }
     }
     //Decode single (1 to 4 bytes) UTF8 character to Unicode
-    lc = UTF8ToUnicode(&zA[i], nKey1 - i, bytes);
+    lc = Utf8ToUnicode(&zA[i], nKey1 - i, bytes);
     i += bytes;
-    rc = UTF8ToUnicode(&zB[j], nKey2 - j, bytes);
+    rc = Utf8ToUnicode(&zB[j], nKey2 - j, bytes);
     j += bytes;
     if (!g_langInfo.UseLocaleCollation())
     {
@@ -1287,7 +1280,7 @@ int StringUtils::AlphaNumericCollation(int nKey1, const void* pKey1, int nKey2, 
 
     if (lc != rc)
     {
-      if (!g_langInfo.UseLocaleCollation() || (lc <= 128 && rc <= 128))
+      if (!g_langInfo.UseLocaleCollation())
         // Compare unicode (having applied accent folding collation to non-ascii chars).
         return lc - rc;
       else
@@ -1296,7 +1289,8 @@ int StringUtils::AlphaNumericCollation(int nKey1, const void* pKey1, int nKey2, 
         // platforms this is not langauge specific but just compares unicode
         const std::collate<wchar_t>& coll =
             std::use_facet<std::collate<wchar_t>>(g_langInfo.GetSystemLocale());
-        int cmp_res = coll.compare(&lc, &lc + 1, &rc, &rc + 1);
+        int cmp_res = 0;
+        cmp_res = coll.compare(&lc, &lc + 1, &rc, &rc + 1);
         if (cmp_res != 0)
           return cmp_res;
       }
