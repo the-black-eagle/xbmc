@@ -434,7 +434,11 @@ void CMusicDatabase::CreateNativeDBFunctions()
      function to StringUtils::AlphaNumericCompare
      !@todo: the video needs these defined too for sorting in DB, then creation can be made common
   */
+<<<<<<< HEAD
   // clang-format off
+=======
+  // clang format off
+>>>>>>> fb01200e7d... Add native stored functions to do natural number sorting in MySQL. Bump to MyMusic76 for this.
   // udfFirstNumberPos finds the position of the first digit in a string
   m_pDS->exec("DROP FUNCTION IF EXISTS udfFirstNumberPos");
   m_pDS->exec("CREATE FUNCTION udfFirstNumberPos (instring VARCHAR(256))\n"
@@ -532,7 +536,11 @@ void CMusicDatabase::CreateNativeDBFunctions()
     "  SET sortString = udfSymbolShift(sortString, ':;<=>?@[\\]^_`{|}~'); \n"
     "  RETURN sortString; \n"
     "END\n");
+<<<<<<< HEAD
   // clang-format on
+=======
+  // clang format on
+>>>>>>> fb01200e7d... Add native stored functions to do natural number sorting in MySQL. Bump to MyMusic76 for this.
 }
 
 void CMusicDatabase::SplitPath(const std::string& strFileNameAndPath, std::string& strPath, std::string& strFileName)
@@ -7374,13 +7382,15 @@ std::string CMusicDatabase::SortnameBuildSQL(const std::string& strAlias,
 std::string CMusicDatabase::AlphanumericSortSQL(const std::string& strField, const SortOrder& sortOrder)
 {
   /*
-  Use custom collation ALPHANUM in SQLite instead of NOCASE. This handles
-  natural number order, case sensitivity and locale UFT-8 order for accents
-  Would more efficient done in table create than per query especially once
-  sorting at db is done for GUI results too.
-  MySQL does not have custom collation defined (yet), but all tables are defined
-  with case insensitive utf8_general_ci collation. Make sort of numbers natural 
-  in SQL. No need to PrepareSQL as syntax is specific to db type.
+  Use custom collation ALPHANUM in SQLite. This handles natural number order, case sensitivity
+  and locale UFT-8 order for accents using the same functionality as fileitem list sorting.
+  Natural number order is not significant for where clause comparison and use of calculated fields
+  means there is no advantage in defining as column defualt in table create than per query (which
+  also makes looking at the db with other tools difficult).
+
+  MySQL does not have callback collation, but all tables are defined with utf8_general_ci an
+  "ascii folding" case insensitive collation. Natural sorting is provided via native functions
+  stored in the db.
   */
   std::string DESC;
   if (sortOrder == SortOrderDescending)
@@ -7390,10 +7400,7 @@ std::string CMusicDatabase::AlphanumericSortSQL(const std::string& strField, con
   if (StringUtils::EqualsNoCase(
           CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_databaseMusic.type,
           "mysql"))
-    strSort = PrepareSQL("CASE WHEN CAST(%s AS UNSIGNED INTEGER) = 0 "
-                         "THEN 100000000 ELSE CAST(%s AS UNSIGNED INTEGER) END%s, %s%s",
-                         strField.c_str(), strField.c_str(), DESC.c_str(), strField.c_str(),
-                         DESC.c_str());
+    strSort = PrepareSQL("udfNaturalSortFormat(%s, 8, '.')%s", strField.c_str(), DESC.c_str());
   else
     strSort = PrepareSQL("%s COLLATE ALPHANUM%s", strField.c_str(), DESC.c_str());
   return strSort;
