@@ -191,6 +191,21 @@
 			<visible>!String.IsEmpty(ListItem.TrackNumber)</visible>
 		</item>
 		<item>
+			<label>$LOCALIZE[623]:</label>
+			<label2>$INFO[ListItem.BitRate]</label2>
+			<visible>!String.IsEmpty(ListItem.BitRate)</visible>
+		</item>
+		<item>
+			<label>$LOCALIZE[613]:</label>
+			<label2>$INFO[ListItem.SampleRate]</label2>
+			<visible>!String.IsEmpty(ListItem.SampleRate)</visible>
+		</item>
+		<item>
+			<label>$LOCALIZE[10127]:</label>
+			<label2>$INFO[ListItem.MusicChannels]</label2>
+			<visible>!String.IsEmpty(ListItem.MusicChannels)</visible>
+		</item>
+		<item>
 			<label>$LOCALIZE[38080]:</label>
 			<label2>$INFO[ListItem.Bpm]</label2>
 			<visible>!String.IsEmpty(ListItem.Bpm)</visible>
