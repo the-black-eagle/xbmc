@@ -66,6 +66,7 @@ public:
     strLastScraped.clear();
     bScrapedMBID = false;
     bArtistSongMerge = false;
+    iAlbumDuration = 0;
   }
 
   /*! \brief Get album artist names from the vector of artistcredits objects
@@ -168,6 +169,7 @@ public:
   std::string strLastScraped;
   bool bScrapedMBID = false;
   bool bArtistSongMerge = false;
+  int iAlbumDuration = 0;
 };
 
 typedef std::vector<CAlbum> VECALBUMS;

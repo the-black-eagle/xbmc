@@ -57,6 +57,7 @@ CAlbum::CAlbum(const CFileItem& item)
   dateAdded.Reset();
   lastPlayed.Reset();
   releaseType = tag.GetAlbumReleaseType();
+  iAlbumDuration = tag.GetAlbumDuration();
 }
 
 void CAlbum::SetArtistCredits(const std::vector<std::string>& names, const std::vector<std::string>& hints,

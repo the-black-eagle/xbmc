@@ -6401,6 +6401,14 @@ const infomap container_str[]  = {{ "property",         CONTAINER_PROPERTY },
 ///     @skinning_v19 **[New Infolabel]** \link ListItem_TvShowDBID `ListItem.TvShowDBID`\endlink
 ///     <p>
 ///   }
+///   \table_row3{   <b>`ListItem.AlbumDuration`</b>,
+///                  \anchor ListItem_AlbumDuration
+///                  _string_,
+///     @return The duration of the album in HH:MM:SS.
+///     <p><hr>
+///     @skinning_v19 **[New Infolabel]** \link ListItem_AlbumDuration `ListItem.AlbumDuration`\endlink
+///     <p>
+///   }
 /// \table_end
 ///
 /// -----------------------------------------------------------------------------
@@ -6608,6 +6616,7 @@ const infomap listitem_labels[]= {{ "thumb",            LISTITEM_THUMB },
                                   { "isfinale",         LISTITEM_IS_FINALE },
                                   { "islive",           LISTITEM_IS_LIVE },
                                   { "tvshowdbid",       LISTITEM_TVSHOWDBID },
+                                  { "albumduration",    LISTITEM_ALBUM_DURATION },
 };
 
 /// \page modules__infolabels_boolean_conditions

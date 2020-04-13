@@ -82,6 +82,7 @@ public:
   int GetBitRate() const;
   int GetNoOfChannels() const;
   int GetSampleRate() const;
+  int GetAlbumDuration() const;
   const EmbeddedArtInfo &GetCoverArtInfo() const;
   const ReplayGain& GetReplayGain() const;
   CAlbum::ReleaseType GetAlbumReleaseType() const;
@@ -147,6 +148,7 @@ public:
   void SetBitRate(int bitrate);
   void SetNoOfChannels(int channels);
   void SetSampleRate(int samplerate);
+  void SetAlbumDuration(int duration);
 
   /*! \brief Append a unique artist to the artist list
    Checks if we have this artist already added, and if not adds it to the songs artist list.
@@ -240,6 +242,7 @@ protected:
   int m_samplerate;
   int m_channels;
   int m_bitrate;
+  int m_iAlbumDuration;
 
   EmbeddedArtInfo m_coverArt; ///< art information
 

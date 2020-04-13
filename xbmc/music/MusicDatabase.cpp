@@ -2486,6 +2486,13 @@ CAlbum CMusicDatabase::GetAlbumFromDataset(const dbiplus::sql_record* const reco
   album.iTotalDiscs = record->at(offset + album_iTotalDiscs).get_asInt();
   album.SetDateAdded(record->at(offset + album_dtDateAdded).get_asString());
   album.SetLastPlayed(record->at(offset + album_dtLastPlayed).get_asString());
+  int iAlbumDuration = 0;
+  std::string strSQL =
+      PrepareSQL("SELECT SUM(song.iDuration) FROM song WHERE song.idAlbum = %i", album.idAlbum);
+  if (m_pDS2->query(strSQL) && m_pDS2->num_rows() == 1)
+    iAlbumDuration = m_pDS2->fv(0).get_asInt();
+  m_pDS2->close();
+  album.iAlbumDuration = iAlbumDuration;
   return album;
 }
 
@@ -6085,6 +6092,7 @@ static const translateJSONField JSONtoDBAlbum[] = {
   // Scalar subquery fields
   { "year",                     "integer", true,  "iYear",                  "CAST(<datefield> AS INTEGER) AS iYear" }, //From strReleaseDate or strOrigReleaseDate
   { "sourceid",                  "string", true,  "sourceid",               "(SELECT GROUP_CONCAT(album_source.idSource SEPARATOR '; ')  FROM album_source WHERE album_source.idAlbum = albumview.idAlbum) AS sources" },
+  { "albumduration",            "integer", true,  "albumDuration",          "(SELECT SUM(song.iDuration) FROM song WHERE song.idAlbum = albumview.idAlbum) AS albumDuration" },
   // Single value JOIN fields
   { "thumbnail",                  "image", true,  "thumbnail",              "art.url AS thumbnail" }, // or (SELECT art.url FROM art WHERE art.media_id = album.idAlbum AND art.media_type = "album" AND art.type = "thumb") as url
   // JOIN fields (multivalue), same order as _JoinToAlbumFields

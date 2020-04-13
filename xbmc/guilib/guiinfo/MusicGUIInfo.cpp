@@ -343,6 +343,16 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         }
         break;
       }
+      case LISTITEM_ALBUM_DURATION:
+      {
+        int albDuration = tag->GetAlbumDuration();
+        if (albDuration > 0)
+        {
+          value = StringUtils::SecondsToTimeString(albDuration, TIME_FORMAT_GUESS);
+          return true;
+        }
+        break;
+      }
       case LISTITEM_FILENAME:
       case LISTITEM_FILE_EXTENSION:
         if (item->IsMusicDb())

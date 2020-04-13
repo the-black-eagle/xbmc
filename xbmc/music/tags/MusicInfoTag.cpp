@@ -306,6 +306,11 @@ const std::string MUSIC_INFO::CMusicInfoTag::GetReleaseYear() const
   return StringUtils::Left(m_strReleaseDate, 4);
 }
 
+int CMusicInfoTag::GetAlbumDuration() const
+{
+  return m_iAlbumDuration;
+}
+
 void CMusicInfoTag::SetURL(const std::string& strURL)
 {
   m_strURL = strURL;
@@ -621,6 +626,11 @@ void CMusicInfoTag::SetBPM(int bpm)
   m_iBPM = bpm;
 }
 
+void CMusicInfoTag::SetAlbumDuration(int duration)
+{
+  m_iAlbumDuration = duration;
+}
+
 const std::string& CMusicInfoTag::GetMusicBrainzTrackID() const
 {
   return m_strMusicBrainzTrackID;
@@ -771,6 +781,7 @@ void CMusicInfoTag::SetAlbum(const CAlbum& album)
   SetDatabaseId(album.idAlbum, MediaTypeAlbum);
   SetLastPlayed(album.lastPlayed);
   SetTotalDiscs(album.iTotalDiscs);
+  SetAlbumDuration(album.iAlbumDuration);
 
   SetLoaded();
 }
@@ -1005,6 +1016,7 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar << m_samplerate;
     ar << m_bitrate;
     ar << m_channels;
+    ar << m_iAlbumDuration;
   }
   else
   {
@@ -1071,6 +1083,7 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar >> m_samplerate;
     ar >> m_bitrate;
     ar >> m_channels;
+    ar >> m_iAlbumDuration;
   }
 }
 
@@ -1121,6 +1134,7 @@ void CMusicInfoTag::Clear()
   m_samplerate = 0;
   m_bitrate = 0;
   m_channels = 0;
+  m_iAlbumDuration = 0;
 }
 
 void CMusicInfoTag::AppendArtist(const std::string &artist)
