@@ -434,11 +434,7 @@ void CMusicDatabase::CreateNativeDBFunctions()
      function to StringUtils::AlphaNumericCompare
      !@todo: the video needs these defined too for sorting in DB, then creation can be made common
   */
-<<<<<<< HEAD
   // clang-format off
-=======
-  // clang format off
->>>>>>> fb01200e7d... Add native stored functions to do natural number sorting in MySQL. Bump to MyMusic76 for this.
   // udfFirstNumberPos finds the position of the first digit in a string
   m_pDS->exec("DROP FUNCTION IF EXISTS udfFirstNumberPos");
   m_pDS->exec("CREATE FUNCTION udfFirstNumberPos (instring VARCHAR(256))\n"
@@ -4849,7 +4845,10 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
     bool extended = false;
     bool limitedInSQL =
       extFilter.limit.empty() && (sorting.limitStart > 0 || sorting.limitEnd > 0);
+<<<<<<< HEAD
 
+=======
+>>>>>>> de76e36ea8... Daves stuff with nav fixes
     // If there are extra WHERE conditions (from media filter dialog) we might
     // need access to songview for these conditions
     if (extFilter.where.find("songview") != std::string::npos)
@@ -4950,7 +4949,11 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
     if (!DatabaseUtils::GetDatabaseResults(MediaTypeAlbum, fields, m_pDS, results))
       return false;
     // Store item list sort order
+<<<<<<< HEAD
     items.SetSortMethod(sorting.sortBy);
+=======
+    items.SetSortMethod(sorting.sortBy); // should be sorting.sortBy??
+>>>>>>> de76e36ea8... Daves stuff with nav fixes
     items.SetSortOrder(sorting.sortOrder);
 
     // Get albums from returned rows
@@ -11654,7 +11657,10 @@ bool CMusicDatabase::GetFilter(CDbUrl &musicUrl, Filter &filter, SortDescription
       filter.AppendWhere(xspWhere);
 
       if (xsp.GetLimit() > 0)
+      {
         sorting.limitEnd = xsp.GetLimit();
+        sorting.limitStart = 0;
+      }
       if (xsp.GetOrder() != SortByNone)
         sorting.sortBy = xsp.GetOrder();
       sorting.sortOrder = xsp.GetOrderAscending() ? SortOrderAscending : SortOrderDescending;

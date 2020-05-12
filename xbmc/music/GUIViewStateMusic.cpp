@@ -8,14 +8,17 @@
 
 #include "GUIViewStateMusic.h"
 
+#include "MusicDbUrl.h"
 #include "FileItem.h"
 #include "PlayListPlayer.h"
 #include "ServiceBroker.h"
+#include "URL.h"
 #include "filesystem/Directory.h"
 #include "filesystem/MusicDatabaseDirectory.h"
 #include "filesystem/VideoDatabaseDirectory.h"
 #include "guilib/LocalizeStrings.h"
 #include "guilib/WindowIDs.h"
+#include "playlists/SmartPlayList.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/MediaSourceSettings.h"
 #include "settings/Settings.h"
@@ -155,8 +158,31 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
       SetSortMethod(SortByArtist);
 
       const CViewState *viewState = CViewStateSettings::GetInstance().Get("musicnavartists");
-      SetViewAsControl(viewState->m_viewMode);
-      SetSortOrder(viewState->m_sortDescription.sortOrder);
+
+      const std::string path = items.GetPath();
+      CMusicDbUrl musicUrl;
+      musicUrl.FromString(path);
+      const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
+      auto option = options.find("xsp");
+      if (option != options.end())
+      {
+        CSmartPlaylist xsp;
+        // set up a default view using the options in the custom node (user can change this and
+        // it will be remembered for this path)
+        xsp.LoadFromJson(option->second.asString());
+        if (xsp.GetType() == "artists")  // ensure we appy the right xsp for the view
+        {
+          SetSortMethod(xsp.GetOrder()); // use the sortBy from the xsp
+          SetSortOrder(xsp.GetOrderDirection()); // use the order specified in the xsp
+          SetViewAsControl(DEFAULT_VIEW_LIST);
+        }
+      }
+      else
+      {
+        SetSortMethod(viewState->m_sortDescription);
+        SetViewAsControl(viewState->m_viewMode);
+        SetSortOrder(viewState->m_sortDescription.sortOrder);
+      }
     }
     break;
   case NODE_TYPE_ALBUM:
@@ -191,9 +217,30 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
       AddSortMethod(SortByUserRating, 38018, LABEL_MASKS("%F", "", strAlbum, "%r"));  // Filename, empty | Userdefined, UserRating
 
       const CViewState *viewState = CViewStateSettings::GetInstance().Get("musicnavalbums");
-      SetSortMethod(viewState->m_sortDescription);
-      SetViewAsControl(viewState->m_viewMode);
-      SetSortOrder(viewState->m_sortDescription.sortOrder);
+      const std::string path = items.GetPath();
+      CMusicDbUrl musicUrl;
+      musicUrl.FromString(path);
+      const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
+      auto option = options.find("xsp");
+      if (option != options.end())
+      {
+        CSmartPlaylist xsp;
+        // set up a default view using the options in the custom node (user can change this and
+        // it will be remembered for this path)
+        xsp.LoadFromJson(option->second.asString());
+        if (xsp.GetType() == "albums") // ensure we appy the right xsp for the view
+        {
+          SetSortMethod(xsp.GetOrder());  // use the sort method in the xsp
+          SetSortOrder(xsp.GetOrderDirection()); // use the order specified in the xsp
+          SetViewAsControl(DEFAULT_VIEW_LIST);
+        }
+      }
+      else
+      {
+        SetSortMethod(viewState->m_sortDescription);
+        SetViewAsControl(viewState->m_viewMode);
+        SetSortOrder(viewState->m_sortDescription.sortOrder);
+      }
     }
     break;
   case NODE_TYPE_ALBUM_RECENTLY_ADDED:
@@ -293,11 +340,30 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
       // change it and the change will be saved for this particular path
       if (dir.IsAllItem(items.GetPath()))
         SetSortMethod(SortByAlbum);
+      const std::string path = items.GetPath();
+      CMusicDbUrl musicUrl;
+      musicUrl.FromString(path);
+      const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
+      auto option = options.find("xsp");
+      if (option != options.end())
+      {
+        CSmartPlaylist xsp;
+        // set up a default view using the options in the custom node (user can change this and
+        // it will be remembered for this path)
+        xsp.LoadFromJson(option->second.asString());
+        if (xsp.GetType() == "songs") // ensure we appy the right xsp for the view
+        {
+          SetSortMethod(xsp.GetOrder()); //get the sort method from xsp
+          SetSortOrder(xsp.GetOrderDirection()); //  and use the order in the xsp
+          SetViewAsControl(DEFAULT_VIEW_LIST);
+        }
+      }
       else
+      {
         SetSortMethod(viewState->m_sortDescription);
-
-      SetViewAsControl(viewState->m_viewMode);
-      SetSortOrder(viewState->m_sortDescription.sortOrder);
+        SetViewAsControl(viewState->m_viewMode);
+        SetSortOrder(viewState->m_sortDescription.sortOrder);
+      }
     }
     break;
   case NODE_TYPE_SONG_TOP100:
@@ -423,10 +489,16 @@ CGUIViewStateMusicSmartPlaylist::CGUIViewStateMusicSmartPlaylist(const CFileItem
     AddSortMethod(SortByUserRating, 38018, LABEL_MASKS("%F", "", strAlbum, "%r"));  // Filename, empty | Userdefined, UserRating
 
     if (items.IsSmartPlayList() || items.IsLibraryFolder())
+    {
       AddPlaylistOrder(items, LABEL_MASKS("%F", "", strAlbum, "%D"));
+      SetSortMethod(items.GetSortMethod());
+      SetSortOrder(items.GetSortOrder());
+      SetViewAsControl(DEFAULT_VIEW_LIST);
+    }
     else
     {
       SetSortMethod(viewState->m_sortDescription);
+      SetViewAsControl(viewState->m_viewMode);
       SetSortOrder(viewState->m_sortDescription.sortOrder);
     }
 
