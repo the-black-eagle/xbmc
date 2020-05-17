@@ -532,11 +532,7 @@ void CMusicDatabase::CreateNativeDBFunctions()
     "  SET sortString = udfSymbolShift(sortString, ':;<=>?@[\\]^_`{|}~'); \n"
     "  RETURN sortString; \n"
     "END\n");
-<<<<<<< HEAD
   // clang-format on
-=======
-  // clang format on
->>>>>>> fb01200e7d... Add native stored functions to do natural number sorting in MySQL. Bump to MyMusic76 for this.
 }
 
 void CMusicDatabase::SplitPath(const std::string& strFileNameAndPath, std::string& strPath, std::string& strFileName)
@@ -4728,8 +4724,8 @@ bool CMusicDatabase::GetArtistsByWhere(const std::string& strBaseDir, const Filt
     if (!DatabaseUtils::GetDatabaseResults(MediaTypeArtist, fields, m_pDS, results))
       return false;
     // Store item list sort order
-    items.SetSortMethod(sortDescription.sortBy);
-    items.SetSortOrder(sortDescription.sortOrder);
+    items.SetSortMethod(sorting.sortBy);
+    items.SetSortOrder(sorting.sortOrder);
 
     // Get Artists from returned rows
     items.Reserve(results.size());
@@ -4845,10 +4841,7 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
     bool extended = false;
     bool limitedInSQL =
       extFilter.limit.empty() && (sorting.limitStart > 0 || sorting.limitEnd > 0);
-<<<<<<< HEAD
 
-=======
->>>>>>> de76e36ea8... Daves stuff with nav fixes
     // If there are extra WHERE conditions (from media filter dialog) we might
     // need access to songview for these conditions
     if (extFilter.where.find("songview") != std::string::npos)
@@ -4949,11 +4942,7 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
     if (!DatabaseUtils::GetDatabaseResults(MediaTypeAlbum, fields, m_pDS, results))
       return false;
     // Store item list sort order
-<<<<<<< HEAD
     items.SetSortMethod(sorting.sortBy);
-=======
-    items.SetSortMethod(sorting.sortBy); // should be sorting.sortBy??
->>>>>>> de76e36ea8... Daves stuff with nav fixes
     items.SetSortOrder(sorting.sortOrder);
 
     // Get albums from returned rows
@@ -5092,6 +5081,17 @@ bool CMusicDatabase::GetDiscsByWhere(CMusicDbUrl& musicUrl,
     else
       strSQLExtra += PrepareSQL(" ORDER BY albumview.idAlbum, iDisc");
 
+    if (extFilter.where.find("song.lastPlayed") != std::string::npos)
+    {
+      StringUtils::Replace(strSQLExtra, " ORDER BY albumview.idAlbum, iDisc", " ORDER BY song.lastPlayed DESC, albumview.idAlbum, iDisc");
+      sorting.sortBy = SortByLastPlayed;
+      sorting.sortOrder = SortOrderDescending;
+    }
+    else
+    {
+      sorting.sortBy = SortByNone;
+      sorting.sortOrder = SortOrderAscending;
+    }
     strSQL = "SELECT iTrack >> 16 AS iDisc, strDiscSubtitle, albumview.* "
       "FROM albumview JOIN song on song.idAlbum = albumview.idAlbum " + strSQLExtra;
 
@@ -11651,8 +11651,9 @@ bool CMusicDatabase::GetFilter(CDbUrl &musicUrl, Filter &filter, SortDescription
 
     // Check if the filter playlist matches the item type
     // Allow for grouping name like "originalyears" and type "years"
+    // Allow discs to be filtered with album criteria as discs are individual albums within a set
     if (xsp.GetType() == type ||
-        (xsp.GetGroup().find(type) != std::string::npos && !xsp.IsGroupMixed()))
+        (xsp.GetGroup().find(type) != std::string::npos && !xsp.IsGroupMixed()) || (xsp.GetType() == "albums" && type == "discs"))
     {
       filter.AppendWhere(xspWhere);
 

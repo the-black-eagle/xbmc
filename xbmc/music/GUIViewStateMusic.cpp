@@ -99,6 +99,28 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
   if (settings->GetBool(CSettings::SETTING_MUSICLIBRARY_USEARTISTSORTNAME))
     sortAttribute = static_cast<SortAttribute>(sortAttribute | SortAttributeUseArtistSortName);
 
+  // see if we have any xsp in the url for the items and if so, use the sorting specified in it
+  // to set up a default view (users can still change the sort methods and order and it will be
+  // saved for the particular path)
+  const std::string path = items.GetPath();
+  bool usexsp = false;
+  CMusicDbUrl musicUrl;
+  musicUrl.FromString(path);
+  const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
+  std::string xspType;
+  SortBy xspMethod;
+  SortOrder xspDirection;
+  auto option = options.find("xsp");
+  if (option != options.end())
+  {
+    CSmartPlaylist xsp;
+    xsp.LoadFromJson(option->second.asString());
+    usexsp = true;
+    xspType = xsp.GetType();
+    xspMethod = xsp.GetOrder();
+    xspDirection = xsp.GetOrderDirection();
+  }
+
   switch (NodeType)
   {
   case NODE_TYPE_OVERVIEW:
@@ -159,23 +181,11 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
 
       const CViewState *viewState = CViewStateSettings::GetInstance().Get("musicnavartists");
 
-      const std::string path = items.GetPath();
-      CMusicDbUrl musicUrl;
-      musicUrl.FromString(path);
-      const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
-      auto option = options.find("xsp");
-      if (option != options.end())
+      if (usexsp && xspType == "artists")  // ensure we appy the right xsp for the view
       {
-        CSmartPlaylist xsp;
-        // set up a default view using the options in the custom node (user can change this and
-        // it will be remembered for this path)
-        xsp.LoadFromJson(option->second.asString());
-        if (xsp.GetType() == "artists")  // ensure we appy the right xsp for the view
-        {
-          SetSortMethod(xsp.GetOrder()); // use the sortBy from the xsp
-          SetSortOrder(xsp.GetOrderDirection()); // use the order specified in the xsp
-          SetViewAsControl(DEFAULT_VIEW_LIST);
-        }
+        SetSortMethod(xspMethod); // use the sortBy from the xsp
+        SetSortOrder(xspDirection); // use the order specified in the xsp
+        SetViewAsControl(DEFAULT_VIEW_LIST);
       }
       else
       {
@@ -217,23 +227,12 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
       AddSortMethod(SortByUserRating, 38018, LABEL_MASKS("%F", "", strAlbum, "%r"));  // Filename, empty | Userdefined, UserRating
 
       const CViewState *viewState = CViewStateSettings::GetInstance().Get("musicnavalbums");
-      const std::string path = items.GetPath();
-      CMusicDbUrl musicUrl;
-      musicUrl.FromString(path);
-      const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
-      auto option = options.find("xsp");
-      if (option != options.end())
+
+      if (usexsp && xspType == "albums") // ensure we appy the right xsp for the view
       {
-        CSmartPlaylist xsp;
-        // set up a default view using the options in the custom node (user can change this and
-        // it will be remembered for this path)
-        xsp.LoadFromJson(option->second.asString());
-        if (xsp.GetType() == "albums") // ensure we appy the right xsp for the view
-        {
-          SetSortMethod(xsp.GetOrder());  // use the sort method in the xsp
-          SetSortOrder(xsp.GetOrderDirection()); // use the order specified in the xsp
-          SetViewAsControl(DEFAULT_VIEW_LIST);
-        }
+        SetSortMethod(xspMethod); // use the sortBy from the xsp
+        SetSortOrder(xspDirection); // use the order specified in the xsp
+        SetViewAsControl(DEFAULT_VIEW_LIST);
       }
       else
       {
@@ -340,23 +339,17 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
       // change it and the change will be saved for this particular path
       if (dir.IsAllItem(items.GetPath()))
         SetSortMethod(SortByAlbum);
-      const std::string path = items.GetPath();
-      CMusicDbUrl musicUrl;
-      musicUrl.FromString(path);
-      const CUrlOptions::UrlOptions& options = musicUrl.GetOptions();
-      auto option = options.find("xsp");
-      if (option != options.end())
+
+      // carry over date added, play count or last played from albums to songs
+      // as this mimics the original nodes
+      if (usexsp &&
+          (xspType == "songs" ||
+           (xspType == "albums" && (xspMethod == SortByDateAdded || xspMethod == SortByPlaycount ||
+                                    xspMethod == SortByLastPlayed))))
       {
-        CSmartPlaylist xsp;
-        // set up a default view using the options in the custom node (user can change this and
-        // it will be remembered for this path)
-        xsp.LoadFromJson(option->second.asString());
-        if (xsp.GetType() == "songs") // ensure we appy the right xsp for the view
-        {
-          SetSortMethod(xsp.GetOrder()); //get the sort method from xsp
-          SetSortOrder(xsp.GetOrderDirection()); //  and use the order in the xsp
-          SetViewAsControl(DEFAULT_VIEW_LIST);
-        }
+        SetSortMethod(xspMethod); //get the sort method from xsp
+        SetSortOrder(xspDirection); // and use the order in the xsp
+        SetViewAsControl(DEFAULT_VIEW_LIST);
       }
       else
       {
