@@ -44,6 +44,7 @@ public:
     std::string order;
     std::string group;
     std::string limit;
+    bool UseXSP = false;
   };
 
   

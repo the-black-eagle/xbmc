@@ -906,9 +906,9 @@ std::string CGUIWindowMusicNav::GetStartFolder(const std::string &dir)
   else if (lower == "top100albums")
     return "musicdb://top100/albums/";
   else if (lower == "recentlyaddedalbums")
-    return "musicdb://recentlyaddedalbums/";
+    return "library://music/test-recentlyadded.xml/";
   else if (lower == "recentlyplayedalbums")
-   return "musicdb://recentlyplayedalbums/";
+   return "library://music/test-lastplayed.xml/";
   else if (lower == "compilations")
     return "musicdb://compilations/";
   else if (lower == "years")

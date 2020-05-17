@@ -4944,6 +4944,8 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string &baseDir, const Filter &
     // Store item list sort order
     items.SetSortMethod(sorting.sortBy);
     items.SetSortOrder(sorting.sortOrder);
+    if (extFilter.UseXSP)
+      items.SetProperty("xsp", true);
 
     // Get albums from returned rows
     items.Reserve(results.size());
@@ -5043,7 +5045,9 @@ bool CMusicDatabase::GetDiscsByWhere(CMusicDbUrl& musicUrl,
     {
       extFilter.AppendJoin("JOIN path ON song.idPath = path.idPath");
     }
-
+    // pass down lastplayed to show the last played disc(s) of a set or album
+    if (extFilter.where.find("albumview.lastPlayed") != std::string::npos)
+      StringUtils::Replace(extFilter.where, "albumview.lastPlayed", "song.lastPlayed");
     std::string strSQLExtra;
     if (!BuildSQL(strSQLExtra, extFilter, strSQLExtra))
       return false;
@@ -5083,9 +5087,9 @@ bool CMusicDatabase::GetDiscsByWhere(CMusicDbUrl& musicUrl,
 
     if (extFilter.where.find("song.lastPlayed") != std::string::npos)
     {
-      StringUtils::Replace(strSQLExtra, " ORDER BY albumview.idAlbum, iDisc", " ORDER BY song.lastPlayed DESC, albumview.idAlbum, iDisc");
+      StringUtils::Replace(strSQLExtra, " ORDER BY albumview.idAlbum, iDisc", " ORDER BY song.lastPlayed, albumview.idAlbum, iDisc");
       sorting.sortBy = SortByLastPlayed;
-      sorting.sortOrder = SortOrderDescending;
+      sorting.sortOrder = SortOrderAscending;
     }
     else
     {
@@ -5113,6 +5117,8 @@ bool CMusicDatabase::GetDiscsByWhere(CMusicDbUrl& musicUrl,
       total = iRowsFound;
     items.SetProperty("total", total);
 
+    if (extFilter.UseXSP)
+      items.SetProperty("SkipSorting", true);
     DatabaseResults results;
     results.reserve(iRowsFound);
 
@@ -5235,7 +5241,7 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
 
     bool extended = false;
     bool limitedInSQL =
-        extFilter.limit.empty() && (sortDescription.limitStart > 0 || sortDescription.limitEnd > 0);
+        extFilter.limit.empty() && (sorting.limitStart > 0 || sorting.limitEnd > 0);
 
     // If there are extra WHERE conditions (from media filter dialog) we might
     // need access to albumview for these conditions
@@ -5291,7 +5297,13 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
       StringUtils::Replace(extFilter.order, "iYear", "CAST(strReleaseDate AS INTEGER)");
     else
       StringUtils::Replace(extFilter.order, "iYear", "CAST(strOrigReleaseDate AS INTEGER)");
-
+    // for last played, remove all descending orders except for the lastplayed field
+    std::string search = "lastPlayed DESC";
+    if (strstr(extFilter.order.c_str(), search.c_str()))
+    {
+      StringUtils::Replace(extFilter.order, "DESC", "");
+      StringUtils::Replace(extFilter.order, "lastPlayed ", "lastPlayed DESC");
+    }
     std::string strFields = "songview.*";
     if (!artistData || limitedInSQL)
     {
@@ -5313,7 +5325,7 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
       Filter joinFilter;
       std::string strSQLJoin;
       joinFilter.AppendJoin("JOIN songartistview ON songartistview.idSong = songview.idSong");
-      if (sortDescription.sortBy == SortByRandom)
+      if (sorting.sortBy == SortByRandom)
         joinFilter.AppendOrder("songartistview.idSong");
       else
         joinFilter.order = extFilter.order;
@@ -5373,7 +5385,15 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
     // Store item list sort order
     items.SetSortMethod(sorting.sortBy);
     items.SetSortOrder(sorting.sortOrder);
+<<<<<<< HEAD
 
+=======
+    // Items are already correctly sorted from the db query so set the property to skip sorting
+    // in the GUI when the list is first displayed (property is cleared afterwards so the user can
+    // resort the items if required
+    if (extFilter.UseXSP)
+      items.SetProperty("SkipSorting", true);
+>>>>>>> 4f8d01f852... Apply xsp rules correctly for nodes and carry rules forwards through navigation
     // Get songs from returned rows. If join songartistview then there is a row for every artist
     items.Reserve(total);
     int songArtistOffset = song_enumCount;
@@ -11653,7 +11673,8 @@ bool CMusicDatabase::GetFilter(CDbUrl &musicUrl, Filter &filter, SortDescription
     // Allow for grouping name like "originalyears" and type "years"
     // Allow discs to be filtered with album criteria as discs are individual albums within a set
     if (xsp.GetType() == type ||
-        (xsp.GetGroup().find(type) != std::string::npos && !xsp.IsGroupMixed()) || (xsp.GetType() == "albums" && type == "discs"))
+        (xsp.GetGroup().find(type) != std::string::npos && !xsp.IsGroupMixed()) ||
+        (xsp.GetType() == "albums" && (type == "discs" || type == "songs")))
     {
       filter.AppendWhere(xspWhere);
 
@@ -11668,6 +11689,7 @@ bool CMusicDatabase::GetFilter(CDbUrl &musicUrl, Filter &filter, SortDescription
       if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_FILELISTS_IGNORETHEWHENSORTING))
         sorting.sortAttributes = SortAttributeIgnoreArticle;
     }
+    filter.UseXSP = true;
   }
 
   //Process role options, common to artist and album type filtering

@@ -704,8 +704,15 @@ void CGUIMediaWindow::FormatAndSort(CFileItemList &items)
     LABEL_MASKS labelMasks;
     viewState->GetSortMethodLabelMasks(labelMasks);
     FormatItemLabels(items, labelMasks);
-
-    items.Sort(viewState->GetSortMethod().sortBy, viewState->GetSortOrder(), viewState->GetSortMethod().sortAttributes);
+    // Skip re-sorting the items when first displayed if xsp rules are in place as they are already
+    // sorted as we want by the music database queries. Revert the property so that users can
+    // re-sort the list if they want to.
+    if (items.GetProperty("SkipSorting").asBoolean())
+    {
+      items.SetProperty("SkipSorting", false);
+      return;
+    }
+      items.Sort(viewState->GetSortMethod().sortBy, viewState->GetSortOrder(), viewState->GetSortMethod().sortAttributes);
   }
 }
 

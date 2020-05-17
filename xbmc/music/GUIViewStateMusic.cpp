@@ -242,16 +242,16 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
       }
     }
     break;
-  case NODE_TYPE_ALBUM_RECENTLY_ADDED:
-    {
-      AddSortMethod(SortByNone, 552, LABEL_MASKS("%F", "", strAlbum, "%a"));  // Filename, empty | Userdefined, dateAdded
-      SetSortMethod(SortByNone);
+  //case NODE_TYPE_ALBUM_RECENTLY_ADDED:
+    //{
+      //AddSortMethod(SortByNone, 552, LABEL_MASKS("%F", "", strAlbum, "%a"));  // Filename, empty | Userdefined, dateAdded
+      //SetSortMethod(SortByNone);
 
-      SetViewAsControl(CViewStateSettings::GetInstance().Get("musicnavalbums")->m_viewMode);
+      //SetViewAsControl(CViewStateSettings::GetInstance().Get("musicnavalbums")->m_viewMode);
 
-      SetSortOrder(SortOrderNone);
-    }
-    break;
+      //SetSortOrder(SortOrderNone);
+    //}
+    //break;
   case NODE_TYPE_ALBUM_RECENTLY_ADDED_SONGS:
     {
       AddSortMethod(SortByNone, 552, LABEL_MASKS(strTrack, "%a"));  // Userdefined, dateAdded | empty, empty
@@ -341,7 +341,8 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
         SetSortMethod(SortByAlbum);
 
       // carry over date added, play count or last played from albums to songs
-      // as this mimics the original nodes
+      // as this mimics the original nodes (user can change the methods or direction to any of the
+      // available methods and it will be saved for each path)
       if (usexsp &&
           (xspType == "songs" ||
            (xspType == "albums" && (xspMethod == SortByDateAdded || xspMethod == SortByPlaycount ||
@@ -370,9 +371,18 @@ CGUIViewStateMusicDatabase::CGUIViewStateMusicDatabase(const CFileItemList& item
     }
     break;
   case NODE_TYPE_DISC:
-    {
-      AddSortMethod(SortByNone, 427, LABEL_MASKS("%L")); // Use the existing label
-      SetSortMethod(SortByNone);
+    { // add SortByLastPlayed but use discs label so skins know these are discs
+      if (usexsp && xspType == "albums")
+      {
+        AddSortMethod(xspMethod, 427, LABEL_MASKS("%L"));
+        SetSortMethod(xspMethod);
+        SetSortOrder(xspDirection);
+      }
+      else
+      {
+        AddSortMethod(SortByNone, 427, LABEL_MASKS("%L")); // Use the existing label
+        SetSortMethod(SortByNone);
+      }
     }
     break;
   default:
