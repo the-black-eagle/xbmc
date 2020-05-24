@@ -187,14 +187,14 @@
 							<param name="list_id" value="7900"/>
 						</include>
 						<include content="WidgetListSquare" condition="Library.HasContent(music)">
-							<param name="content_path" value="musicdb://recentlyplayedalbums"/>
+							<param name="content_path" value="library://music/recentlyplayedalbums.xml"/>
 							<param name="widget_header" value="$LOCALIZE[517]"/>
 							<param name="widget_target" value="music"/>
 							<param name="list_id" value="7100"/>
 							<param name="fallback_icon" value="DefaultMusicAlbums.png"/>
 						</include>
 						<include content="WidgetListSquare" condition="Library.HasContent(music)">
-							<param name="content_path" value="musicdb://recentlyaddedalbums/"/>
+							<param name="content_path" value="library://music/recentlyaddedalbums.xml"/>
 							<param name="widget_header" value="$LOCALIZE[359]"/>
 							<param name="widget_target" value="music"/>
 							<param name="list_id" value="7200"/>
