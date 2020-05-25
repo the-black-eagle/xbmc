@@ -3163,6 +3163,15 @@ bool CMusicDatabase::GetRecentlyAddedAlbums(VECALBUMS& albums, unsigned int limi
       m_pDS->next();
     }
     m_pDS->close(); // cleanup recordset data
+    //CFileItemList items;
+    //CURL pathToURL("library://music/recentlyaddedalbums.xml");
+    //CLibraryDirectory libdir;
+    //libdir.GetDirectory(pathToURL, items);
+    //for (auto& item: items)
+    //{
+      //CAlbum album = GetAlbumFromDataset(item.
+      //albums.push_back(item);
+    //}
     return true;
   }
   catch (...)
