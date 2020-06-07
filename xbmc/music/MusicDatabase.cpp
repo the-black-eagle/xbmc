@@ -5394,15 +5394,12 @@ bool CMusicDatabase::GetSongsFullByWhere(const std::string &baseDir, const Filte
     // Store item list sort order
     items.SetSortMethod(sorting.sortBy);
     items.SetSortOrder(sorting.sortOrder);
-<<<<<<< HEAD
 
-=======
     // Items are already correctly sorted from the db query so set the property to skip sorting
     // in the GUI when the list is first displayed (property is cleared afterwards so the user can
     // resort the items if required
     if (extFilter.UseXSP)
       items.SetProperty("SkipSorting", true);
->>>>>>> 4f8d01f852... Apply xsp rules correctly for nodes and carry rules forwards through navigation
     // Get songs from returned rows. If join songartistview then there is a row for every artist
     items.Reserve(total);
     int songArtistOffset = song_enumCount;
