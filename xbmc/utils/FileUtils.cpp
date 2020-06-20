@@ -249,6 +249,83 @@ CDateTime CFileUtils::GetModificationDate(const int& code, const std::string& st
   return dateAdded;
 }
 
+CDateTime CFileUtils::GetCreationDate(const std::string& strFileNameAndPath)
+{
+  CDateTime dateCreated;
+  if (strFileNameAndPath.empty())
+  {
+    CLog::Log(LOGDEBUG, "%s empty strFileNameAndPath variable", __FUNCTION__);
+    return dateCreated;
+  }
+
+  try
+  {
+    std::string file = strFileNameAndPath;
+    if (URIUtils::IsStack(strFileNameAndPath))
+      file = CStackDirectory::GetFirstStackedFile(strFileNameAndPath);
+
+    if (URIUtils::IsInArchive(file))
+      file = CURL(file).GetHostName();
+
+    time_t now = time(NULL);
+    time_t createdTime = {};
+
+      // Try to get the creation datetime
+      // Use statx if available on posix to get the actual file creation time if possible
+#if defined(__statx_defined) && !defined(ANDROID)
+    int dirfd = AT_FDCWD;
+    int flags = AT_SYMLINK_NOFOLLOW;
+    unsigned int mask = STATX_ALL;
+    struct statx stxbuf = {};
+    long ret = 0;
+    ret = statx(dirfd, file.c_str(), flags, mask, &stxbuf);
+    if (ret == 0)
+    {
+      // Prefer the birth time if it's valid, or fallback to the earliest date we can find
+      if (stxbuf.stx_btime.tv_sec != 0 && stxbuf.stx_btime.tv_sec <= now)
+        createdTime = static_cast<time_t>(stxbuf.stx_btime.tv_sec);
+      else
+        createdTime = std::min(static_cast<time_t>(stxbuf.stx_ctime.tv_sec),
+                               static_cast<time_t>(stxbuf.stx_mtime.tv_sec));
+      // make sure the datetime is not in the future
+    }
+    else
+    {
+      CLog::Log(LOGERROR, "CFileUtils::GetCreationDate - statx failed with error {0}", errno);
+    }
+#else
+    // use Stat if statx is not available
+    struct __stat64 buffer;
+    if (CFile::Stat(file, &buffer) == 0 && (buffer.st_mtime != 0 || buffer.st_ctime != 0))
+    {
+      // Assume the earliest date we can get is the creation date
+      if (buffer.st_ctime != 0 && static_cast<time_t>(buffer.st_ctime) <= now)
+        createdTime =
+            std::min(static_cast<time_t>(buffer.st_ctime), static_cast<time_t>(buffer.st_mtime));
+    }
+#endif
+          // make sure the datetime is not in the future
+    if (createdTime <= now)
+    {
+      struct tm* time;
+#ifdef HAVE_LOCALTIME_R
+      struct tm result = {};
+      time = localtime_r(&createdTime, &result);
+#else
+      time = localtime(&createdTime);
+#endif
+      if (time)
+        dateCreated = *time;
+    }
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "{0} unable to extract creation date for file ({1})", __FUNCTION__,
+              strFileNameAndPath.c_str());
+  }
+  return dateCreated;
+}
+
 bool CFileUtils::CheckFileAccessAllowed(const std::string &filePath)
 {
   // DENY access to paths matching

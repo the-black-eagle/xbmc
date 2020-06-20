@@ -12,6 +12,13 @@
 
 #include <string>
 
+// If statx is available we will use that to get the file creation (birth) date and time on Posix
+// If we are running on a kernel that doesn't support statx the wrapper will use stat but fill the
+// statx buffer with the results - in that case we won't get btime, just ctime and mtime
+#ifdef STATX_TYPE
+#define __statx_defined 1
+#endif
+
 class CFileUtils
 {
 public:
@@ -28,4 +35,9 @@ public:
   */
   static CDateTime GetModificationDate(const std::string& strFileNameAndPath, const bool& bUseLatestDate);
   static CDateTime GetModificationDate(const int& code, const std::string& strFileNameAndPath);
+  /*! \brief Get the creation date of a file if possible
+  \param strFileNameAndPath path to the file
+  \return Returns the creation date, else returns the earlier of the files ctime and mtime if valid
+  */
+  static CDateTime GetCreationDate(const std::string& strFileNameAndPath);
 };

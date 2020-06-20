@@ -12681,7 +12681,7 @@ std::string CMusicDatabase::GetMediaDateFromFile(const std::string& strFileNameA
     dateMedia = CFileUtils::GetModificationDate(1, strFileNameAndPath);
   //3 using the older datetime of the file's mtime and ctime
   else if (code == 3)
-    dateMedia = CFileUtils::GetModificationDate(2, strFileNameAndPath);
+    dateMedia = CFileUtils::GetCreationDate(strFileNameAndPath);
   //0 using the current datetime if none of the above matches or one returns an invalid datetime
   if (!dateMedia.IsValid())
     dateMedia = CDateTime::GetCurrentDateTime();
