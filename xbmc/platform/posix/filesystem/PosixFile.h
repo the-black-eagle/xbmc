@@ -10,6 +10,10 @@
 
 #include "filesystem/IFile.h"
 
+#if defined(STATX_TYPE) && !defined(ANDROID) // use statx if available to get file birth date
+#define HAS_STATX 1
+#endif
+
 namespace XFILE
 {
 
