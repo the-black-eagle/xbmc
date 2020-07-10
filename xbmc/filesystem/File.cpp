@@ -517,6 +517,72 @@ int CFile::Stat(const std::string& strFileName, struct __stat64* buffer)
   return Stat(pathToUrl, buffer);
 }
 
+int CFile::Statx(const::std::string& filename, struct __statx* buffer)
+{
+  const CURL pathToUrl(filename);
+  return Statx(pathToUrl, buffer);
+}
+
+int CFile::Statx(const CURL& file, struct __statx* buffer)
+{
+  if (!buffer)
+    return -1;
+
+  CURL url(URIUtils::SubstitutePath(file));
+  CURL authUrl = url;
+  if (CPasswordManager::GetInstance().IsURLSupported(authUrl) && authUrl.GetUserName().empty())
+    CPasswordManager::GetInstance().AuthenticateURL(authUrl);
+
+  try
+  {
+    std::unique_ptr<IFile> pFile(CFileFactory::CreateLoader(url));
+    if (!pFile)
+      return -1;
+    return pFile->Statx(authUrl, buffer);
+  }
+    XBMCCOMMONS_HANDLE_UNCHECKED
+  catch (CRedirectException *pRedirectEx)
+  {
+    // the file implementation decided this item should use a different implementation.
+    // the exception will contain the new implementation and optional a redirected URL.
+    CLog::Log(LOGDEBUG,"File::Stat - redirecting implementation for %s", file.GetRedacted().c_str());
+    if (pRedirectEx && pRedirectEx->m_pNewFileImp)
+    {
+      std::unique_ptr<IFile> pImp(pRedirectEx->m_pNewFileImp);
+      std::unique_ptr<CURL> pNewUrl(pRedirectEx->m_pNewUrl);
+      delete pRedirectEx;
+
+      if (pNewUrl)
+      {
+        if (pImp)
+        {
+          CURL newAuthUrl = *pNewUrl;
+          if (CPasswordManager::GetInstance().IsURLSupported(newAuthUrl) && newAuthUrl.GetUserName().empty())
+            CPasswordManager::GetInstance().AuthenticateURL(newAuthUrl);
+
+          if (!pImp->Statx(newAuthUrl, buffer))
+          {
+            return 0;
+          }
+        }
+      }
+      else
+      {
+        if (pImp.get() && !pImp->Statx(authUrl, buffer))
+        {
+          return 0;
+        }
+      }
+    }
+  }
+  catch(...)
+  {
+    CLog::Log(LOGERROR, "%s - Unhandled exception", __FUNCTION__);
+  }
+  CLog::Log(LOGERROR, "%s - Error statxing %s", __FUNCTION__, file.GetRedacted().c_str());
+  return -1;
+}
+
 int CFile::Stat(const CURL& file, struct __stat64* buffer)
 {
   if (!buffer)

@@ -105,6 +105,8 @@ typedef int (*LPTHREAD_START_ROUTINE)(void *);
 #define _O_RDONLY O_RDONLY
 #define _O_WRONLY O_WRONLY
 
+struct __statx; // forward declaration
+
 #if defined(TARGET_DARWIN) || defined(TARGET_FREEBSD)
   #define stat64 stat
   #define __stat64 stat
@@ -114,6 +116,10 @@ typedef int (*LPTHREAD_START_ROUTINE)(void *);
     #define statfs64 statfs
   #endif
 #else
+  #if defined(STATX_MODE) && !defined(TARGET_ANDROID) // use statx for file birth date if available
+    #define HAS_STATX 1
+    #define __statx statx
+  #endif
   #define __stat64 stat64
 #endif
 

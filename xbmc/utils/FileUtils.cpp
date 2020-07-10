@@ -270,41 +270,29 @@ CDateTime CFileUtils::GetCreationDate(const std::string& strFileNameAndPath)
     time_t now = time(NULL);
     time_t createdTime = {};
 
-      // Try to get the creation datetime
-      // Use statx if available on posix to get the actual file creation time if possible
-#if defined(__statx_defined) && !defined(ANDROID)
-    int dirfd = AT_FDCWD;
-    int flags = AT_SYMLINK_NOFOLLOW;
-    unsigned int mask = STATX_ALL;
-    struct statx stxbuf = {};
-    long ret = 0;
-    ret = statx(dirfd, file.c_str(), flags, mask, &stxbuf);
-    if (ret == 0)
+#if defined(HAS_STATX)
+    // get creation (birth) date using statx if possible. Fall back to earliest date otherwise
+    struct __statx buffer = {};
+    if (CFile::Statx(file, &buffer) == 0)
     {
-      // Prefer the birth time if it's valid, or fallback to the earliest date we can find
-      if (stxbuf.stx_btime.tv_sec != 0 && stxbuf.stx_btime.tv_sec <= now)
-        createdTime = static_cast<time_t>(stxbuf.stx_btime.tv_sec);
+      if (buffer.stx_btime.tv_sec != 0 && buffer.stx_btime.tv_sec <= now)
+        createdTime = static_cast<time_t>(buffer.stx_btime.tv_sec);
       else
-        createdTime = std::min(static_cast<time_t>(stxbuf.stx_ctime.tv_sec),
-                               static_cast<time_t>(stxbuf.stx_mtime.tv_sec));
-      // make sure the datetime is not in the future
-    }
-    else
-    {
-      CLog::Log(LOGERROR, "CFileUtils::GetCreationDate - statx failed with error {0}", errno);
+        createdTime = std::min(static_cast<time_t>(buffer.stx_ctime.tv_sec),
+                               static_cast<time_t>(buffer.stx_mtime.tv_sec));
     }
 #else
-    // use Stat if statx is not available
+    // use stat if statx not available (birth date will not be available via stat)
     struct __stat64 buffer;
-    if (CFile::Stat(file, &buffer) == 0 && (buffer.st_mtime != 0 || buffer.st_ctime != 0))
+    if (CFile::Stat(file, &buffer) == 0)
     {
-      // Assume the earliest date we can get is the creation date
+      // Assume the earliest date we can get from stat is the creation date
       if (buffer.st_ctime != 0 && static_cast<time_t>(buffer.st_ctime) <= now)
         createdTime =
             std::min(static_cast<time_t>(buffer.st_ctime), static_cast<time_t>(buffer.st_mtime));
     }
 #endif
-          // make sure the datetime is not in the future
+    // make sure the datetime is not in the future
     if (createdTime <= now)
     {
       struct tm* time;

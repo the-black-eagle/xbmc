@@ -36,6 +36,9 @@ namespace XFILE
     bool Exists(const CURL& url) override;
     int Stat(const CURL& url, struct __stat64* buffer) override;
     int Stat(struct __stat64* buffer) override;
+#if defined(HAS_STATX)
+    int Statx(const CURL& url, struct __statx* buffer) override;
+#endif
 
   protected:
     int     m_fd = -1;

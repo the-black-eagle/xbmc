@@ -342,3 +342,17 @@ int CPosixFile::Stat(struct __stat64* buffer)
 
   return fstat64(m_fd, buffer);
 }
+#if defined(HAS_STATX)
+int CPosixFile::Statx(const CURL& url, struct __statx* buffer)
+{
+  assert(buffer != NULL);
+  const std::string filename(getFilename(url));
+  if (filename.empty() || !buffer)
+    return -1;
+
+  int dirfd = AT_FDCWD;
+  int flags = AT_SYMLINK_NOFOLLOW;
+  unsigned int mask = STATX_ALL;
+  return statx(dirfd, filename.c_str(), flags, mask, buffer);
+}
+#endif

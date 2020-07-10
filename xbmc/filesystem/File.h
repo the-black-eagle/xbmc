@@ -156,6 +156,8 @@ public:
   * @return zero of success, -1 otherwise.
   */
   int Stat(struct __stat64 *buffer);
+  static int Statx(const std::string& filename, struct __statx* buffer);
+  static int Statx(const CURL& url, struct __statx* buffer);
   static bool Delete(const std::string& strFileName);
   static bool Rename(const std::string& strFileName, const std::string& strNewFileName);
   static bool Copy(const std::string& strFileName, const std::string& strDest, XFILE::IFileCallback* pCallback = NULL, void* pContext = NULL);
