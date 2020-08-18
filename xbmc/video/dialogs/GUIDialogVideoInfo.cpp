@@ -340,7 +340,35 @@ void CGUIDialogVideoInfo::SetMovie(const CFileItem *item)
       if (!thumb.empty())
         item->SetArt("thumb", thumb);
       item->SetArt("icon", "DefaultArtist.png");
+      item->SetLabel2(g_localizeStrings.Get(29904));
       m_castList->Add(item);
+    }
+    // get performers in the music video (added as actors)
+    for (CVideoInfoTag::iCast it = m_movieItem->GetVideoInfoTag()->m_cast.begin();
+         it != m_movieItem->GetVideoInfoTag()->m_cast.end(); ++it)
+    {
+      // Check to see if we have already added this performer as the artist and skip adding if so
+      auto haveArtist = std::find(std::begin(artists), std::end(artists), it->strName);
+      if (haveArtist == artists.end()) // artist or performer not already in the list
+      {
+        CFileItemPtr item(new CFileItem(it->strName));
+        if (!it->thumb.empty())
+          item->SetArt("thumb", it->thumb);
+        else if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
+                     CSettings::SETTING_VIDEOLIBRARY_ACTORTHUMBS))
+        { // backward compatibility
+          std::string thumb = CScraperUrl::GetThumbUrl(it->thumbUrl.GetFirstUrlByType());
+          if (!thumb.empty())
+          {
+            item->SetArt("thumb", thumb);
+            CTextureCache::GetInstance().BackgroundCacheImage(thumb);
+          }
+        }
+        item->SetArt("icon", "DefaultActor.png");
+        item->SetLabel(it->strName);
+        item->SetLabel2(it->strRole);
+        m_castList->Add(item);
+      }
     }
   }
   else if (type == MediaTypeVideoCollection)

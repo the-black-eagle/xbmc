@@ -28,6 +28,7 @@
 #include "messaging/ApplicationMessenger.h"
 #include "messaging/helpers/DialogOKHelper.h"
 #include "music/MusicDatabase.h"
+#include "music/dialogs/GUIDialogMusicInfo.h"
 #include "profiles/ProfileManager.h"
 #include "pvr/recordings/PVRRecording.h"
 #include "settings/AdvancedSettings.h"
@@ -978,7 +979,10 @@ void CGUIWindowVideoNav::GetContextButtons(int itemNumber, CContextButtons &butt
         if (node == NODE_TYPE_ACTOR && !dir.IsAllItem(item->GetPath()) && item->m_bIsFolder)
         {
           if (StringUtils::StartsWithNoCase(m_vecItems->GetPath(), "videodb://musicvideos")) // mvids
+          {
             buttons.Add(CONTEXT_BUTTON_SET_ARTIST_THUMB, 13359);
+            buttons.Add(CONTEXT_BUTTON_INFO, 21891); // Artist information
+          }
           else
             buttons.Add(CONTEXT_BUTTON_SET_ACTOR_THUMB, 20403);
         }
@@ -1098,6 +1102,18 @@ bool CGUIWindowVideoNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
   case CONTEXT_BUTTON_SCAN_TO_LIBRARY:
     CGUIDialogVideoInfo::ShowFor(*item);
     return true;
+
+  case CONTEXT_BUTTON_INFO:
+  {
+    CMusicDatabase database;
+    database.Open();
+    int idArtist = database.GetArtistByName(StringUtils::Join(
+        m_vecItems->Get(itemNumber)->GetVideoInfoTag()->m_artist,
+        CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_videoItemSeparator));
+    if (idArtist > -1)
+      CGUIDialogMusicInfo::ShowForArtist(idArtist);
+    return true;
+  }
 
   default:
     break;

@@ -33,6 +33,8 @@
 #include "guilib/LocalizeStrings.h"
 #include "input/Key.h"
 #include "messaging/helpers/DialogOKHelper.h"
+#include "music/MusicDatabase.h"
+#include "music/dialogs/GUIDialogMusicInfo.h"
 #include "playlists/PlayList.h"
 #include "playlists/PlayListFactory.h"
 #include "profiles/ProfileManager.h"
@@ -744,6 +746,22 @@ bool CGUIWindowVideoBase::OnItemInfo(int iItem)
     return ShowIMDB(item, nullptr, true);
 
   ADDON::ScraperPtr scraper;
+
+  if (item->IsVideoDb() && item->HasVideoInfoTag() && item->GetVideoInfoTag()->m_type == "actor" &&
+      !item->GetVideoInfoTag()->m_artist.empty())
+  {
+    CMusicDatabase music_database;
+    if (music_database.Open())
+    {
+      int idArtist = music_database.GetArtistByName(StringUtils::Join(
+          item->GetVideoInfoTag()->m_artist,
+          CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_videoItemSeparator));
+      if (idArtist > -1)
+        CGUIDialogMusicInfo::ShowForArtist(idArtist);
+      music_database.Close();
+    }
+    return true;
+  }
   if (!m_vecItems->IsPlugin() && !m_vecItems->IsRSS() && !m_vecItems->IsLiveTV())
   {
     std::string strDir;
