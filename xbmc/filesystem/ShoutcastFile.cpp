@@ -20,7 +20,9 @@
 #include "messaging/ApplicationMessenger.h"
 #include "utils/CharsetConverter.h"
 #include "utils/HTMLUtil.h"
+#include "utils/JSONVariantParser.h"
 #include "utils/RegExp.h"
+#include "utils/StringUtils.h"
 
 #include <climits>
 
@@ -66,12 +68,19 @@ bool CShoutcastFile::Open(const CURL& url)
   bool result = m_file.Open(url2);
   if (result)
   {
-    m_tag.SetTitle(m_file.GetHttpHeader().GetValue("icy-name"));
-    if (m_tag.GetTitle().empty())
-      m_tag.SetTitle(m_file.GetHttpHeader().GetValue("ice-name")); // icecast
+    std::string icyTitle;
+    icyTitle = m_file.GetHttpHeader().GetValue("icy-name");
+    if (icyTitle.empty())
+      icyTitle = m_file.GetHttpHeader().GetValue("ice-name"); // icecast
+    if (icyTitle == "This is my server name") // Handle badly set up servers
+      icyTitle.clear();
+
     m_tag.SetGenre(m_file.GetHttpHeader().GetValue("icy-genre"));
     if (m_tag.GetGenre().empty())
       m_tag.SetGenre(m_file.GetHttpHeader().GetValue("ice-genre")); // icecast
+
+    m_tag.SetStreamType(CMusicInfoTag::StreamType::SHOUTCAST);
+    m_tag.SetStationName(icyTitle);
     m_tag.SetLoaded(true);
   }
   m_fileCharset = m_file.GetProperty(XFILE::FILE_PROPERTY_CONTENT_CHARSET);
@@ -80,7 +89,6 @@ bool CShoutcastFile::Open(const CURL& url)
     m_metaint = -1;
   m_buffer = new char[16*255];
   m_tagPos = 1;
-  m_tagChange.Set();
 
   return result;
 }
@@ -129,6 +137,9 @@ void CShoutcastFile::Close()
   delete[] m_buffer;
   m_buffer = NULL;
   m_file.Close();
+  m_tag.Clear();
+  m_title.clear();
+  m_haveExtraData = false;
 }
 
 bool CShoutcastFile::ExtractTagInfo(const char* buf)
@@ -156,10 +167,75 @@ bool CShoutcastFile::ExtractTagInfo(const char* buf)
 
   if (reTitle.RegFind(strBuffer.c_str()) != -1)
   {
-    std::string newtitle(reTitle.GetMatch(1));
+    const std::string newTitle = reTitle.GetMatch(1);
+
+    /* Example of data contained in the metadata buffer (v1 streams only contain the StreamTitle)
+       StreamTitle='Tuesday's Gone - Lynyrd Skynyrd';
+       StreamUrl='https://listenapi.planetradio.co.uk/api9/eventdata/58431417';
+    */
+
+    CRegExp reURL(true);
+    reURL.RegComp("StreamUrl=\'(.*?)\';");
+    m_haveExtraData = (reURL.RegFind(strBuffer.c_str()) != -1) && !reURL.GetMatch(1).empty();
+
     CSingleLock lock(m_tagSection);
-    result = (m_tag.GetTitle() != newtitle);
-    m_tag.SetTitle(newtitle);
+    result = (m_title != newTitle);
+    if (result) // track has changed
+    {
+      m_title = newTitle;
+
+      std::string artistInfo;
+      std::string title;
+      std::string coverURL;
+
+      if (m_haveExtraData) // track has changed and extra metadata might be available
+      {
+        const std::string serverUrl = reURL.GetMatch(1);
+        if (!serverUrl.empty())
+        {
+          XFILE::CCurlFile http;
+          std::string extData;
+          CURL dataURL(serverUrl);
+          if (http.Get(dataURL.Get(), extData))
+          {
+            CVariant variant;
+            if (CJSONVariantParser::Parse(extData, variant))
+            {
+              /* Example of data returned from the server
+                 {"eventId":58431417,"eventStart":"2020-09-15 10:03:23","eventFinish":"2020-09-15 10:10:43","eventDuration":438,"eventType":"Song","eventSongTitle":"Tuesday's Gone",
+                 "eventSongArtist":"Lynyrd Skynyrd",
+                 "eventImageUrl":"https://assets.planetradio.co.uk/artist/1-1/320x320/753.jpg?ver=1465083598",
+                 "eventImageUrlSmall":"https://assets.planetradio.co.uk/artist/1-1/160x160/753.jpg?ver=1465083598",
+                 "eventAppleMusicUrl":"https://geo.itunes.apple.com/dk/album/287661543?i=287661795"}
+              */
+
+              artistInfo = variant["eventSongArtist"].asString();
+              title = variant["eventSongTitle"].asString();
+              coverURL = variant["eventImageUrl"].asString();
+            }
+          }
+        }
+      }
+      else // track has changed and no extra metadata are available
+      {
+        const std::vector<std::string> tokens = StringUtils::Split(newTitle, " - ");
+        if (tokens.size() == 2)
+        {
+          artistInfo = tokens[0];
+          title = tokens[1];
+        }
+        else
+        {
+          title = newTitle;
+        }
+      }
+
+      m_tag.SetArtist(artistInfo);
+      m_tag.SetTitle(title);
+      m_tag.SetShoutcastCover(coverURL);
+
+      m_tagChange.Set();
+    }
   }
 
   return result;

@@ -25,6 +25,7 @@
 #include "playlists/PlayList.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/SettingsComponent.h"
+#include "utils/CharsetConverter.h"
 #include "utils/URIUtils.h"
 #include "utils/log.h"
 
@@ -99,9 +100,17 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         return true;
       case PLAYER_TITLE:
         value = tag->GetTitle();
+        if (tag->GetStreamType() == CMusicInfoTag::StreamType::SHOUTCAST)
+          return true;
         return !value.empty();
       case MUSICPLAYER_TITLE:
         value = tag->GetTitle();
+        if (tag->GetStreamType() == CMusicInfoTag::StreamType::SHOUTCAST)
+        {
+          // Always return the value (empty or not) if we are playing a shoutcast stream
+          // as v2 streams can return an empty title during ad-breaks/news etc.
+          return true;
+        }
         if (value.empty())
           value = item->GetLabel();
         if (value.empty())
@@ -276,6 +285,15 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
           return true;
         }
         break;
+      case MUSICPLAYER_STATIONNAME:
+        value = tag->GetStationName();
+        if (value.empty() && tag->GetStreamType() == CMusicInfoTag::StreamType::SHOUTCAST)
+        {
+          // if this is a shoutcast v2 stream we have to get the station name from the sortlabel
+          // as it isn't set in the headers.
+          g_charsetConverter.wToUTF8(item->GetSortLabel(), value);
+        }
+        return true;
 
       /////////////////////////////////////////////////////////////////////////////////////////////
       // LISTITEM_*
