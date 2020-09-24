@@ -191,29 +191,76 @@ bool CShoutcastFile::ExtractTagInfo(const char* buf)
       if (m_haveExtraData) // track has changed and extra metadata might be available
       {
         const std::string serverUrl = reURL.GetMatch(1);
-        if (!serverUrl.empty())
+        if (!serverUrl.empty() && serverUrl.substr(0,4) == "http")
         {
           XFILE::CCurlFile http;
           std::string extData;
           CURL dataURL(serverUrl);
           if (http.Get(dataURL.Get(), extData))
-          {
-            CVariant variant;
-            if (CJSONVariantParser::Parse(extData, variant))
+          { // No webpages thanks - Many US stations link back to their websites rather than data
+            if (extData.find("<html") == std::string::npos &&
+                extData.find("<HTML") == std::string::npos)
             {
-              /* Example of data returned from the server
-                 {"eventId":58431417,"eventStart":"2020-09-15 10:03:23","eventFinish":"2020-09-15 10:10:43","eventDuration":438,"eventType":"Song","eventSongTitle":"Tuesday's Gone",
-                 "eventSongArtist":"Lynyrd Skynyrd",
-                 "eventImageUrl":"https://assets.planetradio.co.uk/artist/1-1/320x320/753.jpg?ver=1465083598",
-                 "eventImageUrlSmall":"https://assets.planetradio.co.uk/artist/1-1/160x160/753.jpg?ver=1465083598",
-                 "eventAppleMusicUrl":"https://geo.itunes.apple.com/dk/album/287661543?i=287661795"}
-              */
+              CVariant variant;
+              if (CJSONVariantParser::Parse(extData, variant))
+              {
+                /* Example of data returned from the server
+                   {"eventId":58431417,"eventStart":"2020-09-15 10:03:23","eventFinish":"2020-09-15 10:10:43","eventDuration":438,"eventType":"Song","eventSongTitle":"Tuesday's Gone",
+                   "eventSongArtist":"Lynyrd Skynyrd",
+                   "eventImageUrl":"https://assets.planetradio.co.uk/artist/1-1/320x320/753.jpg?ver=1465083598",
+                   "eventImageUrlSmall":"https://assets.planetradio.co.uk/artist/1-1/160x160/753.jpg?ver=1465083598",
+                   "eventAppleMusicUrl":"https://geo.itunes.apple.com/dk/album/287661543?i=287661795"}
+                */
 
-              artistInfo = variant["eventSongArtist"].asString();
-              title = variant["eventSongTitle"].asString();
-              coverURL = variant["eventImageUrl"].asString();
+                artistInfo = variant["eventSongArtist"].asString();
+                title = variant["eventSongTitle"].asString();
+                coverURL = variant["eventImageUrl"].asString();
+              }
+            }
+            else // we got a webpage so use what data we have, else artist and title will be blank
+            {
+              const std::vector<std::string> tokens = StringUtils::Split(newTitle, " - ");
+              if (tokens.size() == 2)
+              {
+                artistInfo = tokens[0];
+                title = tokens[1];
+              }
+              else
+              {
+                title = newTitle;
+              }
             }
           }
+        }
+        else if (serverUrl.find("&artist=") != std::string::npos) // data is url encoded in serverUrl
+        {
+          /*Examples of data from server - Note the picture data is not a full URL so we can't
+          fetch it for the second example - just grab the artist and track info
+          &artist=Steely%20Dan&title=Deacon%20Blues&album=The%20Best%20of%20Steely%20Dan%20Then%20And%20Now
+
+          &artist=Jimi%20Hendrix&title=Hey%20Joe&album=Cornerstones%201967-1970
+          &duration=206211&songtype=S&overlay=NO&buycd=&website=
+          &picture=az_1810_Experience%20Hendrix%20The%20Best%20Of%20Jimi%20Hendrix_Jimi%20Hendrix.jpg
+         */
+          std::map<std::string, std::string> params;
+          std::stringstream paramlist(CURL::Decode(serverUrl));
+          std::string keyval, key, val;
+
+          while (std::getline(paramlist, keyval, '&')) // split each term
+          {
+            std::istringstream iss(keyval);
+            // split key/value pairs
+            if (std::getline(std::getline(iss, key, '='), val))
+              params[key] = val;
+          }
+
+          auto option = params.find("artist");
+          if (option != params.end())
+            artistInfo = option->second;
+          option = params.find("title");
+          if (option != params.end())
+            title = option->second;
+
         }
       }
       else // track has changed and no extra metadata are available
