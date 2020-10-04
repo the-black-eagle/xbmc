@@ -311,6 +311,7 @@ public:
   bool GetAlbumFromSong(int idSong, CAlbum &album);
   int  GetAlbumByName(const std::string& strAlbum, const std::string& strArtist="");
   int  GetAlbumByName(const std::string& strAlbum, const std::vector<std::string>& artist);
+  int  GetFirstAlbumByName(const std::string& strAlbum, const std::string& strArtist);
   int  GetAlbumByMatch(const CAlbum &album);
   std::string GetAlbumById(int id);
   std::string GetAlbumDiscTitle(int idAlbum, int idDisc);

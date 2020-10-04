@@ -6379,9 +6379,9 @@ bool CVideoDatabase::GetMusicVideoAlbumsNav(const std::string& strBaseDir, CFile
     std::string strSQL = "select %s from musicvideo_view ";
     Filter extFilter = filter;
     extFilter.fields = PrepareSQL("musicvideo_view.c%02d, musicvideo_view.idMVideo, actor.name, "
-                                  "musicvideo_view.c%02d, musicvideo_view.c%02d ",
+                                  "musicvideo_view.c%02d, musicvideo_view.c%02d, musicvideo_view.c%02d ",
                                   VIDEODB_ID_MUSICVIDEO_ALBUM, VIDEODB_ID_MUSICVIDEO_TITLE,
-                                  VIDEODB_ID_MUSICVIDEO_PLOT);
+                                  VIDEODB_ID_MUSICVIDEO_PLOT, VIDEODB_ID_MUSICVIDEO_ARTIST);
     extFilter.AppendJoin(
         PrepareSQL("JOIN actor_link ON actor_link.media_id=musicvideo_view.idMVideo "));
     extFilter.AppendJoin(PrepareSQL("JOIN actor ON actor.actor_id = actor_link.actor_id"));
@@ -6415,7 +6415,8 @@ bool CVideoDatabase::GetMusicVideoAlbumsNav(const std::string& strBaseDir, CFile
     (2) - Artist name
     (3) - Music video title
     (4) - Music video plot
-    (5) - Path to video
+    (5) - Music Video artist
+    (6) - Path to video
     */
     if (iRowsFound <= 0)
       return iRowsFound == 0;
@@ -6435,6 +6436,7 @@ bool CVideoDatabase::GetMusicVideoAlbumsNav(const std::string& strBaseDir, CFile
     }
 
     std::list <int> idMVideoList;
+    std::list <std::pair<std::string, std::string>> idData;
 
     while (!m_pDS->eof())
     {
@@ -6480,6 +6482,7 @@ bool CVideoDatabase::GetMusicVideoAlbumsNav(const std::string& strBaseDir, CFile
           pItem->GetVideoInfoTag()->m_artist.emplace_back(strArtist);
           items.Add(pItem);
           idMVideoList.push_back(idMVideo);
+          idData.push_back(make_pair(m_pDS->fv(0).get_asString(), m_pDS->fv(5).get_asString()));
         }
       m_pDS->next();
     }
@@ -6487,15 +6490,32 @@ bool CVideoDatabase::GetMusicVideoAlbumsNav(const std::string& strBaseDir, CFile
 
     for (int i = 0; i < items.Size(); i++)
     {
-      if (items[i]->m_bIsFolder) // Skip albums, we don't want to set any details at this level
+      if (items[i]->m_bIsFolder)
       {
-        idMVideoList.pop_front();
-        continue;
+        CMusicDatabase music_db;
+        if (music_db.Open())
+        {
+          int idMalbum = music_db.GetFirstAlbumByName(idData.front().first, idData.front().second);
+          if (idMalbum > 0)
+          {
+            std::map <std::string, std::string> art;
+            music_db.GetArtForItem(idMalbum, "album", art);
+            CAlbum album;
+            music_db.GetAlbum(idMalbum, album, false);
+            items[i]->SetArt(art);
+            items[i]->GetVideoInfoTag()->SetPlot(album.strReview);
+          }
+          idMVideoList.pop_front();
+          idData.pop_front();
+          music_db.Close();
+          continue;
+        }
       }
       CVideoInfoTag details;
       GetMusicVideoInfo("", details, idMVideoList.front());
       items[i]->SetFromVideoInfoTag(details);
       idMVideoList.pop_front();
+      idData.pop_front();
     }
 
     if (!strArtist.empty())

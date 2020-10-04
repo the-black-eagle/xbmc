@@ -9903,6 +9903,41 @@ int CMusicDatabase::GetAlbumByName(const std::string& strAlbum, const std::strin
   return -1;
 }
 
+int CMusicDatabase::GetFirstAlbumByName(const std::string& strAlbum, const std::string& strArtist)
+{ /*This gets the first album that matches with the title and artist (this might not be desirable).
+    Called by the videodatabase to find the details for an album that matches with a musicvideo
+    album. As we can't definitively identify an album by title and artist alone we just take the
+    first match returned by the db and ignore re-releases etc.
+  */
+  try
+  {
+    if (nullptr == m_pDB)
+      return false;
+    if (nullptr == m_pDS)
+      return false;
+
+    std::string strSQL;
+    if (strArtist.empty())
+      strSQL =
+          PrepareSQL("SELECT idAlbum FROM album WHERE album.strAlbum LIKE '%s'", strAlbum.c_str());
+    else
+      strSQL = PrepareSQL("SELECT idAlbum FROM album WHERE album.strAlbum LIKE '%s' AND "
+                          "album.strArtistDisp LIKE '%s'",
+                          strAlbum.c_str(), strArtist.c_str());
+    // run query
+    if (!m_pDS->query(strSQL))
+      return false;
+    int iRowsFound = m_pDS->num_rows();
+    if (iRowsFound > 0)
+      return m_pDS->fv("idAlbum").get_asInt();
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+  }
+  return -1;
+}
+
 int CMusicDatabase::GetAlbumByName(const std::string& strAlbum, const std::vector<std::string>& artist)
 {
   return GetAlbumByName(strAlbum, StringUtils::Join(artist, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator));
