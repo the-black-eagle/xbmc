@@ -43,6 +43,7 @@
 #include "input/Key.h"
 #include "messaging/helpers/DialogHelper.h"
 #include "messaging/helpers/DialogOKHelper.h"
+#include "music/MusicDatabase.h"
 #include "music/infoscanner/MusicInfoScanner.h"
 #include "music/tags/MusicInfoTag.h"
 #include "profiles/ProfileManager.h"
@@ -57,6 +58,7 @@
 #include "utils/XTimeUtils.h"
 #include "utils/log.h"
 #include "video/dialogs/GUIDialogVideoInfo.h"
+#include "video/VideoInfoTag.h"
 #include "view/GUIViewState.h"
 
 #include <algorithm>
@@ -277,8 +279,25 @@ void CGUIWindowMusicBase::OnItemInfo(int iItem)
 
   CFileItemPtr item = m_vecItems->Get(iItem);
 
-  if (item->IsVideo())
-  { // Music video on a mixed current playlist
+  if (item->IsVideo() && item->HasVideoInfoTag() && item->GetVideoInfoTag()->m_type == "actor" &&
+      !item->GetVideoInfoTag()->m_artist.empty())
+  { // Music video artist (navigation by music > music video > artist))
+    CMusicDatabase music_database;
+    if (music_database.Open())
+    {
+      int idArtist = music_database.GetArtistByName(StringUtils::Join(
+          item->GetVideoInfoTag()->m_artist,
+          CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_videoItemSeparator));
+      if (idArtist > -1)
+        CGUIDialogMusicInfo::ShowForArtist(idArtist);
+      music_database.Close();
+    }
+    return;
+  }
+
+  if (item->IsVideo() && item->HasVideoInfoTag() &&
+      item->GetVideoInfoTag()->m_type == MediaTypeMusicVideo)
+  { // Music video on a mixed current playlist or navigation by music > music video > artist > video
     CGUIDialogVideoInfo::ShowFor(*item);
     return;
   }
