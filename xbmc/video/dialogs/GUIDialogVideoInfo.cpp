@@ -34,6 +34,8 @@
 #include "messaging/ApplicationMessenger.h"
 #include "messaging/helpers/DialogOKHelper.h"
 #include "music/MusicDatabase.h"
+#include "music/dialogs/GUIDialogMusicInfo.h"
+#include "music/tags/MusicInfoTag.h"
 #include "profiles/ProfileManager.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/MediaSourceSettings.h"
@@ -620,11 +622,43 @@ void CGUIDialogVideoInfo::DoSearch(std::string& strSearch, CFileItemList& items)
   }
   CGUIWindowVideoBase::AppendAndClearSearchItems(movies, "[" + g_localizeStrings.Get(20391) + "] ", items);
   db.Close();
+  CMusicDatabase music_database;
+  if (!music_database.Open())
+    return;
+  int idArtist = music_database.GetArtistByName(strSearch);
+  if (idArtist > -1)
+  {
+    std::vector<int> albums;
+    music_database.GetAlbumsByArtist(idArtist, albums);
+    for (auto i : albums)
+    {
+      CAlbum album;
+      music_database.GetAlbum(i, album, false);
+      std::map<std::string, std::string> art;
+      music_database.GetArtForItem(album.idAlbum, "album", art);
+      std::string path = StringUtils::Format("musicdb://albums/%ld/", album.idAlbum);
+      CFileItemPtr pItem(new CFileItem(path, album));
+      pItem->SetArt(art);
+      movies.Add(pItem);
+    }
+    for (int i = 0; i < movies.Size(); ++i)
+    {
+      std::string label = movies[i]->GetMusicInfoTag()->GetArtistString() + " - " +
+                          movies[i]->GetMusicInfoTag()->GetAlbum();
+      label += StringUtils::Format(" (%i)", movies[i]->GetMusicInfoTag()->GetYear());
+      movies[i]->SetLabel(label);
+    }
+    CGUIWindowVideoBase::AppendAndClearSearchItems(
+        movies, "[" + g_localizeStrings.Get(36918) + "] ", items);
+  }
+  music_database.Close();
 }
 
 void CGUIDialogVideoInfo::OnSearchItemFound(const CFileItem* pItem)
 {
   VIDEODB_CONTENT_TYPE type = static_cast<VIDEODB_CONTENT_TYPE>(pItem->GetVideoContentType());
+  if (pItem->HasMusicInfoTag())
+    type = VIDEODB_CONTENT_TYPE::VIDEODB_CONTENT_MUSIC_ALBUMS;
 
   CVideoDatabase db;
   if (!db.Open())
@@ -641,6 +675,12 @@ void CGUIDialogVideoInfo::OnSearchItemFound(const CFileItem* pItem)
     db.GetMusicVideoInfo(pItem->GetPath(), movieDetails, pItem->GetVideoInfoTag()->m_iDbId);
   db.Close();
 
+  if (type == VIDEODB_CONTENT_MUSIC_ALBUMS)
+  {
+    Close();
+    CGUIDialogMusicInfo::ShowFor(const_cast<CFileItem*>(pItem));
+    return; // No video info to refresh so just close the window and go back to the fileitem list
+  }
   CFileItem item(*pItem);
   *item.GetVideoInfoTag() = movieDetails;
   SetMovie(&item);
