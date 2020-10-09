@@ -25,6 +25,7 @@
 #include "playlists/PlayList.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/SettingsComponent.h"
+#include "utils/CharsetConverter.h"
 #include "utils/URIUtils.h"
 #include "utils/log.h"
 
@@ -282,6 +283,8 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         value = item->GetProperty("StationName").asString();
         if (value.empty())
           value = tag->GetStationName();
+        if (value.empty())
+          g_charsetConverter.wToUTF8(item->GetSortLabel(), value);
         return true;
 
       /////////////////////////////////////////////////////////////////////////////////////////////
