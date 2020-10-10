@@ -622,6 +622,7 @@ void CGUIDialogVideoInfo::DoSearch(std::string& strSearch, CFileItemList& items)
   }
   CGUIWindowVideoBase::AppendAndClearSearchItems(movies, "[" + g_localizeStrings.Get(20391) + "] ", items);
   db.Close();
+  // Find any music albums by this person/artist and add them to the list
   CMusicDatabase music_database;
   if (!music_database.Open())
     return;
@@ -657,7 +658,7 @@ void CGUIDialogVideoInfo::DoSearch(std::string& strSearch, CFileItemList& items)
 void CGUIDialogVideoInfo::OnSearchItemFound(const CFileItem* pItem)
 {
   VIDEODB_CONTENT_TYPE type = static_cast<VIDEODB_CONTENT_TYPE>(pItem->GetVideoContentType());
-  if (pItem->HasMusicInfoTag())
+  if (pItem->HasMusicInfoTag()) // Only music albums have CMusicInfoTag attached
     type = VIDEODB_CONTENT_TYPE::VIDEODB_CONTENT_MUSIC_ALBUMS;
 
   CVideoDatabase db;
@@ -679,7 +680,7 @@ void CGUIDialogVideoInfo::OnSearchItemFound(const CFileItem* pItem)
   {
     Close();
     CGUIDialogMusicInfo::ShowFor(const_cast<CFileItem*>(pItem));
-    return; // No video info to refresh so just close the window and go back to the fileitem list
+    return; // No video info to refresh so just close the dialog and go back to the fileitem list
   }
   CFileItem item(*pItem);
   *item.GetVideoInfoTag() = movieDetails;
