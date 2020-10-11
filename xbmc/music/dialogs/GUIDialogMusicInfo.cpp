@@ -42,6 +42,7 @@
 #include "utils/ProgressJob.h"
 #include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
+#include "video/VideoInfoTag.h"
 
 using namespace XFILE;
 using namespace MUSIC_INFO;
@@ -983,7 +984,7 @@ void CGUIDialogMusicInfo::ShowFor(CFileItem* pItem)
     StringUtils::StartsWithNoCase(pItem->GetPath(), "musicsearch://"))
     return; // nothing to do
 
-  if (!pItem->m_bIsFolder)
+  if (!pItem->m_bIsFolder && !(pItem->HasVideoInfoTag()))
   { // Show Song information dialog
     CGUIDialogSongInfo::ShowFor(pItem);
     return;
@@ -1019,6 +1020,41 @@ void CGUIDialogMusicInfo::ShowFor(CFileItem* pItem)
             window->RefreshContent("albums");
         }
       }
+    }
+  }
+  if (pItem->HasVideoInfoTag()) // called from video db
+  {
+    if (pItem->GetVideoInfoTag()->m_type == MediaTypeActor)
+    {
+      CMusicDatabase db;
+      if (db.Open())
+      {
+        int idArtist = db.GetArtistByName(StringUtils::Join(
+            pItem->GetVideoInfoTag()->m_artist,
+            CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_videoItemSeparator));
+        if (idArtist > -1)
+          ShowForArtist(idArtist);
+      }
+      db.Close();
+    }
+    else if (pItem->m_bIsFolder && !(pItem->GetVideoInfoTag()->m_type == MediaTypeActor &&
+                                     !(pItem->GetVideoInfoTag()->m_strAlbum.empty()))) // album
+    {
+      CMusicDatabase db;
+      if (db.Open())
+      {
+        int idAlbum =
+            db.GetFirstAlbumByName(pItem->GetVideoInfoTag()->m_strAlbum,
+                                   StringUtils::Join(pItem->GetVideoInfoTag()->m_artist,
+                                                     CServiceBroker::GetSettingsComponent()
+                                                         ->GetAdvancedSettings()
+                                                         ->m_videoItemSeparator));
+        if (idAlbum > -1)
+        {
+          ShowForAlbum(idAlbum);
+        }
+      }
+      db.Close();
     }
   }
 }

@@ -6496,7 +6496,7 @@ bool CVideoDatabase::GetMusicVideoAlbumsNav(const std::string& strBaseDir, CFile
         if (music_db.Open())
         {
           int idMalbum = music_db.GetFirstAlbumByName(idData.front().first, idData.front().second);
-          if (idMalbum > 0)
+          if (idMalbum > -1)
           {
             std::map <std::string, std::string> art;
             music_db.GetArtForItem(idMalbum, "album", art);
@@ -6505,6 +6505,8 @@ bool CVideoDatabase::GetMusicVideoAlbumsNav(const std::string& strBaseDir, CFile
             items[i]->SetArt(art);
             items[i]->GetVideoInfoTag()->SetPlot(album.strReview);
           }
+          items[i]->GetVideoInfoTag()->m_strAlbum = idData.front().first;
+          items[i]->GetVideoInfoTag()->m_type = MediaTypeAlbum;
           idMVideoList.pop_front();
           idData.pop_front();
           music_db.Close();
@@ -6825,6 +6827,7 @@ bool CVideoDatabase::GetPeopleNav(const std::string& strBaseDir, CFileItemList& 
               {
                 db.GetArtist(idArtist, artist);
                 pItem->GetVideoInfoTag()->m_strPlot = artist.strBiography;
+                pItem->GetVideoInfoTag()->m_strPictureURL = artist.thumbURL;
               }
               db.Close();
             }

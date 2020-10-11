@@ -979,10 +979,7 @@ void CGUIWindowVideoNav::GetContextButtons(int itemNumber, CContextButtons &butt
         if (node == NODE_TYPE_ACTOR && !dir.IsAllItem(item->GetPath()) && item->m_bIsFolder)
         {
           if (StringUtils::StartsWithNoCase(m_vecItems->GetPath(), "videodb://musicvideos")) // mvids
-          {
             buttons.Add(CONTEXT_BUTTON_SET_ARTIST_THUMB, 13359);
-            buttons.Add(CONTEXT_BUTTON_INFO, 21891); // Artist information
-          }
           else
             buttons.Add(CONTEXT_BUTTON_SET_ACTOR_THUMB, 20403);
         }

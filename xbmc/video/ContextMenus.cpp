@@ -14,6 +14,7 @@
 #include "filesystem/Directory.h"
 #include "guilib/GUIComponent.h"
 #include "guilib/GUIWindowManager.h"
+#include "music/dialogs/GUIDialogMusicInfo.h"
 #include "playlists/PlayList.h"
 #include "settings/MediaSettings.h"
 #include "utils/URIUtils.h"
@@ -44,6 +45,40 @@ bool CVideoInfo::Execute(const CFileItemPtr& item) const
   return true;
 }
 
+bool CMusicVideoArtistInfo::IsVisible(const CFileItem& item) const
+{
+  if (item.HasVideoInfoTag() && !item.GetVideoInfoTag()->m_artist.empty() &&
+      !item.HasMusicInfoTag() && item.GetVideoInfoTag()->m_strAlbum.empty())
+    return true;
+  return false;
+}
+
+bool CMusicVideoArtistInfo::Execute(const CFileItemPtr& item) const
+{
+  if (!item->GetVideoInfoTag()->m_artist.empty())
+  {
+    CGUIDialogMusicInfo::ShowFor(&*item);
+    return true;
+  }
+  return false;
+}
+
+bool CMusicVideoAlbumInfo::IsVisible(const CFileItem& item) const
+{
+  if(item.HasVideoInfoTag() && item.GetVideoInfoTag()->m_type == MediaTypeAlbum)
+    return true;
+  return false;
+}
+
+bool CMusicVideoAlbumInfo::Execute(const CFileItemPtr& item) const
+{
+  if (!item->GetVideoInfoTag()->m_artist.empty() && !item->GetVideoInfoTag()->m_strAlbum.empty())
+  {
+    CGUIDialogMusicInfo::ShowFor(&*item);
+    return true;
+  }
+  return false;
+}
 bool CRemoveResumePoint::IsVisible(const CFileItem& itemIn) const
 {
   CFileItem item(itemIn.GetItemToPlay());

@@ -44,6 +44,20 @@ struct CMovieInfo : CVideoInfo
   CMovieInfo() : CVideoInfo(MediaTypeMovie) {}
 };
 
+struct CMusicVideoArtistInfo : CVideoInfo
+{
+  CMusicVideoArtistInfo() : CVideoInfo(MediaTypeActor) {}
+  bool IsVisible(const CFileItem& item) const override;
+  bool Execute(const CFileItemPtr& item) const override;
+};
+
+struct CMusicVideoAlbumInfo : CVideoInfo
+{
+  CMusicVideoAlbumInfo() : CVideoInfo(MediaTypeAlbum) {}
+  bool IsVisible(const CFileItem& item) const override;
+  bool Execute(const CFileItemPtr& item) const override;
+};
+
 struct CRemoveResumePoint : CStaticContextMenuAction
 {
   CRemoveResumePoint() : CStaticContextMenuAction(38209) {}

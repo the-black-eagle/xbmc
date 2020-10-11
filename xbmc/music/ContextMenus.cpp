@@ -11,6 +11,7 @@
 #include "guilib/GUIWindowManager.h"
 #include "music/dialogs/GUIDialogMusicInfo.h"
 #include "tags/MusicInfoTag.h"
+#include "video/VideoInfoTag.h"
 
 
 namespace CONTEXTMENU
