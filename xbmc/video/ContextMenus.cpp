@@ -48,7 +48,8 @@ bool CVideoInfo::Execute(const CFileItemPtr& item) const
 bool CMusicVideoArtistInfo::IsVisible(const CFileItem& item) const
 {
   if (item.HasVideoInfoTag() && !item.GetVideoInfoTag()->m_artist.empty() &&
-      !item.HasMusicInfoTag() && item.GetVideoInfoTag()->m_strAlbum.empty())
+      !item.HasMusicInfoTag() && item.GetVideoInfoTag()->m_strAlbum.empty() &&
+      item.GetVideoInfoTag()->m_type == MediaTypeActor)
     return true;
   return false;
 }
