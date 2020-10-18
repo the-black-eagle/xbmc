@@ -6768,7 +6768,7 @@ bool CVideoDatabase::GetPeopleNav(const std::string& strBaseDir, CFileItemList& 
         pItem->GetVideoInfoTag()->m_relevance = i.second.appearances;
         if (idContent == VIDEODB_CONTENT_MUSICVIDEOS)
         {
-          // Get artist bio from music db if available
+          // Get artist bio from music db later if available
           pItem->GetVideoInfoTag()->m_artist.emplace_back(i.second.name);
           pItem->SetProperty("musicvideomediatype", MediaTypeArtist);
         }

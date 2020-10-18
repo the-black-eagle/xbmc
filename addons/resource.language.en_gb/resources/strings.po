@@ -20178,13 +20178,7 @@ msgctxt "#36438"
 msgid "Any repositories"
 msgstr ""
 
-#. Description of settings with label #20473 "Name for a container to hold music videos not associated with an album"
-#: system/settings/settings.xml
-msgctxt "#36439"
-msgid "The category name to use for music videos not associated with an album"
-msgstr ""
-
-#empty strings from id 36440 to 36441
+#empty strings from id 36439 to 36441
 
 #. Description of setting "System -> Audio output -> Volume control steps" with label #1302
 #: system/settings/settings.xml

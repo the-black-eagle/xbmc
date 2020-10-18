@@ -77,7 +77,6 @@ public:
 
     CMusicDatabase database;
     database.Open();
-
     // May only have partially populated music item, so fetch all artist or album data from db
     if (tag.GetType() == MediaTypeArtist)
     {
@@ -1044,5 +1043,4 @@ void CGUIDialogMusicInfo::ShowFor(CFileItem* pItem)
         }
       }
     }
-
 }

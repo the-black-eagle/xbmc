@@ -34,6 +34,8 @@
 #include "messaging/ApplicationMessenger.h"
 #include "messaging/helpers/DialogOKHelper.h"
 #include "music/MusicDatabase.h"
+#include "music/dialogs/GUIDialogMusicInfo.h"
+#include "music/tags/MusicInfoTag.h"
 #include "profiles/ProfileManager.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/MediaSourceSettings.h"
@@ -663,6 +665,12 @@ void CGUIDialogVideoInfo::OnSearchItemFound(const CFileItem* pItem)
   if (type == VIDEODB_CONTENT_MUSICVIDEOS)
     db.GetMusicVideoInfo(pItem->GetPath(), movieDetails, pItem->GetVideoInfoTag()->m_iDbId);
   db.Close();
+  if (type == VIDEODB_CONTENT_MUSICALBUMS)
+  {
+    Close();
+    CGUIDialogMusicInfo::ShowFor(const_cast<CFileItem*>(pItem));
+    return; // No video info to refresh so just close the window and go back to the fileitem list
+  }
 
   CFileItem item(*pItem);
   *item.GetVideoInfoTag() = movieDetails;
