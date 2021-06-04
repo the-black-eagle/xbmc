@@ -431,13 +431,18 @@ void CMusicInfoTag::SetGenre(const std::vector<std::string>& genres, bool bTrim 
 void CMusicInfoTag::SetYear(int year)
 {
   // Parse integer year value into YYYY ISO8601 format (partial) date string
-  // Add century for to 2 digit numbers, 41 -> 1941, 40 -> 2040
+  // Add century to 2 digit numbers, 41 -> 1941, 40 -> 2040
+  // If 3 digits, assume the first digit is a month and drop it (3 digits shouldn't occur generally)
+  // Or, if year starts with zero, take the last two digits as the year and add the century
+  std::string strYear = std::to_string(year);
+  if ((strYear.length() == 3) || (strYear.length() > 3 && strYear.substr(0, 1) == "0"))
+    year = std::stoi(strYear.substr(strYear.length() - 2));
   if (year > 99)
-    SetReleaseDate(StringUtils::Format("{:04}", year));
+    SetReleaseDate(fmt::format("{:04}", year));
   else if (year > 40)
-    SetReleaseDate(StringUtils::Format("{:04}", 19 + year));
-  else  if (year > 0)
-    SetReleaseDate(StringUtils::Format("{:04}", 20 + year));
+    SetReleaseDate(fmt::format("{:04}", 1900 + year));
+  else if (year > 0)
+    SetReleaseDate(fmt::format("{:04}", 2000 + year));
   else
     m_strReleaseDate.clear();
 }
