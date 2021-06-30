@@ -30,6 +30,14 @@ enum StreamFlags
   FLAG_STILL_IMAGES = 0x100000
 };
 
+enum class StreamHdrType
+{
+  HDR_TYPE_NONE,
+  HDR_TYPE_DOLBYVISION,
+  HDR_TYPE_HLG,
+  HDR_TYPE_HDR10
+};
+
 struct StreamInfo
 {
   bool valid = false;
@@ -64,6 +72,7 @@ struct VideoStreamInfo : StreamInfo
   CRect VideoRect;
   std::string stereoMode;
   int angles = 0;
+  StreamHdrType hdrType = StreamHdrType::HDR_TYPE_NONE;
 };
 
 struct ProgramInfo
