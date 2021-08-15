@@ -9,7 +9,7 @@
 #pragma once
 
 #include "ContextMenuItem.h"
-
+#include "MusicDatabase.h"
 
 namespace CONTEXTMENU
 {
@@ -38,4 +38,12 @@ struct CSongInfo : CMusicInfo
   CSongInfo() : CMusicInfo(MediaTypeSong) {}
 };
 
+struct CPlayMusic : IContextMenuItem
+{
+  std::string GetLabel(const CFileItem& item) const override;
+  bool IsVisible(const CFileItem& item) const override;
+  bool Execute(const CFileItemPtr& _item) const override;
+};
 }
+void PlaySong(CFileItem& item);
+void AddItemToPlayList(const CFileItemPtr& pItem, CFileItemList& queuedItems, CMusicDatabase& db);
