@@ -131,6 +131,7 @@ static const translateField fields[] = {
   { "albumstatus",       FieldAlbumStatus,             CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 false, 38081 },
   { "albumduration",     FieldAlbumDuration,           CDatabaseQueryRule::SECONDS_FIELD,  StringValidation::IsTime,             false, 180 },
   { "hdrtype",           FieldHdrType,                 CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 false, 20474 },
+  { "isaudiobook",       FieldIsAudioBook,             CDatabaseQueryRule::BOOLEAN_FIELD,  NULL,                                 false, 39032 },
 };
 // clang-format on
 
@@ -369,6 +370,7 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
     fields.push_back(FieldDateAdded);
     fields.push_back(FieldDateModified);
     fields.push_back(FieldDateNew);
+    fields.push_back(FieldIsAudioBook);
   }
   else if (type == "artists")
   {
@@ -807,6 +809,8 @@ std::string CSmartPlaylistRule::GetBooleanQuery(const std::string &negate, const
       return negate + GetField(m_field, strType);
     if (m_field == FieldIsBoxset)
       return negate + "albumview.bBoxedSet = 1";
+    if (m_field == FieldIsAudioBook)
+      return negate + "albumview.strReleaseType = 'audiobook'";
   }
   return "";
 }

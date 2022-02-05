@@ -891,9 +891,12 @@ bool CGUIWindowMusicBase::CanContainFilter(const std::string &strDirectory) cons
 bool CGUIWindowMusicBase::OnSelect(int iItem)
 {
   auto item = m_vecItems->Get(iItem);
-  if (item->IsAudioBook())
-  {
-    int bookmark;
+  int bookmark;
+
+  if (item->IsAudioBook() ||
+      (item->HasMusicInfoTag() &&
+       item->GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook && !item->m_bIsFolder))
+  { // m4b chaptered audiobooks
     if (m_musicdatabase.GetResumeBookmarkForAudioBook(*item, bookmark) && bookmark > 0)
     {
       // find which chapter the bookmark belongs to
@@ -915,6 +918,25 @@ bool CGUIWindowMusicBase::OnSelect(int iItem)
         {
           (*itemIt)->SetProperty("audiobook_bookmark", bookmark);
           return CGUIMediaWindow::OnSelect(static_cast<int>(itemIt - m_vecItems->cbegin()));
+        }
+        else if (choice < 0)
+          return true;
+      } // mp3/flac/other audiobook based on each file = 1 chapter
+      else if (item->GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
+      {
+        auto resume_item = m_vecItems->Get(bookmark);
+        CContextButtons choices;
+        choices.Add(MUSIC_SELECT_ACTION_PLAY, 208); // 208 = Play
+        choices.Add(MUSIC_SELECT_ACTION_RESUME,
+                    StringUtils::Format(g_localizeStrings.Get(12022), // 12022 = Resume from ...
+                                        resume_item->GetMusicInfoTag()->GetTitle()));
+
+        auto choice = CGUIDialogContextMenu::Show(choices);
+        if (choice == MUSIC_SELECT_ACTION_RESUME)
+        {
+          if (resume_item->GetMusicInfoTag()->GetAlbumReleaseType() != CAlbum::Audiobook)
+            resume_item->SetProperty("audiobook_bookmark", bookmark);
+          return CGUIMediaWindow::OnSelect(bookmark);
         }
         else if (choice < 0)
           return true;

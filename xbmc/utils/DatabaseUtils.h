@@ -151,6 +151,7 @@ typedef enum
   FieldHdrType,
   FieldProvider,
   FieldUserPreference,
+  FieldIsAudioBook,
   FieldMax
 } Field;
 

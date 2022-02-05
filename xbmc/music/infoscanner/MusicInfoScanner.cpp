@@ -36,6 +36,7 @@
 #include "guilib/GUIWindowManager.h"
 #include "guilib/LocalizeStrings.h"
 #include "interfaces/AnnouncementManager.h"
+#include "music/Album.h"
 #include "music/MusicLibraryQueue.h"
 #include "music/MusicThumbLoader.h"
 #include "music/MusicUtils.h"
@@ -583,14 +584,14 @@ CInfoScanner::INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items,
     m_currentItem++;
 
     CMusicInfoTag& tag = *pItem->GetMusicInfoTag();
-    std::string orig_title = "";
+    std::string chapter_title = "";
     int iDuration = 0;
     if (pItem->IsAudioBook())
     { // save these values from CAudioBookFileDirectory.cpp and overwrite the tag from taglib with
       // them. SetLoaded to false so we call taglib otherwise we only get a very basic set of tags
       // CAudioBookFileDirectory.cpp needs to set SetLoaded to true otherwise browsing via files
       // does not work correctly.
-      orig_title = pItem->GetMusicInfoTag()->GetTitle();
+      chapter_title = pItem->GetMusicInfoTag()->GetTitle();
       iDuration = pItem->GetMusicInfoTag()->GetDuration();
       pItem->GetMusicInfoTag()->SetLoaded(false);
     }
@@ -601,12 +602,13 @@ CInfoScanner::INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items,
         pLoader->Load(pItem->GetPath(), tag);
       if(pItem->IsAudioBook())
       {
-        if (!orig_title.empty())
-          pItem->GetMusicInfoTag()->SetTitle(orig_title);// Chapter name from original tag
+        if (!chapter_title.empty())
+          pItem->GetMusicInfoTag()->SetTitle(chapter_title);// Chapter name from original tag
         pItem->GetMusicInfoTag()->SetDuration(iDuration);// duration from original tag
         // fixup the correct track number (one track, with multiple chapters split into tracks)
         pItem->GetMusicInfoTag()->SetTrackNumber(i + 1);
         pItem->GetMusicInfoTag()->SetLoaded(true);
+        pItem->GetMusicInfoTag()->SetAlbumReleaseType(CAlbum::Audiobook);
       }
     }
 

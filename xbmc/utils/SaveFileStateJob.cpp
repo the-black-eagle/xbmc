@@ -223,11 +223,15 @@ void CSaveFileState::DoWork(CFileItem& item,
         }
       }
 
-      if (item.IsAudioBook())
+      if (item.IsAudioBook() || item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
       {
         musicdatabase.Open();
-        musicdatabase.SetResumeBookmarkForAudioBook(
-            item, item.GetStartOffset() + CUtil::ConvertSecsToMilliSecs(bookmark.timeInSeconds));
+        if (item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
+          musicdatabase.SetResumeBookmarkForAudioBook(item,
+                                                      item.GetMusicInfoTag()->GetTrackNumber());
+        else
+          musicdatabase.SetResumeBookmarkForAudioBook(
+              item, item.m_lStartOffset + CUtil::ConvertSecsToMilliSecs(bookmark.timeInSeconds));
         musicdatabase.Close();
       }
     }
