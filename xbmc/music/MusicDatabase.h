@@ -167,6 +167,8 @@ public:
               int iBitRate,
               int iSampleRate,
               int iChannels,
+              int iBitsPerSample,
+              const std::string& strCodec,
               const std::string& songVideoURL,
               const ReplayGain& replayGain);
   bool GetSong(int idSong, CSong& song);
@@ -206,6 +208,8 @@ public:
    \param iBPM [in] the beats per minute of a song
    \param iBitRate [in] the bitrate of the song file
    \param iSampleRate [in] the sample rate of the song file
+   \param iBitsPerSample [in] the bitspersample of the song file or zero if not supported
+   \param strCodec [in] name of the codec used or empty string if unknown
    \param iChannels [in] the number of audio channels in the song file
    \param songVideoURL [in] url link to a video of the song
    \return the id of the song
@@ -237,6 +241,8 @@ public:
                  int iBitRate,
                  int iSampleRate,
                  int iChannels,
+                 int iBitsPerSample,
+                 const std::string& strCodec,
                  const std::string& songVideoURL);
 
   //// Misc Song
@@ -1017,6 +1023,8 @@ private:
     song_iBPM,
     song_iBitRate,
     song_iSampleRate,
+    song_iBitsPerSample,
+    song_strCodec,
     song_iChannels,
     song_songVideoURL,
     song_iAlbumDuration,
