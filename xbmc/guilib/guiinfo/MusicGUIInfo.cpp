@@ -344,6 +344,20 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         }
         break;
       }
+      case LISTITEM_MUSIC_BITSPERSAMPLE:
+      {
+        int bitsPerSample = tag->GetBitsPerSample();
+        if (bitsPerSample > 0)
+        {
+          value = std::to_string(bitsPerSample);
+          return true;
+        }
+        break;
+      }
+      case LISTITEM_MUSIC_CODEC:
+        value = tag->GetCodec();
+        return true;
+
       case LISTITEM_ALBUMSTATUS:
         value = tag->GetAlbumReleaseStatus();
         return true;

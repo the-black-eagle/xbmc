@@ -6718,6 +6718,22 @@ const infomap container_str[]  = {{ "property",         CONTAINER_PROPERTY },
 ///     <p><hr>
 ///     @skinning_v20 **[New Infolabel]** \link ListItem_HdrType `ListItem.HdrType`\endlink
 ///   }
+///   \table_row3{   <b>`ListItem.MusicBitsPerSample`</b>,
+///                  \anchor ListItem_MusicBitsPerSample
+///                  _string_,
+///     @return The bits per sample of a song or empty string if not valid.
+///     <p><hr>
+///     @skinning_v20 **[New Infolabel]** \link ListItem_MusicBitsPerSample `ListItem.MusicBitsPerSample`\endlink
+///     <p>
+///   }
+///   \table_row3{   <b>`ListItem.MusicCodec`</b>,
+///                  \anchor ListItem_MusicCodec
+///                  _string_,
+///     @return The codec of a song or empty string if unknown.
+///     <p><hr>
+///     @skinning_v20 **[New Infolabel]** \link ListItem_MusicCodec `ListItem.MusicCodec`\endlink
+///     <p>
+///   }
 /// \table_end
 ///
 /// -----------------------------------------------------------------------------
@@ -6930,6 +6946,8 @@ const infomap listitem_labels[]= {{ "thumb",            LISTITEM_THUMB },
                                   { "albumstatus",      LISTITEM_ALBUMSTATUS },
                                   { "isautoupdateable", LISTITEM_ISAUTOUPDATEABLE },
                                   { "hdrtype",          LISTITEM_VIDEO_HDR_TYPE },
+                                  { "musicbitspersample", LISTITEM_MUSIC_BITSPERSAMPLE },
+                                  { "musiccodec",       LISTITEM_MUSIC_CODEC },
 };
 
 /// \page modules__infolabels_boolean_conditions

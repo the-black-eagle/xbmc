@@ -1293,37 +1293,88 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   Ogg::XiphComment *xiph = nullptr;
   Tag *genericTag = nullptr;
 
+  //bitspersample is a file specific implementation in taglib and not available through
+  //file->audioProperties()
+  unsigned int bitsPerSample = 0;
+  int mpegLayer = 0;
+  std::string codec;
+
   if (apeFile)
+  {
     ape = apeFile->APETag(false);
+    bitsPerSample = apeFile->audioProperties()->bitsPerSample();
+    codec = CodecToString(MusicCodecType::CODEC_TYPE_APE);
+  }
   else if (asfFile)
+  {
     asf = asfFile->tag();
+    bitsPerSample = asfFile->audioProperties()->bitsPerSample();
+    codec = asfFile->audioProperties()->codecName().to8Bit(true);
+  }
   else if (flacFile)
   {
     xiph = flacFile->xiphComment(false);
+    bitsPerSample = flacFile->audioProperties()->bitsPerSample();
     id3v2 = flacFile->ID3v2Tag(false);
+    codec = CodecToString(MusicCodecType::CODEC_TYPE_FLAC);
   }
   else if (mp4File)
+  {
     mp4 = mp4File->tag();
+    bitsPerSample = mp4File->audioProperties()->bitsPerSample();
+    if (mp4File->audioProperties()->codec() != 0)
+      codec = (mp4File->audioProperties()->codec() == 1) ? CodecToString(MusicCodecType::CODEC_TYPE_AAC)
+                                                         : CodecToString(MusicCodecType::CODEC_TYPE_ALAC);
+  }
   else if (mpegFile)
   {
     id3v1 = mpegFile->ID3v1Tag(false);
     id3v2 = mpegFile->ID3v2Tag(false);
     ape = mpegFile->APETag(false);
+    mpegLayer = mpegFile->audioProperties()->layer();
+    codec = CodecToString(MusicCodecType::CODEC_TYPE_MPEG) + std::to_string(mpegLayer);
   }
   else if (oggFlacFile)
+  {
     xiph = oggFlacFile->tag();
+    bitsPerSample = oggFlacFile->audioProperties()->bitsPerSample();
+    codec = CodecToString(MusicCodecType::CODEC_TYPE_FLAC);
+  }
   else if (oggVorbisFile)
+  {
     xiph = oggVorbisFile->tag();
+    codec = CodecToString(MusicCodecType::CODEC_TYPE_VORBIS);
+  }
   else if (oggOpusFile)
+  {
     xiph = oggOpusFile->tag();
+    codec = CodecToString(MusicCodecType::CODEC_TYPE_OPUS);
+  }
   else if (ttaFile)
+  {
     id3v2 = ttaFile->ID3v2Tag(false);
+    bitsPerSample = ttaFile->audioProperties()->bitsPerSample();
+    codec = CodecToString(MusicCodecType::CODEC_TYPE_TTA);
+  }
   else if (aiffFile)
+  {
     id3v2 = aiffFile->tag();
+    bitsPerSample = aiffFile->audioProperties()->bitsPerSample();
+    codec = aiffFile->audioProperties()->compressionName().to8Bit(true);
+  }
   else if (wavFile)
+  {
     id3v2 = wavFile->ID3v2Tag();
+    bitsPerSample = wavFile->audioProperties()->bitsPerSample();
+    if (wavFile->audioProperties()->format() != 0)
+      codec = CodecToString(MusicCodecType::CODEC_TYPE_WAV);
+  }
   else if (wvFile)
+  {
     ape = wvFile->APETag(false);
+    bitsPerSample = wvFile->audioProperties()->bitsPerSample();
+    codec = CodecToString(MusicCodecType::CODEC_TYPE_WAVPACK);
+  }
   else if (mpcFile)
     ape = mpcFile->APETag(false);
   else    // This is a catch all to get generic information for other files types (s3m, xm, it, mod, etc)
@@ -1336,6 +1387,11 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
     tag.SetNoOfChannels(file->audioProperties()->channels());
     tag.SetSampleRate(file->audioProperties()->sampleRate());
   }
+
+  if(bitsPerSample)
+    tag.SetBitsPerSample(bitsPerSample);
+  if (!codec.empty())
+    tag.SetCodec(codec);
 
   if (asf)
     ParseTag(asf, art, tag);
@@ -1364,4 +1420,33 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   delete stream;
 
   return true;
+}
+
+std::string CodecToString(const MusicCodecType& codecType)
+{
+  switch(codecType)
+  {
+    case MusicCodecType::CODEC_TYPE_AAC:
+      return "aac";
+    case MusicCodecType::CODEC_TYPE_ALAC:
+      return "alac";
+    case MusicCodecType::CODEC_TYPE_APE:
+      return "ape";
+    case MusicCodecType::CODEC_TYPE_FLAC:
+      return "flac";
+    case MusicCodecType::CODEC_TYPE_MPEG:
+      return "mp"; // layer is added to the return value to make mp2/mp3
+    case MusicCodecType::CODEC_TYPE_OPUS:
+      return "opus";
+    case MusicCodecType::CODEC_TYPE_TTA:
+      return "tta";
+    case MusicCodecType::CODEC_TYPE_VORBIS:
+      return "vorbis";
+    case MusicCodecType::CODEC_TYPE_WAV:
+      return "pcm";
+    case MusicCodecType::CODEC_TYPE_WAVPACK:
+      return "wavpack";
+    default:
+      return "";
+  }
 }
