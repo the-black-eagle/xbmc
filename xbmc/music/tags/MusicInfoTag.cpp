@@ -296,6 +296,16 @@ int CMusicInfoTag::GetNoOfChannels() const
   return m_channels;
 }
 
+int CMusicInfoTag::GetBitsPerSample() const
+{
+  return m_bitsPerSample;
+}
+
+const std::string& CMusicInfoTag::GetCodec() const
+{
+  return m_codec;
+}
+
 const std::string& CMusicInfoTag::GetReleaseDate() const
 {
   return m_strReleaseDate;
@@ -537,6 +547,16 @@ void CMusicInfoTag::SetNoOfChannels(int channels)
 void CMusicInfoTag::SetSampleRate(int samplerate)
 {
   m_samplerate = samplerate;
+}
+
+void CMusicInfoTag::SetBitsPerSample(int bitspersample)
+{
+  m_bitsPerSample = bitspersample;
+}
+
+void CMusicInfoTag::SetCodec(const std::string& codec)
+{
+  m_codec = codec;
 }
 
 void CMusicInfoTag::SetComment(const std::string& comment)
@@ -892,8 +912,9 @@ void CMusicInfoTag::SetSong(const CSong& song)
   SetBitRate(song.iBitRate);
   SetSampleRate(song.iSampleRate);
   SetNoOfChannels(song.iChannels);
+  SetBitsPerSample(song.iBitsPerSample);
+  SetCodec(song.strCodec);
   SetSongVideoURL(song.songVideoURL);
-
   if (song.replayGain.Get(ReplayGain::TRACK).Valid())
     m_replayGain.Set(ReplayGain::TRACK, song.replayGain.Get(ReplayGain::TRACK));
   if (song.replayGain.Get(ReplayGain::ALBUM).Valid())
@@ -981,8 +1002,9 @@ void CMusicInfoTag::Serialize(CVariant& value) const
   value["bitrate"] = m_bitrate;
   value["samplerate"] = m_samplerate;
   value["channels"] = m_channels;
-  value["songvideourl"] = m_songVideoURL;
-}
+  value["bitspersample"] = m_bitsPerSample;
+  value["codec"] = m_codec;
+  value["songvideourl"] = m_songVideoURL;}
 
 void CMusicInfoTag::ToSortable(SortItem& sortable, Field field) const
 {
@@ -1083,6 +1105,8 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar << m_samplerate;
     ar << m_bitrate;
     ar << m_channels;
+    ar << m_bitsPerSample;
+    ar << m_codec;
     ar << m_songVideoURL;
   }
   else
@@ -1151,6 +1175,8 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar >> m_samplerate;
     ar >> m_bitrate;
     ar >> m_channels;
+    ar >> m_bitsPerSample;
+    ar >> m_codec;
     ar >> m_songVideoURL;
   }
 }
@@ -1205,6 +1231,8 @@ void CMusicInfoTag::Clear()
   m_samplerate = 0;
   m_bitrate = 0;
   m_channels = 0;
+  m_bitsPerSample = 0;
+  m_codec.clear();
   m_stationName.clear();
   m_stationArt.clear();
   m_songVideoURL.clear();
