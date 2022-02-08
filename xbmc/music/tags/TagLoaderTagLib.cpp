@@ -1402,7 +1402,6 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   if (haveInfo) // use data from FFmpeg if taglib data missing or not accurate
   {
     tag.SetBitRate(codec_info.bitRate);
-    tag.SetNoOfChannels(codec_info.channels);
     tag.SetSampleRate(codec_info.sampleRate);
     tag.SetBitsPerSample(codec_info.bitsPerSample);
     tag.SetCodec(codec_info.codecName);
