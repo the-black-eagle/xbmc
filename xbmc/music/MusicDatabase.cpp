@@ -1312,8 +1312,8 @@ int CMusicDatabase::UpdateSong(int idSong,
                                int iBPM,
                                int iBitRate,
                                int iSampleRate,
-                               int iBitsPerSample,
                                int iChannels,
+                               int iBitsPerSample,
                                const std::string& strCodec,
                                const std::string& songVideoURL)
 {
