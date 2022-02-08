@@ -57,6 +57,29 @@
 #include <taglib/wavpackfile.h>
 #include <taglib/xiphcomment.h>
 #include <taglib/xmfile.h>
+#include <taglib/mp4tag.h>
+
+#include <taglib/textidentificationframe.h>
+#include <taglib/uniquefileidentifierframe.h>
+#include <taglib/popularimeterframe.h>
+#include <taglib/commentsframe.h>
+#include <taglib/unsynchronizedlyricsframe.h>
+#include <taglib/attachedpictureframe.h>
+
+#include <taglib/tstring.h>
+#include <taglib/tpropertymap.h>
+
+#include "TagLibVFSStream.h"
+#include "MusicInfoTag.h"
+#include "MusicInfoFFmpeg.h"
+#include "ReplayGain.h"
+#include "utils/RegExp.h"
+#include "utils/URIUtils.h"
+#include "utils/log.h"
+#include "utils/StringUtils.h"
+#include "ServiceBroker.h"
+#include "settings/AdvancedSettings.h"
+#include "settings/SettingsComponent.h"
 
 #if TAGLIB_MAJOR_VERSION <= 1 && TAGLIB_MINOR_VERSION < 11
 #include "utils/Base64.h"
@@ -1321,7 +1344,9 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   //file->audioProperties()
   unsigned int bitsPerSample = 0;
   int mpegLayer = 0;
+  fileInfo codec_info;
   std::string codec;
+  bool haveInfo = false;
 
   if (apeFile)
   {
@@ -1347,8 +1372,9 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
     mp4 = mp4File->tag();
     bitsPerSample = mp4File->audioProperties()->bitsPerSample();
     if (mp4File->audioProperties()->codec() != 0)
-      codec = (mp4File->audioProperties()->codec() == 1) ? CodecToString(MusicCodecType::CODEC_TYPE_AAC)
-                                                         : CodecToString(MusicCodecType::CODEC_TYPE_ALAC);
+      codec = (mp4File->audioProperties()->codec() == 1)
+                  ? CodecToString(MusicCodecType::CODEC_TYPE_AAC)
+                  : CodecToString(MusicCodecType::CODEC_TYPE_ALAC);
   }
   else if (mpegFile)
   {
@@ -1389,9 +1415,8 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   else if (wavFile)
   {
     id3v2 = wavFile->ID3v2Tag();
-    bitsPerSample = wavFile->audioProperties()->bitsPerSample();
-    if (wavFile->audioProperties()->format() != 0)
-      codec = CodecToString(MusicCodecType::CODEC_TYPE_WAV);
+    // taglib can't reliably detect some codecs in wrapped wav files so use ffmpeg in this case
+    haveInfo = CMusicInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
   }
   else if (wvFile)
   {
@@ -1418,8 +1443,20 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
 
   if(bitsPerSample)
     tag.SetBitsPerSample(bitsPerSample);
+  else if (!mpegFile) // skip mp3 files as no bitspersample available but check other filetypes as
+                      // taglib returns the wrong bitrate for at least vorbis files
+    haveInfo = CMusicInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
   if (!codec.empty())
     tag.SetCodec(codec);
+
+  if (haveInfo) // use data from FFmpeg if taglib data missing or not accurate
+  {
+    tag.SetBitRate(codec_info.bitRate);
+    tag.SetNoOfChannels(codec_info.channels);
+    tag.SetSampleRate(codec_info.sampleRate);
+    tag.SetBitsPerSample(codec_info.bitsPerSample);
+    tag.SetCodec(codec_info.codecName);
+  }
 
   if (asf)
     ParseTag(asf, art, tag);
@@ -1470,8 +1507,6 @@ std::string CodecToString(const MusicCodecType& codecType)
       return "tta";
     case MusicCodecType::CODEC_TYPE_VORBIS:
       return "vorbis";
-    case MusicCodecType::CODEC_TYPE_WAV:
-      return "pcm";
     case MusicCodecType::CODEC_TYPE_WAVPACK:
       return "wavpack";
     default:
