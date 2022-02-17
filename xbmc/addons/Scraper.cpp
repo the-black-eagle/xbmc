@@ -825,11 +825,11 @@ void DetailsFromFileItem<CArtist>(const CFileItem &item, CArtist &artist)
   {
     std::stringstream prefix;
     prefix << "artist.videolink" << i + 1;
-    CArtistVideoLinks videoLink;
-    videoLink.strTitle = FromString(item, prefix.str() + ".title");
-    videoLink.strMBTrackID = FromString(item, prefix.str() + ".mbtrackid");
-    videoLink.strURL = FromString(item, prefix.str() + ".url");
-    videoLink.strThumbURL = FromString(item, prefix.str() + ".thumb");
+    ArtistVideoLinks videoLink;
+    videoLink.title = FromString(item, prefix.str() + ".title");
+    videoLink.mbTrackID = FromString(item, prefix.str() + ".mbtrackid");
+    videoLink.videoURL = FromString(item, prefix.str() + ".url");
+    videoLink.thumbURL = FromString(item, prefix.str() + ".thumb");
     artist.videolinks.emplace_back(std::move(videoLink));
   }
 

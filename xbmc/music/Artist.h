@@ -29,13 +29,13 @@ public:
   std::string strReleaseGroupMBID;
 };
 
-class CArtistVideoLinks
+struct ArtistVideoLinks
 {
 public:
-  std::string strTitle;
-  std::string strMBTrackID;
-  std::string strURL;
-  std::string strThumbURL;
+  std::string title;
+  std::string mbTrackID;
+  std::string videoURL;
+  std::string thumbURL;
 };
 
 class CArtist
@@ -127,7 +127,7 @@ public:
   CDateTime dateNew;  // Time db record created
   bool bScrapedMBID = false;
   std::string strLastScraped;
-  std::vector<CArtistVideoLinks> videolinks;
+  std::vector<ArtistVideoLinks> videolinks;
 };
 
 class CArtistCredit

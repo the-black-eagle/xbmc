@@ -86,7 +86,6 @@ public:
   const std::string& GetStationName() const;
   const std::string& GetStationArt() const;
   const std::string& GetSongVideoURL() const;
-  const std::string& GetSongVideoThumb() const;
   const EmbeddedArtInfo &GetCoverArtInfo() const;
   const ReplayGain& GetReplayGain() const;
   CAlbum::ReleaseType GetAlbumReleaseType() const;
@@ -159,8 +158,7 @@ public:
   void SetAlbumReleaseStatus(const std::string& strReleaseStatus);
   void SetStationName(const std::string& strStationName); // name of online radio station
   void SetStationArt(const std::string& strStationArt);
-  void SetSongVideoURL(const std::string& strSongVideoURL); // youtube link to video of song
-  void SetSongVideoThumb(const std::string& strSongVideoThumb); // thumb of song video
+  void SetSongVideoURL(const std::string& strSongVideoURL); // link to video of song
 
   /*! \brief Append a unique artist to the artist list
    Checks if we have this artist already added, and if not adds it to the songs artist list.
@@ -259,8 +257,7 @@ protected:
   int m_bitrate;
   std::string m_stationName;
   std::string m_stationArt; // Used to fetch thumb URL for Shoutcasts
-  std::string m_strSongVideoURL; // youtube link to a video for a song
-  std::string m_strSongVideoThumb; // thumb for song video
+  std::string m_songVideoURL; // link to a video for a song
 
   EmbeddedArtInfo m_coverArt; ///< art information
 

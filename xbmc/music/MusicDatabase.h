@@ -141,7 +141,6 @@ public:
    \param userrating [in] a userrating (my rating) for the song
    \param votes [in] a vote counter for the song rating
    \param strSongvideoURL [in] url to video of the song
-   \param strSongVideoThumb [in] url to thumb of song video
    \param replayGain [in] album and track replaygain and peak values
    \return the id of the song
    */
@@ -173,8 +172,7 @@ public:
               int iBitRate,
               int iSampleRate,
               int iChannels,
-              const std::string& strSongVideoURL,
-              const std::string& strSongVideoThumb,
+              const std::string& songVideoURL,
               const ReplayGain& replayGain);
   bool GetSong(int idSong, CSong& song);
 
@@ -215,7 +213,6 @@ public:
    \param iSampleRate [in] the sample rate of the song file
    \param iChannels [in] the number of audio channels in the song file
    \param strSongVideoURL [in] url link to a video of the song
-   \param strSongVideoThumb [in] thumb for link to video of song
    \return the id of the song
    */
   int UpdateSong(int idSong,
@@ -245,8 +242,7 @@ public:
                  int iBitRate,
                  int iSampleRate,
                  int iChannels,
-                 const std::string& strSongVideoURL,
-                 const std::string& strSongVideoThumb);
+                 const std::string& songVideoURL);
 
   //// Misc Song
   bool GetSongByFileName(const std::string& strFileName, CSong& song, int64_t startOffset = 0);
@@ -1027,7 +1023,7 @@ private:
     song_iBitRate,
     song_iSampleRate,
     song_iChannels,
-    song_strSongVideoURL,
+    song_songVideoURL,
     song_iAlbumDuration,
     song_iDiscTotal,
     song_dateAdded,

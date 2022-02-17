@@ -142,11 +142,11 @@ bool CArtist::Load(const TiXmlElement *artist, bool append, bool prioritise)
   {
     if (songurls->FirstChild())
     {
-      CArtistVideoLinks videoLink;
-      XMLUtils::GetString(songurls, "title", videoLink.strTitle);
-      XMLUtils::GetString(songurls, "musicbrainztrackid", videoLink.strMBTrackID);
-      XMLUtils::GetString(songurls, "url", videoLink.strURL);
-      XMLUtils::GetString(songurls, "thumburl", videoLink.strThumbURL);
+      ArtistVideoLinks videoLink;
+      XMLUtils::GetString(songurls, "title", videoLink.title);
+      XMLUtils::GetString(songurls, "musicbrainztrackid", videoLink.mbTrackID);
+      XMLUtils::GetString(songurls, "url", videoLink.videoURL);
+      XMLUtils::GetString(songurls, "thumburl", videoLink.thumbURL);
       videolinks.emplace_back(std::move(videoLink));
     }
     songurls = songurls->NextSiblingElement("videourl");
@@ -242,10 +242,10 @@ bool CArtist::Save(TiXmlNode *node, const std::string &tag, const std::string& s
   {
     TiXmlElement videolinkElement("videourl");
     TiXmlNode* node = artist->InsertEndChild(videolinkElement);
-    XMLUtils::SetString(node, "title", it.strTitle);
-    XMLUtils::SetString(node, "musicbrainztrackid", it.strMBTrackID);
-    XMLUtils::SetString(node, "url", it.strURL);
-    XMLUtils::SetString(node, "thumburl", it.strThumbURL);
+    XMLUtils::SetString(node, "title", it.title);
+    XMLUtils::SetString(node, "musicbrainztrackid", it.mbTrackID);
+    XMLUtils::SetString(node, "url", it.videoURL);
+    XMLUtils::SetString(node, "thumburl", it.thumbURL);
   }
 
   return true;

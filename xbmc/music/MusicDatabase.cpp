@@ -771,7 +771,7 @@ bool CMusicDatabase::AddAlbum(CAlbum& album, int idSource)
                            song->userrating, //
                            song->votes, //
                            song->iBPM, song->iBitRate, song->iSampleRate, song->iChannels, //
-                           song->strSongVideoURL, song->strSongVideoThumb, //
+                           song->songVideoURL, //
                            song->replayGain);
 
     // Song must have at least one artist so set artist to [Missing]
@@ -1022,8 +1022,7 @@ int CMusicDatabase::AddSong(const int idSong,
                             int iBitRate,
                             int iSampleRate,
                             int iChannels,
-                            const std::string& strSongVideoURL,
-                            const std::string& strSongVideoThumb,
+                            const std::string& songVideoURL,
                             const ReplayGain& replayGain)
 {
   int idNew = -1;
@@ -1151,7 +1150,7 @@ int CMusicDatabase::AddSong(const int idSong,
                  dtLastPlayed, //
                  rating, userrating, votes, //
                  replayGain, //
-                 iBPM, iBitRate, iSampleRate, iChannels, strSongVideoURL, strSongVideoThumb);
+                 iBPM, iBitRate, iSampleRate, iChannels, songVideoURL);
     }
     if (!strThumb.empty())
       SetArtForItem(idNew, MediaTypeSong, "thumb", strThumb);
@@ -1244,7 +1243,7 @@ bool CMusicDatabase::UpdateSong(CSong& song, bool bArtists /*= true*/, bool bArt
                           song.rating, song.userrating, song.votes, //
                           song.replayGain, //
                           song.iBPM, song.iBitRate, song.iSampleRate, song.iChannels, //
-                          song.strSongVideoURL, song.strSongVideoThumb);
+                          song.songVideoURL);
   if (result < 0)
     return false;
 
@@ -1304,8 +1303,7 @@ int CMusicDatabase::UpdateSong(int idSong,
                                int iBitRate,
                                int iSampleRate,
                                int iChannels,
-                               const std::string& strSongVideoURL,
-                               const std::string& strSongVideoThumb)
+                               const std::string& songVideoURL)
 {
   if (idSong < 0)
     return -1;
@@ -1335,7 +1333,7 @@ int CMusicDatabase::UpdateSong(int idSong,
           .c_str(),
       strTitle.c_str(), iTrack, iDuration, strRelease.c_str(), strOriginal.c_str(),
       strDiscSubtitle.c_str(), strFileName.c_str(), iBPM, iBitRate, iSampleRate, iChannels,
-      strDateMedia.c_str(), strSongVideoURL.c_str());
+      strDateMedia.c_str(), songVideoURL.c_str());
   if (strMusicBrainzTrackID.empty())
     strSQL += PrepareSQL(", strMusicBrainzTrackID = NULL");
   else
@@ -1361,9 +1359,6 @@ int CMusicDatabase::UpdateSong(int idSong,
   strSQL += PrepareSQL("WHERE idSong = %i", idSong);
 
   bool status = ExecuteQuery(strSQL);
-
-  if (!strSongVideoThumb.empty())
-    SetArtForItem(idSong, MediaTypeSong, "videothumb", strSongVideoThumb.c_str());
 
   if (status)
     AnnounceUpdate(MediaTypeSong, idSong);
@@ -2075,7 +2070,7 @@ bool CMusicDatabase::GetArtist(int idArtist, CArtist& artist, bool fetchAll /* =
       m_pDS->close();
       return false;
     }
-
+    strSQL2 = strSQL + " - ";
     int discographyOffset = artist_enumCount;
 
     artist.discography.clear();
@@ -2098,23 +2093,23 @@ bool CMusicDatabase::GetArtist(int idArtist, CArtist& artist, bool fetchAll /* =
     artist.videolinks.clear();
     if (fetchAll)
     {
-      strSQL = PrepareSQL(
-          "select idSong, strTitle, strMusicBrainzTrackID, strVideoURL from song join album_artist "
-          "on song.idAlbum = album_artist.idAlbum where album_artist.idArtist = %i AND "
-          "song.strVideoURL is not NULL GROUP by song.strVideoURL order by idSong",
+      strSQL = PrepareSQL("SELECT idSong, strTitle, strMusicBrainzTrackID, strVideoURL, url "
+                          "FROM song JOIN album_artist ON song.idAlbum = album_artist.idAlbum "
+                          "LEFT JOIN art ON art.media_id = song.idSong AND art.type = 'videothumb' "
+                          "WHERE album_artist.idArtist = %i AND "
+                          "song.strVideoURL is not NULL GROUP by song.strVideoURL ORDER BY idSong",
           idArtist);
+      strSQL2 += strSQL;
       m_pDS->query(strSQL);
       while (!m_pDS->eof())
       {
         const dbiplus::sql_record* const record = m_pDS->get_sql_record();
-        CArtistVideoLinks videoLink;
-        videoLink.strTitle = record->at(1).get_asString();
-        videoLink.strMBTrackID = record->at(2).get_asString();
-        videoLink.strURL = record->at(3).get_asString();
-        std::string sql =
-            PrepareSQL("SELECT url FROM art WHERE art.media_id = %i AND art.type = 'videothumb'",
-                       record->at(0).get_asInt());
-        videoLink.strThumbURL = GetSingleValue(sql, m_pDS2);
+        ArtistVideoLinks videoLink;
+        videoLink.title = record->at(1).get_asString();
+        videoLink.mbTrackID = record->at(2).get_asString();
+        videoLink.videoURL = record->at(3).get_asString();
+        videoLink.thumbURL = record->at(4).get_asString();
+
         artist.videolinks.emplace_back(std::move(videoLink));
         m_pDS->next();
       }
@@ -2124,9 +2119,7 @@ bool CMusicDatabase::GetArtist(int idArtist, CArtist& artist, bool fetchAll /* =
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-    CLog::Log(LOGDEBUG, LOGDATABASE, "{0}({1}) - took {2} ms", __FUNCTION__, strSQL,
-              duration.count());
-
+    CLog::LogF(LOGDEBUG, "{} - took {} ms",  strSQL2, duration.count());
     return true;
   }
   catch (...)
@@ -2226,80 +2219,72 @@ bool CMusicDatabase::ClearArtistLastScrapedTime(int idArtist)
 
 bool CMusicDatabase::AddArtistVideoLinks(const CArtist& artist)
 {
-  bool res = false;
-  std::string dbSong;
   auto start = std::chrono::steady_clock::now();
+  std::string dbSong;
 
   try
   {
     if (nullptr == m_pDB || nullptr == m_pDS || nullptr == m_pDS2)
-      return res;
+      return false;
 
-    std::string strSQL = PrepareSQL(
-        "SELECT idSong, strTitle, strMusicBrainzTrackID FROM song WHERE idAlbum IN (SELECT "
-        "idAlbum FROM album_artist WHERE idArtist = %i)",
-        artist.idArtist);
-    if (!m_pDS->query(strSQL))
-      return res;
-    auto queryEnd = std::chrono::steady_clock::now();
-    auto queryDuration = std::chrono::duration_cast<std::chrono::milliseconds>(queryEnd - start);
-    while (!m_pDS->eof())
+    for (const auto& videoURL : artist.videolinks)
     {
-      dbSong = m_pDS->fv(1).get_asString();
-      const std::string strMBTrackID = m_pDS->fv(2).get_asString();
-      const int songId = m_pDS->fv(0).get_asInt();
-      for (const auto& videoURL : artist.videolinks)
+      dbSong = videoURL.title;
+      std::string strSQL = PrepareSQL(
+          "SELECT idSong, strTitle FROM song WHERE strMusicBrainzTrackID = '%s' OR (EXISTS "
+          "(SELECT 1 FROM album_artist  WHERE album_artist.idAlbum = song.idAlbum AND "
+          "album_artist.idArtist = '%i' AND song.strTitle LIKE '%%%s%%'))",
+          videoURL.mbTrackID.c_str(), artist.idArtist, videoURL.title.c_str());
+
+      if (!m_pDS->query(strSQL))
+        return false;
+      if (m_pDS->num_rows() == 0)
+        continue;
+
+      while (!m_pDS->eof())
       {
-        if (strMBTrackID == videoURL.strMBTrackID ||
-            StringUtils::CompareNoCase(dbSong, videoURL.strTitle.c_str()) == 0)
-        {
-          std::string strSQL2 = PrepareSQL("UPDATE song set strVideoURL='%s' WHERE idSong = %i",
-                                           videoURL.strURL.c_str(), songId);
-          res = m_pDS2->exec(strSQL2);
+        const int songId = m_pDS->fv(0).get_asInt();
+        std::string strSQL2 = PrepareSQL("UPDATE song set strVideoURL='%s' WHERE idSong = %i",
+                                         videoURL.videoURL.c_str(), songId);
+        CLog::Log(LOGDEBUG, "Adding videolink for song {} with id {}", dbSong.c_str(), songId);
+        m_pDS2->exec(strSQL2);
 
-          if (!videoURL.strThumbURL.empty())
-          {
-            // already have a thumb for this videoURL ?
-            strSQL2 = PrepareSQL("SELECT art_id FROM art "
-                                 "WHERE media_id=%i AND media_type='%s' AND type='videothumb'",
-                                 songId, MediaTypeArtist);
-            m_pDS2->query(strSQL2);
-            if (!m_pDS2->eof())
-            { // update existing thumb
-              const int artId = m_pDS2->fv(0).get_asInt();
-              m_pDS2->close();
-              strSQL2 = PrepareSQL("UPDATE art SET url='%s' where art_id=%d",
-                                   videoURL.strThumbURL.c_str(), artId);
-              m_pDS2->exec(strSQL2);
-            }
-            else
-            { // insert new thumb
-              strSQL2 =
-                  PrepareSQL("INSERT INTO art(media_id, media_type, type, url) "
-                             "VALUES (%d, '%s', '%s', '%s')",
-                             songId, MediaTypeSong, "videothumb", videoURL.strThumbURL.c_str());
-              m_pDS2->exec(strSQL2);
-              m_pDS2->close();
-            }
+        if (!videoURL.thumbURL.empty())
+        { // already have a videothumb for this song ?
+          strSQL2 = PrepareSQL("SELECT art_id FROM art "
+                               "WHERE media_id=%i AND media_type='%s' AND type='videothumb'",
+                               songId, MediaTypeSong);
+          m_pDS2->query(strSQL2);
+          if (!m_pDS2->eof())
+          { // update existing thumb
+            const int artId = m_pDS2->fv(0).get_asInt();
+            m_pDS2->close();
+            strSQL2 = PrepareSQL("UPDATE art SET url='%s' where art_id=%d",
+                                 videoURL.thumbURL.c_str(), artId);
+            m_pDS2->exec(strSQL2);
           }
-          break;
+          else
+          { // insert new thumb
+            m_pDS2->close();
+            strSQL2 = PrepareSQL("INSERT INTO art(media_id, media_type, type, url) "
+                                 "VALUES (%d, '%s', '%s', '%s')",
+                                 songId, MediaTypeSong, "videothumb", videoURL.thumbURL.c_str());
+            m_pDS2->exec(strSQL2);
+          }
+          m_pDS2->close();
         }
+        m_pDS->next();
       }
-      m_pDS->next();
+      m_pDS->close();
     }
-
-    m_pDS->close();
-    m_pDS2->close();
-
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    CLog::Log(LOGDEBUG, "MusicDatabase::{0}: Time to store videolinks {1}ms query took {2}ms",
-              __FUNCTION__, duration.count(), queryDuration.count());
-    return res;
+    CLog::LogF(LOGDEBUG, "Time to store videolinks {}ms ", duration.count());
+    return true;
   }
   catch (...)
   {
-    CLog::Log(LOGERROR, "MusicDatabase: Unable to add videolink for song ({})", dbSong);
+    CLog::Log(LOGERROR, "MusicDatabase: Unable to add videolink for song ({})", dbSong.c_str());
     return false;
   }
 }
@@ -3133,7 +3118,7 @@ CSong CMusicDatabase::GetSongFromDataset(const dbiplus::sql_record* const record
   song.iBitRate = record->at(offset + song_iBitRate).get_asInt();
   song.iSampleRate = record->at(offset + song_iSampleRate).get_asInt();
   song.iChannels = record->at(offset + song_iChannels).get_asInt();
-  song.strSongVideoURL = record->at(offset + song_strSongVideoURL).get_asString();
+  song.songVideoURL = record->at(offset + song_songVideoURL).get_asString();
   return song;
 }
 
@@ -3196,7 +3181,7 @@ void CMusicDatabase::GetFileItemFromDataset(const dbiplus::sql_record* const rec
   replaygain.Set(record->at(song_strReplayGain).get_asString());
   item->GetMusicInfoTag()->SetReplayGain(replaygain);
   item->GetMusicInfoTag()->SetTotalDiscs(record->at(song_iDiscTotal).get_asInt());
-  item->GetMusicInfoTag()->SetSongVideoURL(record->at(song_strSongVideoURL).get_asString());
+  item->GetMusicInfoTag()->SetSongVideoURL(record->at(song_songVideoURL).get_asString());
 
   item->GetMusicInfoTag()->SetLoaded(true);
   // Get filename with full path
