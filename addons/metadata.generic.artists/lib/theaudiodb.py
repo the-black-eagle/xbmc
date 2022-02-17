@@ -121,3 +121,19 @@ def theaudiodb_artistalbums(data):
             albumdata['year'] = item.get('intYearReleased', '')
             albums.append(albumdata)
     return albums
+
+def theaudiodb_mvids(data):
+    mvids = []
+    mvidlist = data.get('mvids',[])
+    if mvidlist:
+        for item in data.get('mvids', []):
+            mviddata = {}
+            mviddata['title'] = item['strTrack']
+            mviddata['mbtrackid'] = item.get('strMusicBrainzID')
+            tempurl = item.get('strMusicVid', '')
+            index = tempurl.find('=')
+            vid_id = tempurl[index+1:]
+            mviddata['url'] = 'plugin://plugin.video.youtube/?action=play_video&videoid=%s' % vid_id
+            mviddata['thumb'] = item.get('strTrackThumb', '')
+            mvids.append(mviddata)
+    return mvids
