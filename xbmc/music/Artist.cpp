@@ -62,6 +62,7 @@ void CArtist::MergeScrapedArtist(const CArtist& source, bool override /* = true 
     art = source.art;
 
   discography = source.discography;
+  videolinks = source.videolinks;
 }
 
 
@@ -131,6 +132,24 @@ bool CArtist::Load(const TiXmlElement *artist, bool append, bool prioritise)
       discography.push_back(album);
     }
     node = node->NextSiblingElement("album");
+  }
+
+  //song video links
+  const TiXmlElement* songurls = artist->FirstChildElement("videourl");
+  if (songurls)
+    videolinks.clear();
+  while (songurls)
+  {
+    if (songurls->FirstChild())
+    {
+      CArtistVideoLinks videoLink;
+      XMLUtils::GetString(songurls, "title", videoLink.strTitle);
+      XMLUtils::GetString(songurls, "musicbrainztrackid", videoLink.strMBTrackID);
+      XMLUtils::GetString(songurls, "url", videoLink.strURL);
+      XMLUtils::GetString(songurls, "thumburl", videoLink.strThumbURL);
+      videolinks.emplace_back(std::move(videoLink));
+    }
+    songurls = songurls->NextSiblingElement("videourl");
   }
 
   // Support old style <fanart></fanart> for backwards compatibility of old nfo files and scrapers
@@ -217,6 +236,16 @@ bool CArtist::Save(TiXmlNode *node, const std::string &tag, const std::string& s
     XMLUtils::SetString(node, "title", it.strAlbum);
     XMLUtils::SetString(node, "year", it.strYear);
     XMLUtils::SetString(node, "musicbrainzreleasegroupid", it.strReleaseGroupMBID);
+  }
+  // song video links
+  for (const auto& it : videolinks)
+  {
+    TiXmlElement videolinkElement("videourl");
+    TiXmlNode* node = artist->InsertEndChild(videolinkElement);
+    XMLUtils::SetString(node, "title", it.strTitle);
+    XMLUtils::SetString(node, "musicbrainztrackid", it.strMBTrackID);
+    XMLUtils::SetString(node, "url", it.strURL);
+    XMLUtils::SetString(node, "thumburl", it.strThumbURL);
   }
 
   return true;

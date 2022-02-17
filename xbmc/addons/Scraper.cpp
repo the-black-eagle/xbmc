@@ -819,6 +819,20 @@ void DetailsFromFileItem<CArtist>(const CFileItem &item, CArtist &artist)
     artist.discography.emplace_back(discoAlbum);
   }
 
+  int nVideolinks = item.GetProperty("artist.videolinks").asInteger32();
+  artist.videolinks.reserve(nVideolinks);
+  for (int i = 0; i < nVideolinks; ++i)
+  {
+    std::stringstream prefix;
+    prefix << "artist.videolink" << i + 1;
+    CArtistVideoLinks videoLink;
+    videoLink.strTitle = FromString(item, prefix.str() + ".title");
+    videoLink.strMBTrackID = FromString(item, prefix.str() + ".mbtrackid");
+    videoLink.strURL = FromString(item, prefix.str() + ".url");
+    videoLink.strThumbURL = FromString(item, prefix.str() + ".thumb");
+    artist.videolinks.emplace_back(std::move(videoLink));
+  }
+
   int nThumbs = item.GetProperty("artist.thumbs").asInteger32();
   ParseThumbs(artist.thumbURL, item, nThumbs, "artist.thumb");
 

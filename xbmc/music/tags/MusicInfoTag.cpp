@@ -323,6 +323,16 @@ const std::string& CMusicInfoTag::GetStationArt() const
   return m_stationArt;
 }
 
+const std::string& CMusicInfoTag::GetSongVideoURL() const
+{
+  return m_strSongVideoURL;
+}
+
+const std::string& CMusicInfoTag::GetSongVideoThumb() const
+{
+  return m_strSongVideoThumb;
+}
+
 void CMusicInfoTag::SetURL(const std::string& strURL)
 {
   m_strURL = strURL;
@@ -774,6 +784,16 @@ void CMusicInfoTag::SetStationArt(const std::string& strStationArt)
   m_stationArt = strStationArt;
 }
 
+void CMusicInfoTag::SetSongVideoURL(const std::string& strSongVideoURL)
+{
+  m_strSongVideoURL = strSongVideoURL;
+}
+
+void CMusicInfoTag::SetSongVideoThumb(const std::string& strSongVideoThumb)
+{
+  m_strSongVideoThumb = strSongVideoThumb;
+}
+
 void CMusicInfoTag::SetArtist(const CArtist& artist)
 {
   SetArtist(artist.strArtist);
@@ -882,6 +902,8 @@ void CMusicInfoTag::SetSong(const CSong& song)
   SetBitRate(song.iBitRate);
   SetSampleRate(song.iSampleRate);
   SetNoOfChannels(song.iChannels);
+  SetSongVideoURL(song.strSongVideoURL);
+  SetSongVideoThumb(song.strSongVideoThumb);
 
   if (song.replayGain.Get(ReplayGain::TRACK).Valid())
     m_replayGain.Set(ReplayGain::TRACK, song.replayGain.Get(ReplayGain::TRACK));
@@ -970,6 +992,8 @@ void CMusicInfoTag::Serialize(CVariant& value) const
   value["bitrate"] = m_bitrate;
   value["samplerate"] = m_samplerate;
   value["channels"] = m_channels;
+  value["songvideourl"] = m_strSongVideoURL;
+  value["songvideothumb"] = m_strSongVideoThumb;
 }
 
 void CMusicInfoTag::ToSortable(SortItem& sortable, Field field) const
@@ -1071,6 +1095,8 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar << m_samplerate;
     ar << m_bitrate;
     ar << m_channels;
+    ar << m_strSongVideoURL;
+    ar << m_strSongVideoThumb;
   }
   else
   {
@@ -1138,6 +1164,8 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar >> m_samplerate;
     ar >> m_bitrate;
     ar >> m_channels;
+    ar >> m_strSongVideoURL;
+    ar >> m_strSongVideoThumb;
   }
 }
 
@@ -1193,6 +1221,8 @@ void CMusicInfoTag::Clear()
   m_channels = 0;
   m_stationName.clear();
   m_stationArt.clear();
+  m_strSongVideoThumb.clear();
+  m_strSongVideoURL.clear();
 }
 
 void CMusicInfoTag::AppendArtist(const std::string &artist)
