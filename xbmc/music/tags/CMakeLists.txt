@@ -1,4 +1,4 @@
-set(SOURCES MusicInfoFFmpeg.cpp
+set(SOURCES MusicCodecInfoFFmpeg.cpp
             MusicInfoTag.cpp
             MusicInfoTagLoaderCDDA.cpp
             MusicInfoTagLoaderDatabase.cpp
@@ -10,7 +10,7 @@ set(SOURCES MusicInfoFFmpeg.cpp
             TagLoaderTagLib.cpp)
 
 set(HEADERS ImusicInfoTagLoader.h
-            MusicInfoFFmpeg.h
+            MusicCodecInfoFFmpeg.h
             MusicInfoTag.h
             MusicInfoTagLoaderCDDA.h
             MusicInfoTagLoaderDatabase.h
