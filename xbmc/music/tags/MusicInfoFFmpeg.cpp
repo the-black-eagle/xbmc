@@ -6,7 +6,7 @@
  *  See LICENSES/README.md for more information.
  */
 
-#include "MusicInfoFFmpeg.h"
+#include "MusicInfoCodecFFmpeg.h"
 #include "cores/FFmpeg.h"
 #include "filesystem/File.h"
 
@@ -28,7 +28,7 @@ static int64_t vfs_file_seek(void* h, int64_t pos, int whence)
     return pFile->Seek(pos, whence & ~AVSEEK_FORCE);
 }
 
-bool CMusicInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName, fileInfo& codec_info)
+bool CMusicInfoCodecFFmpeg::GetMusicCodecInfo(const std::string& strFileName, musicCodecInfo& codec_info)
 {
   AVCodec* decoder = nullptr;
   std::string codec = "";

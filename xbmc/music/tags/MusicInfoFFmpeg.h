@@ -8,7 +8,7 @@
 
 #include <string>
 
-typedef struct fileInfo
+typedef struct musicCodecInfo
 {
   int bitsPerSample = 0;
   int sampleRate = 0;
@@ -18,8 +18,8 @@ typedef struct fileInfo
 }
 fileInfo;
 
-class CMusicInfoFFmpeg
+class CMusicCodecInfoFFmpeg
 {
 public:
-  static bool GetMusicCodecInfo(const std::string& strFileName, fileInfo& codec_info);
+  static bool GetMusicCodecInfo(const std::string& strFileName, musicCodecInfo& codec_info);
 };

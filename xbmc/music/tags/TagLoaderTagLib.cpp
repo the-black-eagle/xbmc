@@ -1294,13 +1294,14 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   Ogg::XiphComment *xiph = nullptr;
   Tag *genericTag = nullptr;
 
-  //bitspersample is a file specific implementation in taglib and not available through
-  //file->audioProperties()
+  // bitspersample is file specific and not always available through file->audioProperties(). EG,
+  // mp3 files do not have bitspersample as this is determined by the player whilst decoding so grab
+  // it separately for those files that do contain it.
   unsigned int bitsPerSample = 0;
   int mpegLayer = 0;
   fileInfo codec_info;
   std::string codec;
-  bool haveInfo = false;
+  bool haveFFmpegInfo = false;
 
   if (apeFile)
   {
@@ -1325,10 +1326,14 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   {
     mp4 = mp4File->tag();
     bitsPerSample = mp4File->audioProperties()->bitsPerSample();
+    // taglib only recognizes two codecs for mp4 files although mp4 is a container and could contain
+    // any audio codec.  If taglib fails to recognize it, use FFmpeg to detect the codec
     if (mp4File->audioProperties()->codec() != 0)
       codec = (mp4File->audioProperties()->codec() == 1)
                   ? CodecToString(MusicCodecType::CODEC_TYPE_AAC)
                   : CodecToString(MusicCodecType::CODEC_TYPE_ALAC);
+    else
+      haveFFmpegInfo = CMusicCodecInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
   }
   else if (mpegFile)
   {
@@ -1369,8 +1374,10 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   else if (wavFile)
   {
     id3v2 = wavFile->ID3v2Tag();
-    // taglib can't reliably detect some codecs in wrapped wav files so use ffmpeg in this case
-    haveInfo = CMusicInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
+    // taglib doesn't detect the correct codec if the wav file wraps eg DTS as the file will have a
+    // dummy header indicating PCM. Therefore use FFmpeg for wav files so detection doesn't rely on
+    // the header info
+    haveFFmpegInfo = CMusicCodecInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
   }
   else if (wvFile)
   {
@@ -1394,12 +1401,13 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   if(bitsPerSample)
     tag.SetBitsPerSample(bitsPerSample);
   else if (!mpegFile) // skip mp3 files as no bitspersample available but check other filetypes as
-                      // taglib returns the wrong bitrate for at least vorbis files
-    haveInfo = CMusicInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
+                      // taglib returns the wrong bitrate for at least vorbis files (determined
+                      // locally using taglib data, mediainfo and ffprobe for comparisons)
+    haveFFmpegInfo = CMusicCodecInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
   if (!codec.empty())
     tag.SetCodec(codec);
 
-  if (haveInfo) // use data from FFmpeg if taglib data missing or not accurate
+  if (haveFFmpegInfo) // use data from FFmpeg if taglib data missing or not accurate
   {
     tag.SetBitRate(codec_info.bitRate);
     tag.SetSampleRate(codec_info.sampleRate);
