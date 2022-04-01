@@ -13,6 +13,9 @@
 struct musicCodecInfo
 {
 public:
+
+typedef struct musicCodecInfo
+{
   int bitsPerSample = 0;
   int sampleRate = 0;
   int bitRate = 0;
@@ -20,6 +23,7 @@ public:
   int duration = 0;
   std::string codecName;
 };
+
 
 class CMusicCodecInfoFFmpeg
 {
