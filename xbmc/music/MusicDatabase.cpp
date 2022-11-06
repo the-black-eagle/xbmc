@@ -1027,6 +1027,8 @@ int CMusicDatabase::AddSong(const int idSong,
 {
   int idNew = -1;
   std::string strSQL;
+  bool isAudioBook = false;
+  int iAudioBookDiskNumber;
   try
   {
     // We need at least the title
@@ -1044,20 +1046,33 @@ int CMusicDatabase::AddSong(const int idSong,
 
     if (idSong <= 1)
     {
+      isAudioBook = URIUtils::HasExtension(strFileName, ".mka|.m4b");
       if (!strMusicBrainzTrackID.empty())
         strSQL = PrepareSQL("SELECT idSong FROM song WHERE "
                             "idAlbum = %i AND iTrack=%i AND strMusicBrainzTrackID = '%s'",
                             idAlbum, iTrack, strMusicBrainzTrackID.c_str());
-      else
+      else if (!isAudioBook)
         strSQL = PrepareSQL("SELECT idSong FROM song WHERE "
                             "idAlbum=%i AND strFileName='%s' AND strTitle='%s' AND iTrack=%i "
                             "AND strMusicBrainzTrackID IS NULL",
                             idAlbum, strFileName.c_str(), strTitle.c_str(), iTrack);
+      else // If an audiobook (mka/m4b) spans more than one file then assume that all files are in
+           // the same directory (path).  This is used later to create virtual disks (one for each
+           // file) so that the book displays properly in library views.
+        strSQL = PrepareSQL(
+            "SELECT idSong FROM song WHERE "
+            "idAlbum=%i AND iTrack=%i AND idPath=%i AND strMusicBrainzTrackID IS NULL",
+            idAlbum, iTrack, idPath);
 
       if (!m_pDS->query(strSQL))
         return -1;
     }
-    if (m_pDS->num_rows() == 0)
+    // If we have an audiobook in multiple files and have already added the first files chapters,
+    // make virtual disks for each of the additional files and then add the chapters from them.
+    iAudioBookDiskNumber = m_pDS->num_rows() + 1;
+    if (isAudioBook && iAudioBookDiskNumber > 1)
+      iTrack = (iTrack  & 0xffff) | (iAudioBookDiskNumber << 16);
+    if ((m_pDS->num_rows() == 0) || (iAudioBookDiskNumber > 1 && isAudioBook))
     {
       m_pDS->close();
 
@@ -1401,9 +1416,9 @@ int CMusicDatabase::AddAlbum(const std::string& strAlbum,
     StringUtils::ToLower(strCheckFlag);
     if (strCheckFlag.find("boxset") != std::string::npos) //boxset flagged in album type
       bBoxedSet = true;
-
-    if (StringUtils::ToLower(strType).find("audiobook") != std::string::npos)
+    else if (strCheckFlag.find("audiobook") != std::string::npos)
       releaseType = CAlbum::Audiobook;
+
     if (m_pDS->num_rows() == 0)
     {
       m_pDS->close();
@@ -13958,7 +13973,7 @@ bool CMusicDatabase::SetResumeBookmarkForAudioBook(const CFileItem& item, int bo
                       "WHERE file='%s'",
                       bookmark, item.GetDynPath().c_str());
 
-  else if (item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
+  else if (item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook && !item.IsAudioBook())
     // update the bookmark with the last file played (mp3/flac/other audiobooks)
     strSQL = PrepareSQL("UPDATE audiobook SET bookmark=%i, file='%s' WHERE idBook=%i",
                         item.GetMusicInfoTag()->GetTrackNumber(), item.GetDynPath().c_str(),
@@ -13971,9 +13986,6 @@ bool CMusicDatabase::GetResumeBookmarkForAudioBook(const CFileItem& item, int& b
 {
   std::string strSQL =
       PrepareSQL("SELECT bookmark FROM audiobook WHERE file='%s'", item.GetDynPath().c_str());
-  // m4b audiobooks also get marked with CAlbum::Audiobook but need handling differently otherwise
-  // navigation through files breaks, so skip trying to get the musicinfotag for them here as it'll
-  // be null
   if (!item.IsAudioBook() && !item.m_bIsFolder &&
       item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
     strSQL = PrepareSQL("SELECT bookmark from audiobook where idBook='%i'",

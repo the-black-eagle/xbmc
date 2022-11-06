@@ -326,6 +326,9 @@ const std::string& CMusicInfoTag::GetStationArt() const
 const std::string& CMusicInfoTag::GetSongVideoURL() const
 {
   return m_songVideoURL;
+const std::string CMusicInfoTag::GetAlbumReleaseTypeToString() const
+{
+  return CAlbum::ReleaseTypeToString(m_albumReleaseType);
 }
 
 void CMusicInfoTag::SetURL(const std::string& strURL)

@@ -568,6 +568,8 @@ CInfoScanner::INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items,
 {
   std::vector<std::string> regexps = CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_audioExcludeFromScanRegExps;
 
+  std::string strPreviousFilename = "";
+
   for (int i = 0; i < items.Size(); ++i)
   {
     if (m_bStop)
@@ -586,11 +588,12 @@ CInfoScanner::INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items,
     CMusicInfoTag& tag = *pItem->GetMusicInfoTag();
     std::string chapter_title = "";
     int iDuration = 0;
-    if (pItem->IsAudioBook())
-    { // save these values from CAudioBookFileDirectory.cpp and overwrite the tag from taglib with
-      // them. SetLoaded to false so we call taglib otherwise we only get a very basic set of tags
-      // CAudioBookFileDirectory.cpp needs to set SetLoaded to true otherwise browsing via files
-      // does not work correctly.
+    if (pItem->IsAudioBook()) // mka or m4b type audiobook
+    { // save the title and duration values returned from CAudioBookFileDirectory.cpp.
+      // Set SetLoaded to false so we call the tag reader to read any other tags that may be set on
+      // the file(s), (embedded art for example), then restore the saved title and duration values
+      // so that the library can display the correct information.
+
       chapter_title = pItem->GetMusicInfoTag()->GetTitle();
       iDuration = pItem->GetMusicInfoTag()->GetDuration();
       pItem->GetMusicInfoTag()->SetLoaded(false);
@@ -604,8 +607,11 @@ CInfoScanner::INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items,
       {
         if (!chapter_title.empty())
           pItem->GetMusicInfoTag()->SetTitle(chapter_title);// Chapter name from original tag
-        pItem->GetMusicInfoTag()->SetDuration(iDuration);// duration from original tag
-        // fixup the correct track number (one track, with multiple chapters split into tracks)
+        pItem->GetMusicInfoTag()->SetDuration(iDuration);// duration of chapter from original tag
+
+        // fixup the correct track number for library display. There is one chaptered file but we
+        // add each chapter as a separate song so that the library can display it properly.
+
         pItem->GetMusicInfoTag()->SetTrackNumber(i + 1);
         pItem->GetMusicInfoTag()->SetLoaded(true);
         pItem->GetMusicInfoTag()->SetAlbumReleaseType(CAlbum::Audiobook);
@@ -720,7 +726,7 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
     bool tracksOverlap = false;
     bool hasAlbumArtist = false;
     bool isCompilation = true;
-    std::string old_DiscSubtitle;
+    std::string strThisReleaseType;
 
     std::map<std::string, std::vector<CSong *> > artists;
     for (VECSONGS::iterator song = songs.begin(); song != songs.end(); ++song)
@@ -732,9 +738,7 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
       if (!song->bCompilation)
         isCompilation = false;
 
-      if (song->strDiscSubtitle != old_DiscSubtitle)
-        old_DiscSubtitle = song->strDiscSubtitle;
-
+      strThisReleaseType = song->strReleaseType;
       // get primary artist
       std::string primary;
       if (!song->GetAlbumArtist().empty())
@@ -858,6 +862,7 @@ void CMusicInfoScanner::FileItemsToAlbums(CFileItemList& items, VECALBUMS& album
        */
       CAlbum album;
       album.strAlbum = songsByAlbumName.first;
+      album.SetReleaseType(strThisReleaseType);
 
       //Split the albumartist sort string to try and get sort names for individual artists
       std::vector<std::string> sortnames = StringUtils::Split(albumartistsort, CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator);

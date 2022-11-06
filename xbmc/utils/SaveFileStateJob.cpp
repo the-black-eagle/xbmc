@@ -223,15 +223,15 @@ void CSaveFileState::DoWork(CFileItem& item,
         }
       }
 
-      if (item.IsAudioBook() || item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
+      if (item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
       {
         musicdatabase.Open();
-        if (item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
+        if (!item.IsAudioBook()) // mp3 etc audiobook - save current tracknumber as bookmark
           musicdatabase.SetResumeBookmarkForAudioBook(item,
                                                       item.GetMusicInfoTag()->GetTrackNumber());
         else
           musicdatabase.SetResumeBookmarkForAudioBook(
-              item, item.m_lStartOffset + CUtil::ConvertSecsToMilliSecs(bookmark.timeInSeconds));
+              item, item.GetStartOffset() + CUtil::ConvertSecsToMilliSecs(bookmark.timeInSeconds));
         musicdatabase.Close();
       }
     }
