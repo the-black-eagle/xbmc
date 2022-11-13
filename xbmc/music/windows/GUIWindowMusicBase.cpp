@@ -900,8 +900,8 @@ bool CGUIWindowMusicBase::OnSelect(int iItem)
     if (m_musicdatabase.GetResumeBookmarkForAudioBook(*item, bookmark) && bookmark > 0)
     {
       auto itemIt =
-            std::find_if(m_vecItems->cbegin(), m_vecItems->cend(),
-                         [&](const CFileItemPtr& item) { return bookmark < item->GetEndOffset(); });
+          std::find_if(m_vecItems->cbegin(), m_vecItems->cend(),
+                       [&](const CFileItemPtr& item) { return bookmark < item->GetEndOffset(); });
       pItemToResume = *itemIt;
       if (!item->IsChapteredAudioBook())//mp3 etc book - bookmark will already be the track number to resume
         pItemToResume = (m_vecItems->Get(bookmark));

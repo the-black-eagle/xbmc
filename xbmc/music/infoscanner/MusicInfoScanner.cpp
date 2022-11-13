@@ -567,8 +567,6 @@ CInfoScanner::INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items,
 {
   std::vector<std::string> regexps = CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_audioExcludeFromScanRegExps;
 
-  std::string strPreviousFilename = "";
-
   for (int i = 0; i < items.Size(); ++i)
   {
     if (m_bStop)
