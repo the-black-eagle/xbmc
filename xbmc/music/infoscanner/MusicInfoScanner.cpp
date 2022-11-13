@@ -36,7 +36,6 @@
 #include "guilib/GUIWindowManager.h"
 #include "guilib/LocalizeStrings.h"
 #include "interfaces/AnnouncementManager.h"
-#include "music/Album.h"
 #include "music/MusicLibraryQueue.h"
 #include "music/MusicThumbLoader.h"
 #include "music/MusicUtils.h"
@@ -588,7 +587,7 @@ CInfoScanner::INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items,
     CMusicInfoTag& tag = *pItem->GetMusicInfoTag();
     std::string chapter_title = "";
     int iDuration = 0;
-    if (pItem->IsAudioBook()) // mka or m4b type audiobook
+    if (pItem->IsChapteredAudioBook()) // mka or m4b type audiobook
     { // save the title and duration values returned from CAudioBookFileDirectory.cpp.
       // Set SetLoaded to false so we call the tag reader to read any other tags that may be set on
       // the file(s), (embedded art for example), then restore the saved title and duration values
@@ -603,7 +602,7 @@ CInfoScanner::INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items,
       std::unique_ptr<IMusicInfoTagLoader> pLoader (CMusicInfoTagLoaderFactory::CreateLoader(*pItem));
       if (nullptr != pLoader)
         pLoader->Load(pItem->GetPath(), tag);
-      if(pItem->IsAudioBook())
+      if(pItem->IsChapteredAudioBook())
       {
         if (!chapter_title.empty())
           pItem->GetMusicInfoTag()->SetTitle(chapter_title);// Chapter name from original tag

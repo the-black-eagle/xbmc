@@ -13942,12 +13942,10 @@ bool CMusicDatabase::AddAudioBook(const CFileItem& item)
                  artists.empty() ? "" : artists[0].c_str(), 0, item.GetDynPath().c_str(),
                  CDateTime::GetCurrentDateTime().GetAsDBDateTime().c_str());
   if (albumid >= 0)
-    strSQL += PrepareSQL(", '%i' ", albumid);
+    strSQL += PrepareSQL(", '%i' )", albumid);
   else
-    strSQL += PrepareSQL(", NULL");
+    strSQL += PrepareSQL(", NULL)");
 
-  strSQL += ")";
-  CLog::Log(LOGINFO, "AddAudioBook strSQL = [{}]", strSQL);
   return ExecuteQuery(strSQL);
 }
 
@@ -13967,18 +13965,17 @@ bool CMusicDatabase::SetResumeBookmarkForAudioBook(const CFileItem& item, int bo
       return false;
   }
 
-  if (item.IsAudioBook())
+  if (item.IsChapteredAudioBook())
     // update the bookmark with the offset position in the file
     strSQL = PrepareSQL("UPDATE audiobook SET bookmark=%i "
                       "WHERE file='%s'",
                       bookmark, item.GetDynPath().c_str());
 
-  else if (item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook && !item.IsAudioBook())
+  else if (item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook && !item.IsChapteredAudioBook())
     // update the bookmark with the last file played (mp3/flac/other audiobooks)
     strSQL = PrepareSQL("UPDATE audiobook SET bookmark=%i, file='%s' WHERE idBook=%i",
                         item.GetMusicInfoTag()->GetTrackNumber(), item.GetDynPath().c_str(),
                         item.GetMusicInfoTag()->GetAlbumId());
-  CLog::Log(LOGINFO, "CMusicDatabase::SetResumeBookmarkForAudioBook() - Query is [{}]", strSQL);
   return ExecuteQuery(strSQL);
 }
 
@@ -13986,7 +13983,7 @@ bool CMusicDatabase::GetResumeBookmarkForAudioBook(const CFileItem& item, int& b
 {
   std::string strSQL =
       PrepareSQL("SELECT bookmark FROM audiobook WHERE file='%s'", item.GetDynPath().c_str());
-  if (!item.IsAudioBook() && !item.m_bIsFolder &&
+  if (!item.IsChapteredAudioBook() && !item.m_bIsFolder &&
       item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
     strSQL = PrepareSQL("SELECT bookmark from audiobook where idBook='%i'",
                         item.GetMusicInfoTag()->GetAlbumId());

@@ -903,7 +903,7 @@ bool CGUIWindowMusicBase::OnSelect(int iItem)
             std::find_if(m_vecItems->cbegin(), m_vecItems->cend(),
                          [&](const CFileItemPtr& item) { return bookmark < item->GetEndOffset(); });
       pItemToResume = *itemIt;
-      if (!item->IsAudioBook())//mp3 etc book - bookmark will already be the track number to resume
+      if (!item->IsChapteredAudioBook())//mp3 etc book - bookmark will already be the track number to resume
         pItemToResume = (m_vecItems->Get(bookmark));
 
       if (pItemToResume != *m_vecItems->cend() && pItemToResume != nullptr)
@@ -919,7 +919,7 @@ bool CGUIWindowMusicBase::OnSelect(int iItem)
         if (choice == MUSIC_SELECT_ACTION_RESUME)
         {
           pItemToResume->SetProperty("audiobook_bookmark", bookmark);
-          if (item->IsAudioBook())
+          if (item->IsChapteredAudioBook())
             return CGUIMediaWindow::OnSelect(static_cast<int>(itemIt - m_vecItems->cbegin()));
           else
             return CGUIMediaWindow::OnSelect(bookmark);

@@ -226,7 +226,7 @@ void CSaveFileState::DoWork(CFileItem& item,
       if (item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
       {
         musicdatabase.Open();
-        if (!item.IsAudioBook()) // mp3 etc audiobook - save current tracknumber as bookmark
+        if (!item.IsChapteredAudioBook()) // mp3 etc audiobook - save current tracknumber as bookmark
           musicdatabase.SetResumeBookmarkForAudioBook(item,
                                                       item.GetMusicInfoTag()->GetTrackNumber());
         else
