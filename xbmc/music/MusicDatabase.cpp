@@ -3873,7 +3873,7 @@ bool CMusicDatabase::GetRecentlyAddedAlbums(VECALBUMS& albums, unsigned int limi
     // timestamps, nothing to do with when albums added to library)
     std::string strSQL =
         PrepareSQL("SELECT albumview.*, albumartistview.* "
-                   "FROM (SELECT idAlbum FROM album WHERE strAlbum != '' "
+                   "FROM (SELECT idAlbum FROM album WHERE strAlbum != '' AND strReleaseType = 'album' "
                    "ORDER BY dateAdded DESC LIMIT %u) AS recentalbums "
                    "JOIN albumview ON albumview.idAlbum = recentalbums.idAlbum "
                    "JOIN albumartistview ON albumview.idAlbum = albumartistview.idAlbum "
