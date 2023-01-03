@@ -3871,17 +3871,17 @@ bool CMusicDatabase::GetRecentlyAddedAlbums(VECALBUMS& albums, unsigned int limi
     // Get data from album and album_artist tables to fully populate albums
     // Determine the recently added albums from dateAdded (usually derived from music file
     // timestamps, nothing to do with when albums added to library)
-    std::string strSQL =
-        PrepareSQL("SELECT albumview.*, albumartistview.* "
-                   "FROM (SELECT idAlbum FROM album WHERE strAlbum != '' AND strReleaseType = 'album' "
-                   "ORDER BY dateAdded DESC LIMIT %u) AS recentalbums "
-                   "JOIN albumview ON albumview.idAlbum = recentalbums.idAlbum "
-                   "JOIN albumartistview ON albumview.idAlbum = albumartistview.idAlbum "
-                   "ORDER BY dateAdded DESC, albumview.idAlbum desc, albumartistview.iOrder ",
-                   limit ? limit
-                         : CServiceBroker::GetSettingsComponent()
-                               ->GetAdvancedSettings()
-                               ->m_iMusicLibraryRecentlyAddedItems);
+    std::string strSQL = PrepareSQL(
+        "SELECT albumview.*, albumartistview.* "
+        "FROM (SELECT idAlbum FROM album WHERE strAlbum != '' AND strReleaseType = 'album' "
+        "ORDER BY dateAdded DESC LIMIT %u) AS recentalbums "
+        "JOIN albumview ON albumview.idAlbum = recentalbums.idAlbum "
+        "JOIN albumartistview ON albumview.idAlbum = albumartistview.idAlbum "
+        "ORDER BY dateAdded DESC, albumview.idAlbum desc, albumartistview.iOrder ",
+        limit ? limit
+              : CServiceBroker::GetSettingsComponent()
+                    ->GetAdvancedSettings()
+                    ->m_iMusicLibraryRecentlyAddedItems);
 
     CLog::Log(LOGDEBUG, "{} query: {}", __FUNCTION__, strSQL);
     if (!m_pDS->query(strSQL))
