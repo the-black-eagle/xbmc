@@ -11181,6 +11181,14 @@ std::string CMusicDatabase::GetAlbumDiscTitle(int idAlbum, int idDisc)
   return albumtitle;
 }
 
+int CMusicDatabase::GetAudioBookCount()
+{
+  std::string strSQL =
+      PrepareSQL("SELECT COUNT(idAlbum) FROM album WHERE album.strReleaseType = '%s'",
+                 CAlbum::ReleaseTypeToString(CAlbum::Audiobook).c_str());
+  return GetSingleValueInt(strSQL);
+}
+
 int CMusicDatabase::GetBoxsetsCount()
 {
   return GetSingleValueInt("album", "count(idAlbum)", "bBoxedSet = 1");
