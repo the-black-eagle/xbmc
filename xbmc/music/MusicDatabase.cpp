@@ -1056,9 +1056,10 @@ int CMusicDatabase::AddSong(const int idSong,
                             "idAlbum=%i AND strFileName='%s' AND strTitle='%s' AND iTrack=%i "
                             "AND strMusicBrainzTrackID IS NULL",
                             idAlbum, strFileName.c_str(), strTitle.c_str(), iTrack);
-      else // If an audiobook (mka/m4b) spans more than one file then assume that all files are in
-           // the same directory (path).  This is used later to create virtual disks (one for each
-           // file) so that the book displays properly in library views.
+      else /* If an audiobook (mka/m4b) spans more than one file then assume that all files are in
+              the same directory (path).  This is used later to create virtual disks (one for each
+              file) so that the book displays properly in library views.
+           */
         strSQL = PrepareSQL(
             "SELECT idSong FROM song WHERE "
             "idAlbum=%i AND iTrack=%i AND idPath=%i AND strMusicBrainzTrackID IS NULL",
@@ -1067,12 +1068,16 @@ int CMusicDatabase::AddSong(const int idSong,
       if (!m_pDS->query(strSQL))
         return -1;
     }
-    // If we have an audiobook in multiple files and have already added the first files chapters,
-    // make virtual disks for each of the additional files and then add the chapters from them.
-    iAudioBookDiskNumber = m_pDS->num_rows() + 1;
-    if (isAudioBook && iAudioBookDiskNumber > 1)
+    /* If we have an m4b audiobook in multiple files and have already added the first files chapters
+       make virtual disks for each of the additional files and then add the chapters from them.
+       For m4b books this numbers the discs from zero rather than one, but its still better than
+       what we had previously.
+       Example screenshots at https://forum.kodi.tv/showthread.php?tid=371039&pid=3132388#pid3132388
+     */
+    iAudioBookDiskNumber = m_pDS->num_rows();
+    if (isAudioBook && iAudioBookDiskNumber >= 1)
       iTrack = (iTrack  & 0xffff) | (iAudioBookDiskNumber << 16);
-    if ((m_pDS->num_rows() == 0) || (iAudioBookDiskNumber > 1 && isAudioBook))
+    if ((m_pDS->num_rows() == 0) || (iAudioBookDiskNumber >= 1 && isAudioBook))
     {
       m_pDS->close();
 

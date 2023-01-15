@@ -583,7 +583,7 @@ CInfoScanner::INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items,
     m_currentItem++;
 
     CMusicInfoTag& tag = *pItem->GetMusicInfoTag();
-    std::string chapter_title = "";
+    std::string chapter_title;
     int iDuration = 0;
     if (pItem->IsChapteredAudioBook()) // mka or m4b type audiobook
     { // save the title and duration values returned from CAudioBookFileDirectory.cpp.
