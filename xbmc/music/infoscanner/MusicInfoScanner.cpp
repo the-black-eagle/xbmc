@@ -586,11 +586,12 @@ CInfoScanner::INFO_RET CMusicInfoScanner::ScanTags(const CFileItemList& items,
     std::string chapter_title;
     int iDuration = 0;
     if (pItem->IsChapteredAudioBook()) // mka or m4b type audiobook
-    { // save the title and duration values returned from CAudioBookFileDirectory.cpp.
-      // Set SetLoaded to false so we call the tag reader to read any other tags that may be set on
-      // the file(s), (embedded art for example), then restore the saved title and duration values
-      // so that the library can display the correct information.
-
+    { /* save the title and duration values returned from CAudioBookFileDirectory.cpp.
+         Set SetLoaded to false so we call the tag reader to read any other tags that may be set on
+         the file(s). At the very least, this correctly loads any embedded art.
+         Finally, restore the saved title and duration values so that the library can display the
+         correct information.
+      */
       chapter_title = pItem->GetMusicInfoTag()->GetTitle();
       iDuration = pItem->GetMusicInfoTag()->GetDuration();
       pItem->GetMusicInfoTag()->SetLoaded(false);
