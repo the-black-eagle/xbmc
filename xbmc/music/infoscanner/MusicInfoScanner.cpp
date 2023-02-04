@@ -1496,6 +1496,11 @@ CMusicInfoScanner::DownloadAlbumInfo(const CAlbum& album,
     existsNFO = false;
     CLog::Log(LOGDEBUG, "Ignoring nfo file: {}", CURL::GetRedacted(strNfo));
   }
+  if (CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_bMusicLibraryIgnoreNfos)
+  {
+    existsNFO = false;
+    CLog::Log(LOGDEBUG, "Ignoring NFO file due to Advancedsettings");
+  }
   if (existsNFO)
   {
     CLog::Log(LOGDEBUG, "Found matching nfo file: {}", CURL::GetRedacted(strNfo));
