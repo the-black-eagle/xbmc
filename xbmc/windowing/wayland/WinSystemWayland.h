@@ -44,7 +44,10 @@ namespace WAYLAND
 class CRegistry;
 class CWindowDecorator;
 
-class CWinSystemWayland : public CWinSystemBase, IInputHandler, IWindowDecorationHandler, IShellSurfaceHandler
+class CWinSystemWayland : public CWinSystemBase,
+                          IInputHandler,
+                          IWindowDecorationHandler,
+                          public IShellSurfaceHandler
 {
 public:
   CWinSystemWayland();
@@ -81,7 +84,7 @@ public:
   float GetSyncOutputRefreshRate();
   float GetDisplayLatency() override;
   float GetFrameLatencyAdjustment() override;
-  std::unique_ptr<CVideoSync> GetVideoSync(void* clock) override;
+  std::unique_ptr<CVideoSync> GetVideoSync(CVideoReferenceClock* clock) override;
 
   void Register(IDispResource* resource) override;
   void Unregister(IDispResource* resource) override;
@@ -112,6 +115,7 @@ protected:
   void PrepareFramePresentation();
   void FinishFramePresentation();
   virtual void SetContextSize(CSizeInt size) = 0;
+  virtual IShellSurface* CreateShellSurface(const std::string& name);
 
 private:
   // IInputHandler

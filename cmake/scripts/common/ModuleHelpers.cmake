@@ -141,8 +141,10 @@ macro(SETUP_BUILD_VARS)
     set(PROJECTSOURCE ${CMAKE_SOURCE_DIR})
   endif()
 
-  # populate variables of data from VERSION file for MODULE
-  get_versionfile_data()
+  if(NOT ${MODULE}_DISABLE_VERSION)
+    # populate variables of data from VERSION file for MODULE
+    get_versionfile_data()
+  endif()
 
   # allow user to override the download URL with a local tarball
   # needed for offline build envs
@@ -158,6 +160,7 @@ macro(SETUP_BUILD_VARS)
     message(STATUS "PROJECTSOURCE: ${PROJECTSOURCE}")
     message(STATUS "${MODULE}_URL: ${${MODULE}_URL}")
   endif()
+  unset(LIB_TYPE)
 endmacro()
 
 macro(CLEAR_BUILD_VARS)

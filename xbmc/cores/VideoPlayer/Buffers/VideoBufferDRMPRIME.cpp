@@ -20,6 +20,19 @@ extern "C"
 namespace DRMPRIME
 {
 
+KODI::UTILS::Colorimetry GetColorimetry(const VideoPicture& picture)
+{
+  switch (picture.color_space)
+  {
+    case AVCOL_SPC_BT2020_CL:
+      return KODI::UTILS::Colorimetry::BT2020_CYCC;
+    case AVCOL_SPC_BT2020_NCL:
+      return KODI::UTILS::Colorimetry::BT2020_YCC;
+    default:
+      return KODI::UTILS::Colorimetry::DEFAULT;
+  }
+}
+
 std::string GetColorEncoding(const VideoPicture& picture)
 {
   switch (picture.color_space)
@@ -50,17 +63,17 @@ std::string GetColorRange(const VideoPicture& picture)
   return "YCbCr limited range";
 }
 
-uint8_t GetEOTF(const VideoPicture& picture)
+KODI::UTILS::Eotf GetEOTF(const VideoPicture& picture)
 {
   switch (picture.color_transfer)
   {
     case AVCOL_TRC_SMPTE2084:
-      return HDMI_EOTF_SMPTE_ST2084;
+      return KODI::UTILS::Eotf::PQ;
     case AVCOL_TRC_ARIB_STD_B67:
     case AVCOL_TRC_BT2020_10:
-      return HDMI_EOTF_BT_2100_HLG;
+      return KODI::UTILS::Eotf::HLG;
     default:
-      return HDMI_EOTF_TRADITIONAL_GAMMA_SDR;
+      return KODI::UTILS::Eotf::TRADITIONAL_SDR;
   }
 }
 

@@ -139,7 +139,10 @@ public:
 protected:
   explicit CRendererBase(CVideoSettings& videoSettings);
 
-  bool CreateIntermediateTarget(unsigned int width, unsigned int height, bool dynamic = false);
+  bool CreateIntermediateTarget(unsigned int width,
+                                unsigned int height,
+                                bool dynamic = false,
+                                DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN);
   void OnCMSConfigChanged(AVColorPrimaries srcPrimaries);
   void ReorderDrawPoints(const CRect& destRect, CPoint(&rotatedPoints)[4]) const;
   bool CreateRenderBuffer(int index);
@@ -155,6 +158,7 @@ protected:
   virtual void CheckVideoParameters();
   virtual void OnViewSizeChanged() {}
   virtual void OnOutputReset() {}
+  virtual std::string GetRenderMethodDebugInfo() const { return {}; }
 
   bool m_toneMapping = false;
   bool m_useDithering = false;
@@ -188,4 +192,5 @@ protected:
   DXGI_HDR_METADATA_HDR10 m_lastHdr10 = {};
   HDR_TYPE m_HdrType = HDR_TYPE::HDR_NONE_SDR;
   bool m_AutoSwitchHDR = false;
+  std::string m_renderMethodName;
 };

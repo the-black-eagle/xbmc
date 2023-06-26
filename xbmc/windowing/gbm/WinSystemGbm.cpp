@@ -13,6 +13,7 @@
 #include "ServiceBroker.h"
 #include "VideoSyncGbm.h"
 #include "cores/VideoPlayer/Buffers/VideoBufferDRMPRIME.h"
+#include "cores/VideoPlayer/VideoReferenceClock.h"
 #include "drm/DRMAtomic.h"
 #include "drm/DRMLegacy.h"
 #include "drm/OffScreenModeSetting.h"
@@ -21,6 +22,8 @@
 #include "settings/Settings.h"
 #include "settings/SettingsComponent.h"
 #include "settings/lib/Setting.h"
+#include "utils/DisplayInfo.h"
+#include "utils/Map.h"
 #include "utils/StringUtils.h"
 #include "utils/log.h"
 #include "windowing/GraphicContext.h"
@@ -61,6 +64,27 @@ using namespace KODI::WINDOWING::GBM;
 
 using namespace std::chrono_literals;
 
+namespace
+{
+
+// These map to the definitions in the linux kernel
+// drivers/gpu/drm/drm_connector.c
+
+constexpr auto ColorimetryMap = make_map<KODI::UTILS::Colorimetry, std::string_view>({
+    {KODI::UTILS::Colorimetry::DEFAULT, "Default"},
+    {KODI::UTILS::Colorimetry::XVYCC_601, "XVYCC_601"},
+    {KODI::UTILS::Colorimetry::XVYCC_709, "XVYCC_709"},
+    {KODI::UTILS::Colorimetry::SYCC_601, "SYCC_601"},
+    {KODI::UTILS::Colorimetry::OPYCC_601, "opYCC_601"},
+    {KODI::UTILS::Colorimetry::OPRGB, "opRGB"},
+    {KODI::UTILS::Colorimetry::BT2020_CYCC, "BT2020_CYCC"},
+    {KODI::UTILS::Colorimetry::BT2020_YCC, "BT2020_YCC"},
+    {KODI::UTILS::Colorimetry::BT2020_RGB, "BT2020_RGB"},
+    {KODI::UTILS::Colorimetry::ST2113_RGB, "Default"},
+    {KODI::UTILS::Colorimetry::ICTCP, "Default"},
+});
+} // namespace
+
 CWinSystemGbm::CWinSystemGbm() :
   m_DRM(nullptr),
   m_GBM(new CGBMUtils),
@@ -69,6 +93,8 @@ CWinSystemGbm::CWinSystemGbm() :
   m_dpms = std::make_shared<CGBMDPMSSupport>();
   m_libinput->Start();
 }
+
+CWinSystemGbm::~CWinSystemGbm() = default;
 
 bool CWinSystemGbm::InitWindowSystem()
 {
@@ -103,6 +129,16 @@ bool CWinSystemGbm::InitWindowSystem()
         m_DRM.reset();
         return false;
       }
+    }
+  }
+
+  CDRMConnector* connector = m_DRM->GetConnector();
+  if (connector)
+  {
+    std::vector<uint8_t> edid = connector->GetEDID();
+    if (!edid.empty())
+    {
+      m_info = UTILS::CDisplayInfo::Create(edid);
     }
   }
 
@@ -303,7 +339,7 @@ void CWinSystemGbm::OnLostDevice()
     resource->OnLostDisplay();
 }
 
-std::unique_ptr<CVideoSync> CWinSystemGbm::GetVideoSync(void* clock)
+std::unique_ptr<CVideoSync> CWinSystemGbm::GetVideoSync(CVideoReferenceClock* clock)
 {
   return std::make_unique<CVideoSyncGbm>(clock);
 }
@@ -330,9 +366,23 @@ bool CWinSystemGbm::SetHDR(const VideoPicture* videoPicture)
   if (!drm)
     return false;
 
+  auto connector = drm->GetConnector();
+  if (!connector)
+    return false;
+
   if (!videoPicture)
   {
-    auto connector = drm->GetConnector();
+    if (connector->SupportsProperty("Colorspace"))
+    {
+      std::optional<uint64_t> colorspace = connector->GetPropertyValue("Colorspace", "Default");
+      if (colorspace)
+      {
+        CLog::LogF(LOGDEBUG, "setting connector colorspace to Default");
+        drm->AddProperty(connector, "Colorspace", colorspace.value());
+        drm->SetActive(true);
+      }
+    }
+
     if (connector->SupportsProperty("HDR_OUTPUT_METADATA"))
     {
       drm->AddProperty(connector, "HDR_OUTPUT_METADATA", 0);
@@ -346,13 +396,30 @@ bool CWinSystemGbm::SetHDR(const VideoPicture* videoPicture)
     return true;
   }
 
-  auto connector = drm->GetConnector();
-  if (connector->SupportsProperty("HDR_OUTPUT_METADATA"))
+  KODI::UTILS::Colorimetry colorimetry = DRMPRIME::GetColorimetry(*videoPicture);
+
+  if (connector->SupportsProperty("Colorspace") && m_info &&
+      m_info->SupportsColorimetry(colorimetry))
+  {
+    std::optional<uint64_t> colorspace =
+        connector->GetPropertyValue("Colorspace", ColorimetryMap.at(colorimetry));
+    if (colorspace)
+    {
+      CLog::LogF(LOGDEBUG, "setting connector colorspace to {}", ColorimetryMap.at(colorimetry));
+      drm->AddProperty(connector, "Colorspace", colorspace.value());
+      drm->SetActive(true);
+    }
+  }
+
+  KODI::UTILS::Eotf eotf = DRMPRIME::GetEOTF(*videoPicture);
+
+  if (connector->SupportsProperty("HDR_OUTPUT_METADATA") && m_info &&
+      m_info->SupportsHDRStaticMetadataType1() && m_info->SupportsEOTF(eotf))
   {
     hdr_output_metadata hdr_metadata = {};
 
     hdr_metadata.metadata_type = DRMPRIME::HDMI_STATIC_METADATA_TYPE1;
-    hdr_metadata.hdmi_metadata_type1.eotf = DRMPRIME::GetEOTF(*videoPicture);
+    hdr_metadata.hdmi_metadata_type1.eotf = static_cast<uint8_t>(eotf);
     hdr_metadata.hdmi_metadata_type1.metadata_type = DRMPRIME::HDMI_STATIC_METADATA_TYPE1;
 
     if (m_hdr_blob_id)
@@ -439,7 +506,22 @@ bool CWinSystemGbm::IsHDRDisplay()
   if (!connector)
     return false;
 
-  //! @todo: improve detection (edid?)
-  // we have no way to know if the display is actually HDR capable and we blindly set the HDR metadata
-  return connector->SupportsProperty("HDR_OUTPUT_METADATA");
+  return connector->SupportsProperty("HDR_OUTPUT_METADATA") && m_info &&
+         m_info->SupportsHDRStaticMetadataType1();
+}
+
+CHDRCapabilities CWinSystemGbm::GetDisplayHDRCapabilities() const
+{
+  if (!m_info)
+    return {};
+
+  CHDRCapabilities caps;
+
+  if (m_info->SupportsEOTF(UTILS::Eotf::PQ))
+    caps.SetHDR10();
+
+  if (m_info->SupportsEOTF(UTILS::Eotf::HLG))
+    caps.SetHLG();
+
+  return caps;
 }

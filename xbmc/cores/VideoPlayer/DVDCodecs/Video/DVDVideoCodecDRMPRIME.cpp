@@ -72,6 +72,18 @@ static void AlignedSize(AVCodecContext* avctx, int& width, int& height)
   height = h;
 }
 
+bool SupportsDRM()
+{
+  AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE;
+  while ((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE)
+  {
+    if (type == AV_HWDEVICE_TYPE_DRM)
+      return true;
+  }
+
+  return false;
+}
+
 } // namespace
 
 CDVDVideoCodecDRMPRIME::CDVDVideoCodecDRMPRIME(CProcessInfo& processInfo)
@@ -98,6 +110,12 @@ std::unique_ptr<CDVDVideoCodec> CDVDVideoCodecDRMPRIME::Create(CProcessInfo& pro
 
 void CDVDVideoCodecDRMPRIME::Register()
 {
+  if (!SupportsDRM())
+  {
+    CLog::Log(LOGINFO, "CDVDVideoCodecDRMPRIME: FFMPEG has no libdrm support");
+    return;
+  }
+
   auto settingsComponent = CServiceBroker::GetSettingsComponent();
   if (!settingsComponent)
     return;
@@ -333,12 +351,15 @@ bool CDVDVideoCodecDRMPRIME::Open(CDVDStreamInfo& hints, CDVDCodecOptions& optio
   m_pCodecContext->time_base.den = DVD_TIME_BASE;
   m_pCodecContext->thread_count = CServiceBroker::GetCPUInfo()->GetCPUCount();
 
-  if (hints.extradata && hints.extrasize > 0)
+  if (hints.extradata)
   {
-    m_pCodecContext->extradata_size = hints.extrasize;
     m_pCodecContext->extradata =
-        static_cast<uint8_t*>(av_mallocz(hints.extrasize + AV_INPUT_BUFFER_PADDING_SIZE));
-    memcpy(m_pCodecContext->extradata, hints.extradata, hints.extrasize);
+        static_cast<uint8_t*>(av_mallocz(hints.extradata.GetSize() + AV_INPUT_BUFFER_PADDING_SIZE));
+    if (m_pCodecContext->extradata)
+    {
+      m_pCodecContext->extradata_size = hints.extradata.GetSize();
+      memcpy(m_pCodecContext->extradata, hints.extradata.GetData(), hints.extradata.GetSize());
+    }
   }
 
   for (auto&& option : options.m_keys)

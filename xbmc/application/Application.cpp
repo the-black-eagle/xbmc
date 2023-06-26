@@ -73,7 +73,6 @@
 #include "SeekHandler.h"
 #include "ServiceBroker.h"
 #include "TextureCache.h"
-#include "cores/DllLoader/DllLoaderContainer.h"
 #include "filesystem/Directory.h"
 #include "filesystem/DirectoryCache.h"
 #include "filesystem/DllLibCurl.h"
@@ -318,6 +317,9 @@ void CApplication::HandlePortEvents()
         break;
       case XBMC_MODECHANGE:
         CServiceBroker::GetWinSystem()->GetGfxContext().ApplyModeChange(newEvent.mode.res);
+        break;
+      case XBMC_SCREENCHANGE:
+        CServiceBroker::GetWinSystem()->OnChangeScreen(newEvent.screen.screenIdx);
         break;
       case XBMC_USEREVENT:
         CServiceBroker::GetAppMessenger()->PostMsg(static_cast<uint32_t>(newEvent.user.code));
@@ -1607,8 +1609,8 @@ void CApplication::OnApplicationMessage(ThreadMessage* pMsg)
     appPlayer->TriggerUpdateResolution();
     break;
 
-  case TMSG_TOGGLEFLOATONTOP:
-    CServiceBroker::GetWinSystem()->ToggleFloatOnTop();
+  case TMSG_MOVETOSCREEN:
+    CServiceBroker::GetWinSystem()->MoveToScreen(static_cast<int>(pMsg->param1));
     break;
 
   case TMSG_MINIMIZE:
@@ -1997,7 +1999,6 @@ bool CApplication::Cleanup()
     g_directoryCache.Clear();
     //CServiceBroker::GetInputManager().ClearKeymaps(); //! @todo
     CEventServer::RemoveInstance();
-    DllLoaderContainer::Clear();
     CServiceBroker::GetPlaylistPlayer().Clear();
 
     if (m_ServiceManager)

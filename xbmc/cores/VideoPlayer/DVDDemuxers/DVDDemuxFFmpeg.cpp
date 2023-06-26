@@ -325,7 +325,6 @@ bool CDVDDemuxFFmpeg::Open(const std::shared_ptr<CDVDInputStream>& pInput, bool 
     }
     if (result < 0)
     {
-      m_pFormatContext->flags |= AVFMT_FLAG_PRIV_OPT;
       if (avformat_open_input(&m_pFormatContext, strFile.c_str(), iformat, &options) < 0)
       {
         CLog::Log(LOGDEBUG, "Error, could not open file {}", CURL::GetRedacted(strFile));
@@ -337,7 +336,6 @@ bool CDVDDemuxFFmpeg::Open(const std::shared_ptr<CDVDInputStream>& pInput, bool 
       avformat_close_input(&m_pFormatContext);
       m_pFormatContext = avformat_alloc_context();
       m_pFormatContext->interrupt_callback = int_cb;
-      m_pFormatContext->flags &= ~AVFMT_FLAG_PRIV_OPT;
       AVDictionary* options = GetFFMpegOptionsFromInput();
       av_dict_set_int(&options, "load_all_variants", 0, AV_OPT_SEARCH_CHILDREN);
       if (avformat_open_input(&m_pFormatContext, strFile.c_str(), iformat, &options) < 0)
@@ -1883,10 +1881,8 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int streamIdx)
 
     if (stream->type != STREAM_NONE && pStream->codecpar->extradata && pStream->codecpar->extradata_size > 0)
     {
-      stream->ExtraSize = pStream->codecpar->extradata_size;
-      stream->ExtraData = std::make_unique<uint8_t[]>(pStream->codecpar->extradata_size);
-      memcpy(stream->ExtraData.get(), pStream->codecpar->extradata,
-             pStream->codecpar->extradata_size);
+      stream->extraData =
+          FFmpegExtraData(pStream->codecpar->extradata, pStream->codecpar->extradata_size);
     }
 
 #ifdef HAVE_LIBBLURAY
@@ -2168,7 +2164,8 @@ bool CDVDDemuxFFmpeg::IsProgramChange()
         return true;
       }
     }
-    if (m_pFormatContext->streams[idx]->codecpar->extradata_size != static_cast<int>(stream->ExtraSize))
+    if (m_pFormatContext->streams[idx]->codecpar->extradata_size !=
+        static_cast<int>(stream->extraData.GetSize()))
       return true;
   }
   return false;
@@ -2301,11 +2298,11 @@ void CDVDDemuxFFmpeg::ParsePacket(AVPacket* pkt)
         parser->second->m_parserCtx->parser &&
         !st->codecpar->extradata)
     {
-      auto [retExtraData, i] = GetPacketExtradata(pkt, st->codecpar);
-      if (i > 0)
+      FFmpegExtraData retExtraData = GetPacketExtradata(pkt, st->codecpar);
+      if (retExtraData)
       {
-        st->codecpar->extradata_size = i;
-        st->codecpar->extradata = retExtraData;
+        st->codecpar->extradata_size = retExtraData.GetSize();
+        st->codecpar->extradata = retExtraData.TakeData();
 
         if (parser->second->m_parserCtx->parser->parser_parse)
         {

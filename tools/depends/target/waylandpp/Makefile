@@ -1,5 +1,5 @@
 -include ../../Makefile.include
-DEPS =Makefile ../../download-files.include
+DEPS =Makefile ../../download-files.include 001-fix-gcc13-build.patch
 
 # lib name, version
 LIBNAME=waylandpp
@@ -7,7 +7,6 @@ VERSION=0.2.8
 SOURCE=$(LIBNAME)-$(VERSION)
 ARCHIVE=$(SOURCE).tar.gz
 SHA512=bf1b8a9e69b87547fc65989b9eaff88a442d8b2f01f5446cef960000b093390b1e557536837fbf38bb6d9a4f93e3985ea34c3253f94925b0f571b4606c980832
-include ../../download-files.include
 
 LIBDYLIB=$(PLATFORM)/build/libwayland-client++.so
 
@@ -17,10 +16,12 @@ ifeq ($(PLATFORM),)
 	PLATFORM = native
 	TARBALLS_LOCATION = $(ROOT_DIR)
 	BASE_URL := http://mirrors.kodi.tv/build-deps/sources
-	RETRIEVE_TOOL := curl -Ls --create-dirs -f -O
-	ARCHIVE_TOOL := tar --strip-components=1 -xf
+	RETRIEVE_TOOL := curl
+	RETRIEVE_TOOL_FLAGS := -LsS --create-dirs --retry 10 --retry-connrefused -o
+	ARCHIVE_TOOL := tar
+	ARCHIVE_TOOL_FLAGS := --strip-components=1 -xf
 	CMAKE := cmake
-	CMAKE_OPTIONS := -DCMAKE_INSTALL_PREFIX=$(PREFIX) -DBUILD_SCANNER=ON $(CMAKE_OPTIONS)
+	CMAKE_OPTIONS := -DCMAKE_INSTALL_PREFIX=$(PREFIX) -DCMAKE_INSTALL_LIBDIR=lib -DBUILD_SCANNER=ON $(CMAKE_OPTIONS)
 else
 	# Building as part of depends
 	DEPS += ../../Makefile.include
@@ -30,6 +31,7 @@ endif
 CMAKE_OPTIONS := -DBUILD_DOCUMENTATION=OFF -DBUILD_LIBRARIES=ON -DBUILD_SHARED_LIBS=OFF -DBUILD_EXAMPLES=OFF $(CMAKE_OPTIONS)
 BUILDDIR = $(PLATFORM)/build
 
+include ../../download-files.include
 all: .installed-$(PLATFORM)
 
 
@@ -41,6 +43,7 @@ ifeq ($(PREFIX),)
 endif
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
+	cd $(PLATFORM); patch -p1 -i ../001-fix-gcc13-build.patch
 	mkdir -p $(BUILDDIR)
 	cd $(BUILDDIR); $(CMAKE) $(CMAKE_OPTIONS) ..
 
@@ -49,9 +52,10 @@ $(LIBDYLIB): $(PLATFORM)
 
 .installed-$(PLATFORM): $(LIBDYLIB)
 	$(MAKE) -C $(BUILDDIR) install
-
+ifneq ($(PLATFORM), native)
 	# We want to use the native wayland-scanner++
 	ln -sf $(NATIVEPREFIX)/lib/pkgconfig/wayland-scanner++.pc $(PREFIX)/lib/pkgconfig/wayland-scanner++.pc
+endif
 	touch $@
 
 clean:

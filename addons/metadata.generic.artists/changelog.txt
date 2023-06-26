@@ -1,3 +1,6 @@
+v1.0.15
+- scrape youtube links and thumbs from theaudiodb
+
 v1.0.14
 - add translations
 

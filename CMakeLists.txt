@@ -112,6 +112,8 @@ endif()
 
 core_find_git_rev(APP_SCMID FULL)
 
+set(AUDIO_BACKENDS_LIST "" CACHE STRING "Available audio backends")
+
 # Dynamically loaded libraries built with the project
 add_custom_target(${APP_NAME_LC}-libraries)
 set(LIBRARY_FILES "" CACHE STRING "" FORCE)
@@ -255,12 +257,17 @@ endif()
 set(outputFilterRegex "addons/xbmc.json")
 find_addon_xml_in_files(${outputFilterRegex})
 
+if(ALSA_FOUND AND PULSEAUDIO_FOUND)
+  list(APPEND AUDIO_BACKENDS_LIST "alsa+pulseaudio")
+endif()
+
 # Compile Info
 add_custom_command(OUTPUT ${CORE_BUILD_DIR}/xbmc/CompileInfo.cpp
                           ${ADDON_XML_OUTPUTS}
                    COMMAND ${CMAKE_COMMAND} -DCORE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
                                             -DCORE_SYSTEM_NAME=${CORE_SYSTEM_NAME}
                                             -DCORE_PLATFORM_NAME_LC="${CORE_PLATFORM_NAME_LC}"
+                                            -DAUDIO_BACKENDS="${AUDIO_BACKENDS_LIST}"
                                             -DCORE_BUILD_DIR=${CORE_BUILD_DIR}
                                             -DCMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}
                                             -DARCH_DEFINES="${ARCH_DEFINES}"
@@ -342,10 +349,14 @@ get_property(INTERNAL_DEPS GLOBAL PROPERTY INTERNAL_DEPS_PROP)
 set(GLOBAL_TARGET_DEPS ${INTERNAL_DEPS} ${PLATFORM_GLOBAL_TARGET_DEPS})
 
 # main library (used for main binary and tests)
-if(CMAKE_GENERATOR STREQUAL Xcode)
+if(CORE_SYSTEM_NAME STREQUAL "darwin_embedded")
+  # $<TARGET_OBJECTS:> as at 3.26.4 provides incorrect paths for ios/tvos platforms
+  # Even if XCODE_EMIT_EFFECTIVE_PLATFORM_NAME global property is used, the xcode project
+  # still sets int dir paths to $(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME) and the generator
+  # expression only provides a path using $(CONFIGURATION)
   add_library(compileinfo_obj OBJECT IMPORTED)
   set_property(TARGET compileinfo_obj PROPERTY IMPORTED_OBJECTS
-    "${CMAKE_BINARY_DIR}/$(PROJECT_NAME).build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/compileinfo.build/$(OBJECT_FILE_DIR_normal:base)/$(CURRENT_ARCH)/CompileInfo.o"
+    "${CMAKE_BINARY_DIR}/${CORE_BUILD_DIR}/compileinfo.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/$(OBJECT_FILE_DIR_normal:base)/$(CURRENT_ARCH)/CompileInfo.o"
   )
   add_library(lib${APP_NAME_LC} STATIC)
   add_dependencies(lib${APP_NAME_LC} compileinfo)
@@ -409,9 +420,14 @@ if(WIN32)
   endif()
 elseif(CORE_SYSTEM_NAME STREQUAL android)
   # Nothing
-elseif(CORE_SYSTEM_NAME STREQUAL darwin_embedded)
+elseif(CORE_SYSTEM_NAME STREQUAL darwin_embedded OR CORE_SYSTEM_NAME STREQUAL osx)
+  # Build all apple app target as bundled and dont sign.
+  # We do all signing post build of the app target manually
   set_target_properties(${APP_NAME_LC} PROPERTIES OUTPUT_NAME ${APP_NAME}
-                                                  MACOSX_BUNDLE_INFO_PLIST ${PLATFORM_BUNDLE_INFO_PLIST})
+                                                  MACOSX_BUNDLE YES
+                                                  MACOSX_BUNDLE_INFO_PLIST ${PLATFORM_BUNDLE_INFO_PLIST}
+                                                  XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+                                                  XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
 else()
   set_target_properties(${APP_NAME_LC} PROPERTIES SUFFIX ${APP_BINARY_SUFFIX})
 endif()

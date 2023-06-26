@@ -3,11 +3,10 @@ DEPS =Makefile ../../download-files.include
 
 # lib name, version
 LIBNAME=wayland-protocols
-VERSION=1.20
+VERSION=1.24
 SOURCE=$(LIBNAME)-$(VERSION)
-ARCHIVE=$(SOURCE).tar.gz
-SHA512=56c99b1534ca12e094c0ba1a7d38e7551d38dd7dea80d1a35ae4cd60e8b28ddbd8f00374394da871bbfc91aa3a42f77ebed7d62a8fe6165684a385f2028a1bf4
-include ../../download-files.include
+ARCHIVE=$(SOURCE).tar.xz
+SHA512=4b1122517db56f48a5fafd4bd0cb7f94faef6fdd2d80e6cec17e5a6bafbaf2f5a71b958ed12e6d13965494885c209b2fb6dd8331487b39c6f251e71f1e770a15
 
 ifeq ($(PLATFORM),)
 	# Building stand-alone
@@ -15,18 +14,30 @@ ifeq ($(PLATFORM),)
 	PLATFORM = native
 	TARBALLS_LOCATION = $(ROOT_DIR)
 	BASE_URL := http://mirrors.kodi.tv/build-deps/sources
-	RETRIEVE_TOOL := curl -Ls --create-dirs -f -O
-	ARCHIVE_TOOL := tar --strip-components=1 -xf
+	RETRIEVE_TOOL := curl
+	RETRIEVE_TOOL_FLAGS := -LsS --create-dirs --retry 10 --retry-connrefused -o
+	ARCHIVE_TOOL := tar
+	ARCHIVE_TOOL_FLAGS := --strip-components=1 -xf
+	AUTORECONF := autoreconf
 else
 	# Building as part of depends
 	DEPS += ../../Makefile.include
 endif
 
+MESON_BUILD_TYPE=release
+
+ifeq ($(DEBUG_BUILD), yes)
+  MESON_BUILD_TYPE=debug
+endif
+
 # configuration settings
-CONFIGURE=./configure --prefix=$(PREFIX)
+CONFIGURE = $(PYTHON) $(MESON) $(NATIVEPREFIX)/bin/meson \
+	--prefix=$(PREFIX) \
+	--buildtype=$(MESON_BUILD_TYPE) \
+	-Dtests=false
 
+include ../../download-files.include
 all: .installed-$(PLATFORM)
-
 
 $(PLATFORM): $(DEPS) | $(TARBALLS_LOCATION)/$(ARCHIVE).$(HASH_TYPE)
 ifeq ($(PREFIX),)
@@ -36,11 +47,12 @@ ifeq ($(PREFIX),)
 endif
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
-	cd $(PLATFORM); $(AUTORECONF) -vif
-	cd $(PLATFORM); $(CONFIGURE)
+	cd $(PLATFORM); rm -rf build; mkdir -p build
+	cd $(PLATFORM); $(CONFIGURE) . build
 
 .installed-$(PLATFORM): $(PLATFORM)
-	$(MAKE) -C $(PLATFORM) install
+	cd $(PLATFORM)/build; $(NATIVEPREFIX)/bin/ninja -v install
+	mkdir -p $(PREFIX)/lib/pkgconfig
 	ln -sf $(PREFIX)/share/pkgconfig/wayland-protocols.pc $(PREFIX)/lib/pkgconfig/wayland-protocols.pc
 	touch $@
 

@@ -94,8 +94,6 @@ public:
       "videolibrary.episodeartwhitelist";
   static constexpr auto SETTING_VIDEOLIBRARY_MUSICVIDEOART_WHITELIST =
       "videolibrary.musicvideoartwhitelist";
-  static constexpr auto SETTING_VIDEOLIBRARY_ARTSETTINGS_UPDATED =
-      "videolibrary.artsettingsupdated";
   static constexpr auto SETTING_VIDEOLIBRARY_SHOWPERFORMERS =
       "videolibrary.musicvideosallperformers";
   static constexpr auto SETTING_LOCALE_AUDIOLANGUAGE = "locale.audiolanguage";
@@ -115,6 +113,8 @@ public:
       "videoplayer.quitstereomodeonstop";
   static constexpr auto SETTING_VIDEOPLAYER_RENDERMETHOD = "videoplayer.rendermethod";
   static constexpr auto SETTING_VIDEOPLAYER_HQSCALERS = "videoplayer.hqscalers";
+  static constexpr auto SETTING_VIDEOPLAYER_USESUPERRESOLUTION = "videoplayer.usesuperresolution";
+  static constexpr auto SETTING_VIDEOPLAYER_HIGHPRECISIONPROCESSING = "videoplayer.highprecision";
   static constexpr auto SETTING_VIDEOPLAYER_USEMEDIACODEC = "videoplayer.usemediacodec";
   static constexpr auto SETTING_VIDEOPLAYER_USEMEDIACODECSURFACE =
       "videoplayer.usemediacodecsurface";
@@ -253,7 +253,6 @@ public:
       "musiclibrary.artistartwhitelist";
   static constexpr auto SETTING_MUSICLIBRARY_ALBUMART_WHITELIST = "musiclibrary.albumartwhitelist";
   static constexpr auto SETTING_MUSICLIBRARY_MUSICTHUMBS = "musiclibrary.musicthumbs";
-  static constexpr auto SETTING_MUSICLIBRARY_ARTSETTINGS_UPDATED = "musiclibrary.artsettings";
   static constexpr auto SETTING_MUSICLIBRARY_ALBUMSSCRAPER = "musiclibrary.albumsscraper";
   static constexpr auto SETTING_MUSICLIBRARY_ARTISTSSCRAPER = "musiclibrary.artistsscraper";
   static constexpr auto SETTING_MUSICLIBRARY_OVERRIDETAGS = "musiclibrary.overridetags";

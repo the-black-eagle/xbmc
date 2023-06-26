@@ -5,7 +5,6 @@ set(SOURCES android_main.cpp
             AndroidMouse.cpp
             AndroidTouch.cpp
             EventLoop.cpp
-            GraphicBuffer.cpp
             JNIMainActivity.cpp
             JNIXBMCMainView.cpp
             JNIXBMCMediaSession.cpp
@@ -20,18 +19,17 @@ set(SOURCES android_main.cpp
             JNIXBMCURIUtils.cpp
             JNIXBMCDisplayManagerDisplayListener.cpp
             JNIXBMCSpeechRecognitionListener.cpp
+            JNIXBMCConnectivityManagerNetworkCallback.cpp
+            JNIXBMCBroadcastReceiver.cpp
             ${NDKROOT}/sources/android/native_app_glue/android_native_app_glue.c
             ${NDKROOT}/sources/android/cpufeatures/cpu-features.c)
 
-set(HEADERS AndroidExtra.h
-            AndroidFeatures.h
+set(HEADERS AndroidFeatures.h
             AndroidJoyStick.h
             AndroidKey.h
             AndroidMouse.h
             AndroidTouch.h
-            DllGraphicBuffer.h
             EventLoop.h
-            GraphicBuffer.h
             IActivityHandler.h
             JNIMainActivity.h
             JNIXBMCMainView.h
@@ -47,6 +45,8 @@ set(HEADERS AndroidExtra.h
             JNIXBMCURIUtils.h
             JNIXBMCDisplayManagerDisplayListener.h
             JNIXBMCSpeechRecognitionListener.h
+            JNIXBMCConnectivityManagerNetworkCallback.h
+            JNIXBMCBroadcastReceiver.h
             XBMCApp.h)
 
 core_add_library(platform_android_activity)

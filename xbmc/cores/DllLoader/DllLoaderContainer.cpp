@@ -13,13 +13,11 @@
 #ifdef TARGET_WINDOWS
 #include "Win32DllLoader.h"
 #endif
-#include "DllLoader.h"
-#include "dll_tracker.h" // for python unload hack
-#include "filesystem/File.h"
-#include "utils/URIUtils.h"
-#include "utils/StringUtils.h"
-#include "utils/log.h"
 #include "URL.h"
+#include "filesystem/File.h"
+#include "utils/StringUtils.h"
+#include "utils/URIUtils.h"
+#include "utils/log.h"
 
 #if defined(TARGET_WINDOWS)
 #define ENV_PARTIAL_PATH \
@@ -56,17 +54,7 @@
 using namespace XFILE;
 
 LibraryLoader* DllLoaderContainer::m_dlls[64] = {};
-int        DllLoaderContainer::m_iNrOfDlls = 0;
-bool       DllLoaderContainer::m_bTrack = true;
-
-void DllLoaderContainer::Clear()
-{
-}
-
-HMODULE DllLoaderContainer::GetModuleAddress(const char* sName)
-{
-  return (HMODULE)GetModule(sName);
-}
+int DllLoaderContainer::m_iNrOfDlls = 0;
 
 LibraryLoader* DllLoaderContainer::GetModule(const char* sName)
 {
@@ -244,8 +232,6 @@ LibraryLoader* DllLoaderContainer::LoadDll(const char* sName, bool bLoadSymbols)
   pLoader = new SoLoader(sName, bLoadSymbols);
 #elif defined(TARGET_WINDOWS)
   pLoader = new Win32DllLoader(sName, false);
-#else
-  pLoader = new DllLoader(sName, m_bTrack, false, bLoadSymbols);
 #endif
 
   if (!pLoader)
@@ -272,17 +258,6 @@ bool DllLoaderContainer::IsSystemDll(const char* sName)
   }
 
   return false;
-}
-
-int DllLoaderContainer::GetNrOfModules()
-{
-  return m_iNrOfDlls;
-}
-
-LibraryLoader* DllLoaderContainer::GetModule(int iPos)
-{
-  if (iPos < m_iNrOfDlls) return m_dlls[iPos];
-  return NULL;
 }
 
 void DllLoaderContainer::RegisterDll(LibraryLoader* pDll)
@@ -325,20 +300,4 @@ void DllLoaderContainer::UnRegisterDll(LibraryLoader* pDll)
       }
     }
   }
-}
-
-void DllLoaderContainer::UnloadPythonDlls()
-{
-  // unload all dlls that python could have loaded
-  for (int i = 0; i < m_iNrOfDlls && m_dlls[i] != NULL; i++)
-  {
-    const char* name = m_dlls[i]->GetName();
-    if (strstr(name, ".pyd") != NULL)
-    {
-      LibraryLoader* pDll = m_dlls[i];
-      ReleaseModule(pDll);
-      i = 0;
-    }
-  }
-
 }

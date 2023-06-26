@@ -113,6 +113,26 @@
             <formatlabel>14047</formatlabel>
           </control>
         </setting>
+        <setting id="videoplayer.usesuperresolution" type="boolean" label="13417" help="39194">
+          <requirement>HAS_DX</requirement>
+          <dependencies>
+            <dependency type="visible">
+              <condition on="property" name="supportsvideosuperresolution" />
+            </dependency>
+            <dependency type="enable">
+              <or>
+                <condition setting="videoplayer.rendermethod" operator="is">0</condition> <!-- RENDER_METHOD_AUTO -->
+                <condition setting="videoplayer.rendermethod" operator="is">4</condition> <!-- RENDER_METHOD_DXVA -->
+              </or>
+            </dependency>
+          </dependencies>
+          <level>2</level>
+          <default>false</default>
+          <updates>
+            <update type="change" />
+          </updates>
+          <control type="toggle" />
+        </setting>
         <setting id="videoplayer.usemediacodecsurface" type="boolean" label="13440" help="36544">
           <requirement>HAS_MEDIACODEC</requirement>
           <level>2</level>
@@ -149,6 +169,12 @@
               <condition on="property" name="ishdrdisplay" />
             </dependency>
           </dependencies>
+          <level>2</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.highprecision" type="boolean" label="13418" help="39195">
+          <requirement>HAS_DX</requirement>
           <level>2</level>
           <default>true</default>
           <control type="toggle" />
@@ -1111,12 +1137,6 @@
         </setting>
       </group>
       <group id="4" label="39123">
-        <!-- Hidden setting indicating video art settings have been migrated from old advancedsettings.xml format-->
-        <setting id="videolibrary.artsettingsupdated" type="boolean" label="0" help="">
-          <level>4</level>
-          <default>false</default>
-          <control type="toggle" />
-        </setting>
         <setting id="videolibrary.artworklevel" type="integer" label="39137" help="39138">
           <level>1</level>
           <default>0</default>
@@ -1305,12 +1325,6 @@
         </setting>
       </group>
       <group id="3" label="39123">
-        <!-- Hidden setting indicating music art settings have been migrated from old advancedsettings.xml format-->
-        <setting id="musiclibrary.artsettings" type="boolean" label="0" help="">
-          <level>4</level>
-          <default>false</default>
-          <control type="toggle" />
-        </setting>
         <setting id="musiclibrary.artworklevel" type="integer" label="39137" help="39138">
           <level>1</level>
           <default>0</default>

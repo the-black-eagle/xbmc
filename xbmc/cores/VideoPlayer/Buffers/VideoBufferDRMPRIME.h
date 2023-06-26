@@ -10,6 +10,7 @@
 
 #include "cores/VideoPlayer/Buffers/VideoBuffer.h"
 #include "cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h"
+#include "utils/DisplayInfo.h"
 
 extern "C"
 {
@@ -34,9 +35,10 @@ enum hdmi_eotf
   HDMI_EOTF_BT_2100_HLG,
 };
 
+KODI::UTILS::Colorimetry GetColorimetry(const VideoPicture& picture);
 std::string GetColorEncoding(const VideoPicture& picture);
 std::string GetColorRange(const VideoPicture& picture);
-uint8_t GetEOTF(const VideoPicture& picture);
+KODI::UTILS::Eotf GetEOTF(const VideoPicture& picture);
 const AVMasteringDisplayMetadata* GetMasteringDisplayMetadata(const VideoPicture& picture);
 const AVContentLightMetadata* GetContentLightMetadata(const VideoPicture& picture);
 

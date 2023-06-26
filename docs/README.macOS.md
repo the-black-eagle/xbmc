@@ -56,7 +56,7 @@ Several different strategies are used to draw your attention to certain pieces o
 ## 2. Prerequisites
 * **[Java Development Kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html)**
 * **[Xcode](https://developer.apple.com/xcode/)**. Install it from the AppStore or from the **[Apple Developer Homepage](https://developer.apple.com/)**.
-* Device with **OSX 10.13 or newer** to run Kodi after build.
+* Device with **OSX 10.14 or newer** to run Kodi after build.
 
 Building for OSX/macOS should work with the following constellations of Xcode and OSX/macOS versions:
   * Xcode 12.4 against MacOSX SDK 11.1 on 10.15.7 (Catalina)(recommended)(CI)
@@ -109,14 +109,14 @@ make -j$(getconf _NPROCESSORS_ONLN)
 
 **WARNING:** Look for the `Dependencies built successfully.` success message. If in doubt run a single threaded `make` command until the message appears. If the single make fails, clean the specific library by issuing `make -C target/<name_of_failed_lib> distclean` and run `make`again.
 
-**NOTE:** **Advanced developers** may want to specify an SDK version (if multiple versions are installed) in the configure line(s) shown above. The example below would use SDK 10.13:
+**NOTE:** **Advanced developers** may want to specify an SDK version (if multiple versions are installed) in the configure line(s) shown above. The example below would use SDK 10.14:
 ```
-./configure --host=x86_64-apple-darwin --with-platform=macos --with-sdk=10.13
+./configure --host=x86_64-apple-darwin --with-platform=macos --with-sdk=10.14
 ```
 
-Developers can also select native windowing/input handling with the following
+Developers can also select the legacy SDL windowing/input handling with the following
 ```
-./configure --host=x86_64-apple-darwin --with-platform=macos --with-windowsystem=native
+./configure --host=x86_64-apple-darwin --with-platform=macos --with-windowsystem=sdl
 ```
 
 ### 4.1. Advanced Configure Options
@@ -189,7 +189,7 @@ Developers can also select native windowing/input handling with the following
 ```
 --with-windowsystem=<native:sdl>
 ```
-  Windowing system to use (default is sdl when not provided). arm64 MacOS requires native
+  Windowing system to use (default is native windowing when not provided). arm64 MacOS does not support SDL windowing.
 
 ```
 --with-sdk=<sdknumber>
@@ -241,9 +241,9 @@ Generate Xcode project as per configure command in **[Configure and build tools 
 make -C tools/depends/target/cmakebuildsys BUILD_DIR=$HOME/kodi-build GEN=Xcode
 ```
 
-To explicitly select the windowing/input system to use do the following (default is to use SDL if not provided)
+To explicitly select the windowing/input system to use do the following (default is to use native if not provided)
 ```
-make -C tools/depends/target/cmakebuildsys BUILD_DIR=$HOME/kodi-build GEN=Xcode APP_WINDOW_SYSTEM=native
+make -C tools/depends/target/cmakebuildsys BUILD_DIR=$HOME/kodi-build GEN=Xcode APP_WINDOW_SYSTEM=sdl
 ```
 
 **TIP:** BUILD_DIR can be omitted, and project will be created in $HOME/kodi/build
@@ -260,10 +260,10 @@ cd $HOME/kodi-build
 
 Generate Xcode project (x86_64 intel):
 ```
-/Users/Shared/xbmc-depends/x86_64-darwin17.5.0-native/bin/cmake -G Xcode -DCMAKE_TOOLCHAIN_FILE=/Users/Shared/xbmc-depends/macosx10.13_x86_64-target-debug/share/Toolchain.cmake ../kodi
+/Users/Shared/xbmc-depends/x86_64-darwin17.5.0-native/bin/cmake -G Xcode -DCMAKE_TOOLCHAIN_FILE=/Users/Shared/xbmc-depends/macosx10.14_x86_64-target-debug/share/Toolchain.cmake ../kodi
 ```
 
-**WARNING:** The toolchain file location differs depending on SDK version. You have to replace `x86_64-darwin17.5.0-native` and `macosx10.13_x86_64-target-debug` in the paths above with the correct ones on your system.
+**WARNING:** The toolchain file location differs depending on SDK version. You have to replace `x86_64-darwin17.5.0-native` and `macosx10.14_x86_64-target-debug` in the paths above with the correct ones on your system.
 
 You can check `Users/Shared/xbmc-depends` directory content with:
 ```

@@ -13,7 +13,11 @@
 #include <map>
 
 #include <d3d11_4.h>
+
+extern "C"
+{
 #include <libavutil/pixfmt.h>
+}
 
 enum RenderMethod;
 
@@ -31,19 +35,23 @@ public:
 
   static CRendererBase* Create(CVideoSettings& videoSettings);
   static void GetWeight(std::map<RenderMethod, int>& weights, const VideoPicture& picture);
+  static DXGI_FORMAT GetDXGIFormat(AVPixelFormat format, DXGI_FORMAT default_fmt);
 
 protected:
-  explicit CRendererDXVA(CVideoSettings& videoSettings) : CRendererHQ(videoSettings) {}
+  explicit CRendererDXVA(CVideoSettings& videoSettings);
 
   void CheckVideoParameters() override;
   void RenderImpl(CD3DTexture& target, CRect& sourceRect, CPoint(&destPoints)[4], uint32_t flags) override;
   CRenderBuffer* CreateBuffer() override;
+  virtual std::string GetRenderMethodDebugInfo() const;
 
 private:
   void FillBuffersSet(CRenderBuffer* (&buffers)[8]);
   CRect ApplyTransforms(const CRect& destRect) const;
+  DXGI_FORMAT CalcIntermediateTargetFormat(const VideoPicture& picture) const;
 
   std::unique_ptr<DXVA::CProcessorHD> m_processor;
+  DXGI_FORMAT m_intermediateTargetFormat{DXGI_FORMAT_UNKNOWN};
 };
 
 class CRendererDXVA::CRenderBufferImpl : public CRenderBuffer

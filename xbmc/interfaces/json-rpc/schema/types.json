@@ -545,7 +545,8 @@
                 "votes", "userrating", "mood", "contributors",
                 "displaycomposer", "displayconductor", "displayorchestra", "displaylyricist",
                 "sortartist", "art", "sourceid", "disctitle", "releasedate", "originaldate",
-                "bpm", "samplerate", "bitrate", "channels", "datemodified", "datenew" ]
+                "bpm", "samplerate", "bitrate", "channels", "datemodified", "datenew",
+                "songvideourl" ]
     }
   },
   "Audio.Album.ReleaseType": {
@@ -692,7 +693,8 @@
       "bpm": { "type": "Integer" },
       "samplerate": { "type": "Integer" },
       "bitrate": { "type": "Integer"},
-      "channels": { "type": "Integer"}
+      "channels": { "type": "Integer"},
+      "songvideourl": { "type": "string" }
     }
   },
   "Audio.Property.Name": {
@@ -766,7 +768,7 @@
                 "showtitle", "cast", "streamdetails", "lastplayed", "fanart",
                 "thumbnail", "file", "resume", "tvshowid", "dateadded",
                 "uniqueid", "art", "specialsortseason", "specialsortepisode", "userrating",
-                "seasonid", "ratings", "genre" ]
+                "seasonid", "ratings", "genre", "studio" ]
     }
   },
   "Video.Fields.MusicVideo": {
@@ -974,7 +976,9 @@
       "specialsortepisode": { "type": "integer" },
       "userrating": { "type": "integer" },
       "seasonid": { "$ref": "Library.Id" },
-      "ratings": { "type": "Video.Ratings" }
+      "ratings": { "type": "Video.Ratings" },
+      "studio": { "$ref": "Array.String" },
+      "genre": { "$ref": "Array.String" }
     }
   },
   "Video.Details.MusicVideo": {
@@ -1570,7 +1574,8 @@
       "samplerate": { "type": "integer" },
       "channels": { "type": "integer"},
       "albumstatus": { "type": "string" },
-      "customproperties": { "$ref": "Item.CustomProperties" }
+      "customproperties": { "$ref": "Item.CustomProperties" },
+      "songvideourl": { "type": "string" }
     }
   },
   "List.Fields.All": {
@@ -1595,7 +1600,7 @@
                 "musicbrainzreleasegroupid", "mediapath", "dynpath", "isboxset", "totaldiscs",
                 "disctitle", "releasedate", "originaldate", "bpm", "bitrate", "samplerate",
                 "channels", "albumstatus", "datemodified", "datenew", "customproperties",
-                "albumduration"]
+                "albumduration", "songvideourl"]
     }
   },
   "List.Item.All": {
@@ -1629,7 +1634,7 @@
                 "specialsortseason", "specialsortepisode", "sortartist", "musicbrainzreleasegroupid",
                 "isboxset", "totaldiscs", "disctitle", "releasedate", "originaldate", "bpm",
                 "bitrate", "samplerate", "channels", "datemodified", "datenew", "customproperties",
-                "albumduration", "userrating"]
+                "albumduration", "userrating", "songvideourl" ]
     }
   },
   "List.Item.File": {

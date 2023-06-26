@@ -8,6 +8,10 @@
 
 #include "utils/Variant.h"
 
+#include <map>
+#include <string>
+#include <vector>
+
 #include <gtest/gtest.h>
 
 TEST(TestVariant, VariantTypeInteger)
@@ -284,9 +288,32 @@ TEST(TestVariant, size)
 TEST(TestVariant, empty)
 {
   std::vector<std::string> strarray;
-  CVariant a(strarray);
+  EXPECT_TRUE(CVariant(strarray).empty());
+  strarray.emplace_back("abc");
+  EXPECT_FALSE(CVariant(strarray).empty());
 
-  EXPECT_TRUE(a.empty());
+  std::map<std::string, std::string> strmap;
+  EXPECT_TRUE(CVariant(strmap).empty());
+  strmap.emplace(std::make_pair(std::string("key"), std::string("value")));
+  EXPECT_FALSE(CVariant(strmap).empty());
+
+  std::string str;
+  EXPECT_TRUE(CVariant(str).empty());
+  str = "abc";
+  EXPECT_FALSE(CVariant(str).empty());
+
+  std::wstring wstr;
+  EXPECT_TRUE(CVariant(wstr).empty());
+  wstr = L"abc";
+  EXPECT_FALSE(CVariant(wstr).empty());
+
+  EXPECT_TRUE(CVariant().empty());
+
+  EXPECT_FALSE(CVariant(CVariant::VariantTypeConstNull).empty());
+  EXPECT_FALSE(CVariant(CVariant::VariantTypeInteger).empty());
+  EXPECT_FALSE(CVariant(CVariant::VariantTypeUnsignedInteger).empty());
+  EXPECT_FALSE(CVariant(CVariant::VariantTypeBoolean).empty());
+  EXPECT_FALSE(CVariant(CVariant::VariantTypeDouble).empty());
 }
 
 TEST(TestVariant, clear)
@@ -331,4 +358,41 @@ TEST(TestVariant, isMember)
 
   EXPECT_TRUE(a.isMember("key1"));
   EXPECT_FALSE(a.isMember("key2"));
+}
+
+TEST(TestVariant, asBoolean)
+{
+  EXPECT_TRUE(CVariant("true").asBoolean());
+  EXPECT_FALSE(CVariant("false").asBoolean());
+  EXPECT_TRUE(CVariant("1").asBoolean());
+  EXPECT_FALSE(CVariant("0").asBoolean());
+  EXPECT_FALSE(CVariant("").asBoolean());
+
+  EXPECT_TRUE(CVariant(L"true").asBoolean());
+  EXPECT_FALSE(CVariant(L"false").asBoolean());
+  EXPECT_TRUE(CVariant(L"1").asBoolean());
+  EXPECT_FALSE(CVariant(L"0").asBoolean());
+  EXPECT_FALSE(CVariant(L"").asBoolean());
+
+  EXPECT_TRUE(CVariant(uint64_t{1}).asBoolean());
+  EXPECT_TRUE(CVariant(uint64_t{999999999}).asBoolean());
+  EXPECT_FALSE(CVariant(uint64_t{0}).asBoolean());
+
+  EXPECT_TRUE(CVariant(int64_t{1}).asBoolean());
+  EXPECT_TRUE(CVariant(int64_t{999999999}).asBoolean());
+  EXPECT_TRUE(CVariant(int64_t{-999999999}).asBoolean());
+  EXPECT_FALSE(CVariant(int64_t{0}).asBoolean());
+
+  EXPECT_TRUE(CVariant(double{1}).asBoolean());
+  EXPECT_TRUE(CVariant(double{999999999}).asBoolean());
+  EXPECT_TRUE(CVariant(double{-999999999}).asBoolean());
+  EXPECT_FALSE(CVariant(double{0}).asBoolean());
+
+  EXPECT_TRUE(CVariant(true).asBoolean());
+  EXPECT_FALSE(CVariant(false).asBoolean());
+
+  EXPECT_FALSE(CVariant(CVariant::VariantTypeNull).asBoolean());
+  EXPECT_FALSE(CVariant(CVariant::VariantTypeConstNull).asBoolean());
+  EXPECT_FALSE(CVariant(CVariant::VariantTypeArray).asBoolean());
+  EXPECT_FALSE(CVariant(CVariant::VariantTypeObject).asBoolean());
 }

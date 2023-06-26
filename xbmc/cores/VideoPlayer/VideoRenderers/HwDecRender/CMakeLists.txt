@@ -1,6 +1,8 @@
 if(CORE_SYSTEM_NAME STREQUAL windows OR CORE_SYSTEM_NAME STREQUAL windowsstore)
   list(APPEND SOURCES DXVAHD.cpp)
+  list(APPEND SOURCES DXVAEnumeratorHD.cpp)
   list(APPEND HEADERS DXVAHD.h)
+  list(APPEND HEADERS DXVAEnumeratorHD.h)
 endif()
 
 if(VAAPI_FOUND)
@@ -60,6 +62,11 @@ if("gbm" IN_LIST CORE_PLATFORM_NAME_LC OR "wayland" IN_LIST CORE_PLATFORM_NAME_L
     list(APPEND HEADERS RendererDRMPRIMEGLES.h
                         DRMPRIMEEGL.h)
   endif()
+endif()
+
+if("webos" IN_LIST CORE_PLATFORM_NAME_LC)
+  list(APPEND SOURCES RendererStarfish.cpp)
+  list(APPEND HEADERS RendererStarfish.h)
 endif()
 
 # we might want to build on linux systems
