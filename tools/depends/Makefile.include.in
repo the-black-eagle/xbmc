@@ -41,7 +41,7 @@ BASE_URL=http://mirrors.kodi.tv/build-deps/sources
 ifneq ($(KODI_MIRROR),)
 BASE_URL=$(KODI_MIRROR)/build-deps/sources
 endif
-RETRIEVE_TOOL_FLAGS=-LsS --create-dirs --retry 10 --retry-connrefused -O
+RETRIEVE_TOOL_FLAGS=-LsS --create-dirs --retry 10 --retry-connrefused -o
 ARCHIVE_TOOL_FLAGS=--strip-components=1 -xf
 CONFIG_SUB=@prefix@/@tool_dir@/share/automake-1.16/config.sub
 CONFIG_GUESS=@prefix@/@tool_dir@/share/automake-1.16/config.guess
@@ -98,6 +98,7 @@ NM_FOR_BUILD=@NM_FOR_BUILD@
 STRIP_FOR_BUILD=@STRIP_FOR_BUILD@
 READELF_FOR_BUILD=@READELF_FOR_BUILD@
 OBJDUMP_FOR_BUILD=@OBJDUMP_FOR_BUILD@
+CMAKE_FOR_BUILD=@prefix@/@tool_dir@/bin/cmake -DCMAKE_TOOLCHAIN_FILE=$(NATIVEPREFIX)/share/Toolchain-Native.cmake -DCMAKE_INSTALL_PREFIX=$(NATIVEPREFIX)
 
 NATIVE_CFLAGS=@host_includes@ -I@prefix@/@tool_dir@/include
 NATIVE_LDFLAGS=@host_includes@ -L@prefix@/@tool_dir@/lib

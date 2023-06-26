@@ -10,14 +10,18 @@
 
 #include "DVDCodecs/Video/DVDVideoCodec.h"
 #include "VideoRenderers/BaseRenderer.h"
+#include "VideoRenderers/HwDecRender/DXVAEnumeratorHD.h"
 #include "WIN32Util.h"
 #include "rendering/dx/RenderContext.h"
+#include "settings/Settings.h"
+#include "settings/SettingsComponent.h"
 #include "utils/log.h"
 #include "utils/memcpy_sse2.h"
 #include "windowing/GraphicContext.h"
 
 #include <ppl.h>
 
+using namespace DXVA;
 using namespace Microsoft::WRL;
 
 CRendererBase* CRendererDXVA::Create(CVideoSettings& videoSettings)
@@ -29,13 +33,40 @@ void CRendererDXVA::GetWeight(std::map<RenderMethod, int>& weights, const VideoP
 {
   unsigned weight = 0;
   const AVPixelFormat av_pixel_format = picture.videoBuffer->GetFormat();
+  const DXGI_FORMAT dxgi_format = GetDXGIFormat(av_pixel_format, __super::GetDXGIFormat(picture));
+
+  const bool streamIsHDR = (picture.color_primaries == AVCOL_PRI_BT2020) &&
+                           (picture.color_transfer == AVCOL_TRC_SMPTE2084 ||
+                            picture.color_transfer == AVCOL_TRC_ARIB_STD_B67);
+  const auto settings = CServiceBroker::GetSettingsComponent()->GetSettings();
+  const auto setting = DX::Windowing()->SETTING_WINSYSTEM_IS_HDR_DISPLAY;
+  const bool systemUsesHDR =
+      (settings ? settings->GetBool(setting) && DX::Windowing()->IsHDRDisplay() : false) ||
+      DX::Windowing()->IsHDROutput();
+
+  CEnumeratorHD enumerator;
+  enumerator.Open(picture.iWidth, picture.iHeight, dxgi_format);
 
   if (av_pixel_format == AV_PIX_FMT_D3D11VA_VLD)
+  {
+    // Check if HDR10 passthrough is supported by DXVA video processor
+    // Also used for HLG because it is not supported by Windows, HDR10 is used instead
+    if (streamIsHDR && systemUsesHDR && !enumerator.IsPQ10PassthroughSupported())
+      return;
+
+    // Check if BT.2020 color space is supported by DXVA video processor (for own HDR-SDR tonemap)
+    if (picture.color_primaries == AVCOL_PRI_BT2020 && !enumerator.IsBT2020Supported())
+      return;
+
+    // Everything else is played as HD / BT709, check support.
+    if (picture.color_primaries != AVCOL_PRI_BT2020 && !enumerator.IsSDRSupported())
+      return;
+
     weight += 1000;
+  }
   else
   {
     // check format for buffer
-    const DXGI_FORMAT dxgi_format = CRenderBufferImpl::GetDXGIFormat(av_pixel_format, GetDXGIFormat(picture));
     if (dxgi_format == DXGI_FORMAT_UNKNOWN)
       return;
 
@@ -57,6 +88,19 @@ void CRendererDXVA::GetWeight(std::map<RenderMethod, int>& weights, const VideoP
       return;
     }
 
+    // Check if HDR10 passthrough is supported by DXVA video processor
+    // Also used for HLG because it is not supported by Windows, HDR10 is used instead
+    if (streamIsHDR && systemUsesHDR && !enumerator.IsPQ10PassthroughSupported())
+      return;
+
+    // Check if BT.2020 color space is supported by DXVA video processor
+    if (picture.color_primaries == AVCOL_PRI_BT2020 && !enumerator.IsBT2020Supported())
+      return;
+
+    // Everything else is played as HD / BT709, check support.
+    if (picture.color_primaries != AVCOL_PRI_BT2020 && !enumerator.IsSDRSupported())
+      return;
+
     if (av_pixel_format == AV_PIX_FMT_NV12 ||
         av_pixel_format == AV_PIX_FMT_P010 ||
         av_pixel_format == AV_PIX_FMT_P016)
@@ -77,12 +121,15 @@ void CRendererDXVA::GetWeight(std::map<RenderMethod, int>& weights, const VideoP
     weights[RENDER_DXVA] = weight;
 }
 
+CRendererDXVA::CRendererDXVA(CVideoSettings& videoSettings) : CRendererHQ(videoSettings)
+{
+  m_renderMethodName = "DXVA";
+}
+
 CRenderInfo CRendererDXVA::GetRenderInfo()
 {
   auto info = __super::GetRenderInfo();
 
-  const int buffers = NUM_BUFFERS + m_processor->PastRefs();
-  info.optimal_buffer_size = std::min(NUM_BUFFERS, buffers);
   info.m_deintMethods.push_back(VS_INTERLACEMETHOD_DXVA_AUTO);
 
   return  info;
@@ -95,16 +142,35 @@ bool CRendererDXVA::Configure(const VideoPicture& picture, float fps, unsigned o
   if (__super::Configure(picture, fps, orientation))
   {
     m_format = picture.videoBuffer->GetFormat();
-    const DXGI_FORMAT dxgi_format = CRenderBufferImpl::GetDXGIFormat(m_format, GetDXGIFormat(picture));
+    const DXGI_FORMAT dxgi_format = GetDXGIFormat(m_format, __super::GetDXGIFormat(picture));
     const DXGI_FORMAT dest_format = DX::Windowing()->GetBackBuffer().GetFormat();
 
     // create processor
     m_processor = std::make_unique<DXVA::CProcessorHD>();
-    if (m_processor->PreInit() && m_processor->Open(m_sourceWidth, m_sourceHeight) &&
-        m_processor->IsFormatSupported(dxgi_format, support_type) &&
-        m_processor->IsFormatConversionSupported(dxgi_format, dest_format, picture))
+    if (m_processor->PreInit() && m_processor->Open(picture) &&
+        m_processor->IsFormatSupported(dxgi_format, support_type))
     {
-      return true;
+      if (CServiceBroker::GetLogging().IsLogLevelLogged(LOGDEBUG) &&
+          CServiceBroker::GetLogging().CanLogComponent(LOGVIDEO))
+        m_processor->ListSupportedConversions(dxgi_format, dest_format, picture);
+
+      if (m_processor->IsFormatConversionSupported(dxgi_format, dest_format, picture))
+      {
+        if (DX::Windowing()->SupportsVideoSuperResolution())
+        {
+          const auto settings = CServiceBroker::GetSettingsComponent()->GetSettings();
+
+          if (!settings)
+            return true;
+
+          if (settings->GetBool(CSettings::SETTING_VIDEOPLAYER_USESUPERRESOLUTION) &&
+              CProcessorHD::IsSuperResolutionSuitable(picture))
+          {
+            m_processor->TryEnableVideoSuperResolution();
+          }
+        }
+        return true;
+      }
     }
 
     CLog::LogF(LOGERROR, "unable to create DXVA processor");
@@ -245,6 +311,21 @@ bool CRendererDXVA::Supports(ESCALINGMETHOD method) const
 CRenderBuffer* CRendererDXVA::CreateBuffer()
 {
   return new CRenderBufferImpl(m_format, m_sourceWidth, m_sourceHeight);
+}
+
+std::string CRendererDXVA::GetRenderMethodDebugInfo() const
+{
+  if (m_processor && DX::Windowing()->SupportsVideoSuperResolution())
+  {
+    return StringUtils::Format("Video Super Resolution: {}",
+                               m_processor->IsVideoSuperResolutionEnabled() ? "requested" : "OFF");
+  }
+  return {};
+}
+
+DXGI_FORMAT CRendererDXVA::GetDXGIFormat(AVPixelFormat format, DXGI_FORMAT default_fmt)
+{
+  return CRenderBufferImpl::GetDXGIFormat(format, default_fmt);
 }
 
 CRendererDXVA::CRenderBufferImpl::CRenderBufferImpl(AVPixelFormat av_pix_format, unsigned width, unsigned height)

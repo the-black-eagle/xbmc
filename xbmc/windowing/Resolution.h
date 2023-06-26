@@ -74,19 +74,19 @@ struct RESOLUTION_INFO
   //!< Specify if it is a fullscreen resolution, otherwise windowed
   bool bFullScreen;
 
-  //!< Width GUI resolution, may differ from the screen value if GUI resolution limit or 3D is set
+  //!< Width GUI resolution (pixels), may differ from the screen value if GUI resolution limit, 3D is set or in HiDPI screens
   int iWidth;
 
-  //!< Height GUI resolution, may differ from the screen value if GUI resolution limit or 3D is set
+  //!< Height GUI resolution (pixels), may differ from the screen value if GUI resolution limit, 3D is set or in HiDPI screens
   int iHeight;
 
   //!< Number of pixels of padding between stereoscopic frames
   int iBlanking;
 
-  //!< Screen width
+  //!< Screen width (logical width in pixels)
   int iScreenWidth;
 
-  //!< Screen height
+  //!< Screen height (logical height in pixels)
   int iScreenHeight;
 
   //!< The vertical subtitle baseline position, may be changed by Video calibration

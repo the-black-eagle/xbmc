@@ -19,9 +19,8 @@
 #include <androidjni/ConnectivityManager.h>
 #include <androidjni/InetAddress.h>
 #include <androidjni/LinkAddress.h>
+#include <androidjni/NetworkInfo.h>
 #include <androidjni/RouteInfo.h>
-#include <androidjni/WifiInfo.h>
-#include <androidjni/WifiManager.h>
 #include <arpa/inet.h>
 #include <net/if_arp.h>
 #include <netinet/in.h>
@@ -234,10 +233,15 @@ std::unique_ptr<CNetworkBase> CNetworkBase::GetNetwork()
   return std::make_unique<CNetworkAndroid>();
 }
 
-CNetworkAndroid::CNetworkAndroid()
- : CNetworkBase()
+CNetworkAndroid::CNetworkAndroid() : CNetworkBase(), CJNIXBMCConnectivityManagerNetworkCallback()
 {
   RetrieveInterfaces();
+
+  if (CJNIBase::GetSDKVersion() >= 24)
+  {
+    CJNIConnectivityManager connman{CXBMCApp::getSystemService(CJNIContext::CONNECTIVITY_SERVICE)};
+    connman.registerDefaultNetworkCallback(this->get_raw());
+  }
 }
 
 CNetworkAndroid::~CNetworkAndroid()
@@ -246,6 +250,12 @@ CNetworkAndroid::~CNetworkAndroid()
     delete intf;
   for (auto intf : m_oldInterfaces)
     delete intf;
+
+  if (CJNIBase::GetSDKVersion() >= 24)
+  {
+    CJNIConnectivityManager connman{CXBMCApp::getSystemService(CJNIContext::CONNECTIVITY_SERVICE)};
+    connman.unregisterNetworkCallback(this->get_raw());
+  }
 }
 
 bool CNetworkAndroid::GetHostName(std::string& hostname)
@@ -269,10 +279,15 @@ CNetworkInterface* CNetworkAndroid::GetFirstConnectedInterface()
 {
   std::unique_lock<CCriticalSection> lock(m_refreshMutex);
 
-  for(CNetworkInterface* intf : m_interfaces)
+  if (m_defaultInterface)
+    return m_defaultInterface.get();
+  else
   {
-    if (intf->IsEnabled() && intf->IsConnected() && !intf->GetCurrentDefaultGateway().empty())
-      return intf;
+    for (CNetworkInterface* intf : m_interfaces)
+    {
+      if (intf->IsEnabled() && intf->IsConnected() && !intf->GetCurrentDefaultGateway().empty())
+        return intf;
+    }
   }
 
   return nullptr;
@@ -294,7 +309,8 @@ bool CNetworkAndroid::PingHost(unsigned long remote_ip, unsigned int timeout_ms)
   struct in_addr host_ip;
   host_ip.s_addr = remote_ip;
 
-  sprintf(cmd_line, "ping -c 1 -w %d %s", timeout_ms / 1000 + (timeout_ms % 1000) != 0, inet_ntoa(host_ip));
+  snprintf(cmd_line, sizeof(cmd_line), "ping -c 1 -w %d %s",
+           timeout_ms / 1000 + (timeout_ms % 1000) != 0, inet_ntoa(host_ip));
 
   int status = system (cmd_line);
 
@@ -348,4 +364,26 @@ void CNetworkAndroid::RetrieveInterfaces()
                 "CNetworkAndroid::RetrieveInterfaces Cannot get link properties for network: {}",
                 n.toString());
   }
+}
+
+void CNetworkAndroid::onAvailable(const CJNINetwork n)
+{
+  CLog::Log(LOGDEBUG, "CNetworkAndroid::onAvailable The default network is now: {}", n.toString());
+
+  CJNIConnectivityManager connman{CXBMCApp::getSystemService(CJNIContext::CONNECTIVITY_SERVICE)};
+  CJNILinkProperties lp = connman.getLinkProperties(n);
+
+  if (lp)
+  {
+    CJNINetworkInterface intf = CJNINetworkInterface::getByName(lp.getInterfaceName());
+    if (intf)
+      m_defaultInterface = std::make_unique<CNetworkInterfaceAndroid>(n, lp, intf);
+  }
+}
+
+void CNetworkAndroid::onLost(const CJNINetwork n)
+{
+  CLog::Log(LOGDEBUG, "CNetworkAndroid::onLost No default network (the last was: {})",
+            n.toString());
+  m_defaultInterface = nullptr;
 }

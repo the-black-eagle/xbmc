@@ -13,7 +13,11 @@
 #include <map>
 
 #include <d3d11_4.h>
+
+extern "C"
+{
 #include <libavutil/pixfmt.h>
+}
 
 #define PLANE_Y 0
 #define PLANE_U 1
@@ -35,7 +39,7 @@ public:
   static void GetWeight(std::map<RenderMethod, int>& weights, const VideoPicture& picture);
 
 protected:
-  explicit CRendererShaders(CVideoSettings& videoSettings) : CRendererHQ(videoSettings) {}
+  explicit CRendererShaders(CVideoSettings& videoSettings);
   void RenderImpl(CD3DTexture& target, CRect& sourceRect, CPoint(&destPoints)[4], uint32_t flags) override;
   void CheckVideoParameters() override;
   void UpdateVideoFilters() override;

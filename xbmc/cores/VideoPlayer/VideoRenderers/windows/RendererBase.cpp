@@ -163,7 +163,6 @@ CRenderInfo CRendererBase::GetRenderInfo()
     AV_PIX_FMT_YUV420P16
   };
   info.max_buffer_size = NUM_BUFFERS;
-  info.optimal_buffer_size = 4;
 
   return info;
 }
@@ -272,7 +271,8 @@ void CRendererBase::Render(CD3DTexture& target, const CRect& sourceRect, const C
 
 void CRendererBase::FinalOutput(CD3DTexture& source, CD3DTexture& target, const CRect& src, const CPoint(&destPoints)[4])
 {
-  m_outputShader->Render(source, src, destPoints, target);
+  if (m_outputShader)
+    m_outputShader->Render(source, src, destPoints, target);
 }
 
 void CRendererBase::ManageTextures()
@@ -723,6 +723,15 @@ DEBUG_INFO_VIDEO CRendererBase::GetDebugInfo(int idx)
 
   if (m_outputShader)
     info.shader = m_outputShader->GetDebugInfo();
+
+  info.render = StringUtils::Format("Render method: {}", m_renderMethodName);
+
+  std::string rmInfo = GetRenderMethodDebugInfo();
+  if (!rmInfo.empty())
+  {
+    info.render.append(", ");
+    info.render.append(rmInfo);
+  }
 
   return info;
 }

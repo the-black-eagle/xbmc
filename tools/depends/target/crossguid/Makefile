@@ -4,6 +4,10 @@ DEPS = Makefile CROSSGUID-VERSION ../../download-files.include \
                                   001-fix-unused-function.patch \
                                   002-disable-Wall-error.patch
 
+CMAKE_OPTIONS=-DCROSSGUID_TESTS=OFF \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DDISABLE_WALL=ON
+
 ifeq ($(CROSS_COMPILING), yes)
   DEPS += ../../Makefile.include
 else
@@ -14,18 +18,16 @@ else
     PLATFORM = native
     TARBALLS_LOCATION = $(ROOT_DIR)
     BASE_URL := http://mirrors.kodi.tv/build-deps/sources
-    RETRIEVE_TOOL := curl -Ls --create-dirs -f -O
-    ARCHIVE_TOOL := tar --strip-components=1 -xf
+    RETRIEVE_TOOL := curl
+    RETRIEVE_TOOL_FLAGS := -LsS --create-dirs --retry 10 --retry-connrefused -o
+    ARCHIVE_TOOL := tar
+    ARCHIVE_TOOL_FLAGS := --strip-components=1 -xf
     CMAKE := cmake
-    CMAKE_OPTIONS := -DCMAKE_INSTALL_PREFIX=$(PREFIX) $(CMAKE_OPTIONS)
+    CMAKE_OPTIONS := -DCMAKE_INSTALL_PREFIX=$(PREFIX) -DCMAKE_INSTALL_LIBDIR=lib $(CMAKE_OPTIONS)
     HASH_TOOL = sha512sum
     HASH_TOOL_FLAGS = -c --status
   endif
 endif
-
-CMAKE_OPTIONS=-DCROSSGUID_TESTS=OFF \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DDISABLE_WALL=ON
 
 LIBDYLIB=$(PLATFORM)/$(BYPRODUCT)
 
@@ -45,6 +47,7 @@ endif
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); patch -p1 -i ../001-fix-unused-function.patch
 	cd $(PLATFORM); patch -p1 -i ../002-disable-Wall-error.patch
+	cd $(PLATFORM); patch -p1 -i ../003-add-cstdint-include.patch
 	cd $(PLATFORM)/build; $(CMAKE) $(CMAKE_OPTIONS) ..
 
 .installed-$(PLATFORM): $(PLATFORM)

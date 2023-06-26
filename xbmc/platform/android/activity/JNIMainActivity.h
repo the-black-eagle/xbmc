@@ -12,6 +12,9 @@
 #include <androidjni/InputManager.h>
 #include <androidjni/Rect.h>
 
+namespace jni
+{
+
 class CJNIMainActivity : public CJNIActivity, public CJNIInputManagerInputDeviceListener
 {
 public:
@@ -19,6 +22,8 @@ public:
   ~CJNIMainActivity() override;
 
   static CJNIMainActivity* GetAppInstance() { return m_appInstance; }
+
+  static void RegisterNatives(JNIEnv* env);
 
   static void _onNewIntent(JNIEnv *env, jobject context, jobject intent);
   static void _onActivityResult(JNIEnv *env, jobject context, jint requestCode, jint resultCode, jobject resultData);
@@ -50,3 +55,5 @@ protected:
   virtual void onDisplayChanged(int displayId)=0;
   virtual void onDisplayRemoved(int displayId)=0;
 };
+
+} // namespace jni

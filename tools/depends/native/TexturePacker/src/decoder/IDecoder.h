@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -33,22 +34,14 @@ class IDecoder
   public:
     virtual ~IDecoder() = default;
     virtual bool CanDecode(const std::string &filename) = 0;
-    virtual bool LoadFile(const std::string &filename, DecodedFrames &frames) = 0;
-    virtual void FreeDecodedFrame(DecodedFrame &frame) = 0;
+    virtual bool LoadFile(const std::string& filename, DecodedFrames& frames) = 0;
     virtual const char* GetImageFormatName() = 0;
     virtual const char* GetDecoderName() = 0;
 
-    const std::vector<std::string>& GetSupportedExtensions()
-    {
-      m_supportedExtensions.clear();
-      FillSupportedExtensions();
-      return m_supportedExtensions;
-    }
+    const std::vector<std::string>& GetSupportedExtensions() const { return m_extensions; }
 
   protected:
-    virtual void FillSupportedExtensions() = 0;
-    //fill this with extensions in FillSupportedExtensions like ".png"
-    std::vector<std::string> m_supportedExtensions;
+    std::vector<std::string> m_extensions;
 };
 
 class RGBAImage
@@ -56,7 +49,7 @@ class RGBAImage
 public:
   RGBAImage() = default;
 
-  char* pixels = nullptr; // image data
+  std::vector<uint8_t> pixels;
   int width = 0; // width
   int height = 0; // height
   int bbp = 0; // bits per pixel
@@ -69,7 +62,6 @@ public:
   DecodedFrame() = default;
   RGBAImage rgbaImage; /* rgbaimage for this frame */
   int delay = 0; /* Frame delay in ms */
-  IDecoder* decoder = nullptr; /* Pointer to decoder */
 };
 
 class DecodedFrames
@@ -77,22 +69,4 @@ class DecodedFrames
   public:
     DecodedFrames() = default;
     std::vector<DecodedFrame> frameList;
-
-    void clear()
-    {
-      for (auto f : frameList)
-      {
-        if (f.decoder != NULL)
-        {
-          f.decoder->FreeDecodedFrame(f);
-        }
-        else
-        {
-          fprintf(stderr,
-            "ERROR: %s - can not determine decoder type for frame!\n",
-            __FUNCTION__);
-        }
-      }
-      frameList.clear();
-    }
 };

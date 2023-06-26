@@ -1,5 +1,5 @@
 # Minimum SDK version we support
-set(VS_MINIMUM_SDK_VERSION 10.0.17763.0)
+set(VS_MINIMUM_SDK_VERSION 10.0.18362.0)
 
 if(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION VERSION_LESS VS_MINIMUM_SDK_VERSION)
   message(FATAL_ERROR "Detected Windows SDK version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}.\n"
@@ -51,7 +51,10 @@ set(PACKAGE_GUID "281d668b-5739-4abd-b3c2-ed1cda572ed2")
 set(APP_MANIFEST_NAME package.appxmanifest)
 set(DEPS_FOLDER_RELATIVE project/BuildDependencies)
 
-set(NATIVEPREFIX ${CMAKE_SOURCE_DIR}/${DEPS_FOLDER_RELATIVE}/tools)
+# ToDo: currently host build tools are hardcoded to win32
+# If we ever allow package.native other than 0_package.native-win32.list we will want to
+# adapt this based on host
+set(NATIVEPREFIX ${CMAKE_SOURCE_DIR}/${DEPS_FOLDER_RELATIVE}/win32)
 set(DEPENDS_PATH ${CMAKE_SOURCE_DIR}/${DEPS_FOLDER_RELATIVE}/win10-${ARCH})
 set(MINGW_LIBS_DIR ${CMAKE_SOURCE_DIR}/${DEPS_FOLDER_RELATIVE}/mingwlibs/win10-${ARCH})
 

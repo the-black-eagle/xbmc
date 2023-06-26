@@ -14,15 +14,16 @@
 #include "windowing/WinSystem.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 typedef struct _CGLContextObject* CGLContextObj;
 typedef struct CGRect NSRect;
-
 class IDispResource;
 class CWinEventsOSX;
 #ifdef __OBJC__
+@class NSWindowController;
 @class NSWindow;
 @class OSXGLView;
 @class NSEvent;
@@ -30,6 +31,8 @@ class CWinEventsOSX;
 struct NSWindow;
 struct OSXGLView;
 struct NSEvent;
+struct NSWindowController;
+
 #endif
 
 class CWinSystemOSX : public CWinSystemBase, public ITimerCallback
@@ -37,6 +40,16 @@ class CWinSystemOSX : public CWinSystemBase, public ITimerCallback
 public:
   CWinSystemOSX();
   ~CWinSystemOSX() override;
+
+  struct ScreenResolution
+  {
+    bool interlaced{false};
+    size_t resWidth{0};
+    size_t resHeight{0};
+    size_t pixelWidth{0};
+    size_t pixelHeight{0};
+    double refreshrate{0.0};
+  };
 
   // ITimerCallback interface
   void OnTimeout() override;
@@ -54,27 +67,19 @@ public:
   bool Hide() override;
   bool HasCursor() override;
   bool Show(bool raise = true) override;
+  unsigned int GetScreenId(const std::string& screen) override;
+  void MoveToScreen(unsigned int screenIdx) override;
   void OnMove(int x, int y) override;
+  void OnChangeScreen(unsigned int screenIdx) override;
+  CGraphicContext& GetGfxContext() const override;
+  bool HasValidResolution() const;
 
   std::string GetClipboardText() override;
-
-  /*! \brief Check if the windowing system supports moving windows across screens
-   *  \return true if the windowing system supports moving windows across screens, false otherwise
-  */
-  bool SupportsScreenMove() override;
-
-  /**
-   * \brief Used to signal the windowing system about the intention of the user to change the main display
-   * \details triggered, for example, when the user manually changes the monitor setting
-  */
-  void NotifyScreenChangeIntention() override;
 
   void Register(IDispResource* resource) override;
   void Unregister(IDispResource* resource) override;
 
-  void ToggleFloatOnTop() override;
-
-  std::unique_ptr<CVideoSync> GetVideoSync(void* clock) override;
+  std::unique_ptr<CVideoSync> GetVideoSync(CVideoReferenceClock* clock) override;
 
   void WindowChangedScreen();
 
@@ -87,6 +92,7 @@ public:
   int CheckDisplayChanging(uint32_t flags);
   void SetFullscreenWillToggle(bool toggle) { m_fullscreenWillToggle = toggle; }
   bool GetFullscreenWillToggle() { return m_fullscreenWillToggle; }
+  void SignalFullScreenStateChanged(bool fullscreenState);
 
   CGLContextObj GetCGLContextObj();
 
@@ -106,9 +112,9 @@ public:
 protected:
   std::unique_ptr<KODI::WINDOWING::IOSScreenSaver> GetOSScreenSaverImpl() override;
 
-  void GetScreenResolution(size_t* w, size_t* h, double* fps, unsigned long screenIdx);
+  ScreenResolution GetScreenResolution(unsigned long screenIdx);
   void EnableVSync(bool enable);
-  bool SwitchToVideoMode(int width, int height, double refreshrate);
+  bool SwitchToVideoMode(RESOLUTION_INFO& res);
   void FillInVideoModes();
   bool FlushBuffer();
 
@@ -129,5 +135,10 @@ protected:
   XbmcThreads::EndTime<> m_dispResetTimer;
   bool m_fullscreenWillToggle;
   bool m_hasCursor{false};
+  //! Set while moving the fullscreen window to another screen. Stores the target screen id.
+  std::optional<unsigned long> m_fullScreenMovingToScreen;
   CCriticalSection m_critSection;
+
+private:
+  NSWindowController* m_appWindowController;
 };

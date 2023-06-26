@@ -103,6 +103,7 @@ add_custom_command(TARGET ${APP_NAME_LC} POST_BUILD
     COMMAND "ACTION=build"
             "APP_NAME=${APP_NAME}"
             "XBMC_DEPENDS=${DEPENDS_PATH}"
+            "SRCROOT=${CMAKE_BINARY_DIR}"
             ${CMAKE_SOURCE_DIR}/tools/darwin/Support/CopyRootFiles-darwin_embedded.command
     COMMAND "XBMC_DEPENDS=${DEPENDS_PATH}"
             "PYTHON_VERSION=${PYTHON_VERSION}"
@@ -122,6 +123,9 @@ endif()
 set(DEPENDS_ROOT_FOR_XCODE ${NATIVEPREFIX}/..)
 configure_file(${CMAKE_SOURCE_DIR}/tools/darwin/packaging/darwin_embedded/mkdeb-darwin_embedded.sh.in
                ${CMAKE_BINARY_DIR}/tools/darwin/packaging/darwin_embedded/mkdeb-darwin_embedded.sh @ONLY)
+
+configure_file(${CMAKE_SOURCE_DIR}/xbmc/platform/darwin/Credits.html.in
+               ${CMAKE_BINARY_DIR}/xbmc/platform/darwin/Credits.html @ONLY)
 
 add_custom_target(deb
     COMMAND sh ./mkdeb-darwin_embedded.sh ${CORE_BUILD_CONFIG}

@@ -6,10 +6,9 @@ This guide has been tested with an adapted buildroot configuration where the Lin
 ## Table of Contents
 1. **[Document conventions](#1-document-conventions)**
 2. **[Prerequisites](#2-prerequisites)**
-3. **[Configure the tool chain](#3-Configure-the-tool-chain)**  
+3. **[Configure the tool chain](#3-Configure-the-tool-chain)**
 4. **[Configure ares-cli tools](#4-Configure-ares-cli-tools)**
 5. **[Get the source code](#5-get-the-source-code)**  
-  5.1. **[5.1. Downgrade flatc binary](#51-Downgrade-flatc-binary)**
 6. **[Configure and build tools and dependencies](#6-configure-and-build-tools-and-dependencies)**  
   6.1. **[Advanced Configure Options](#61-Advanced-Configure-Options)**
 7. **[Generate Kodi Build files](#7-Generate-Kodi-Build-files)**  
@@ -21,7 +20,7 @@ This guide has been tested with an adapted buildroot configuration where the Lin
   9.1. **[Create the IPK](#91-Create-the-IPK)**  
 10. **[Install](#10-Install)**  
   10.1. **[Using make install](#101-Using-make-install)**  
-  10.2. **[Using ares-cli to install](#102-Using-ares-cli-to-install)**  
+  10.2. **[Using ares-cli to install](#102-Using-ares-cli-to-install)**
 11. **[Debugging ](#11-Debugging)**
 12. **[Uninstall](#12-Uninstall)**  
   12.1. **[Using make to uninstall](#121-Using-make-to-uninstall)**  
@@ -102,24 +101,10 @@ Clone Kodi's current master branch:
 git clone https://github.com/xbmc/xbmc kodi
 ```
 
-### 5.1. Downgrade flatc binary
-
-The version of FlatBuffers in Kodi is currently locked to v2.0.0, the flatc binary installed onto your Linux system is likely
-to be much newer and therefore incompatible. You can get a version compatible here:
-
-```
-https://github.com/google/flatbuffers/releases/download/v2.0.0/Linux.flatc.binary.clang++-9.zip
-```
-
-Place flatc somewhere in your path, for example `/usr/local/bin`
-
-Alternatively, you may run `make -C native/flatc` when in $HOME/kodi/tools/depends which will compile it for you.
-
 **[back to top](#table-of-contents)**
 
 ## 6. Configure and build tools and dependencies
 Kodi should be built as a 32bit program for webOS. The dependencies are built in `$HOME/kodi/tools/depends` and installed into `/media/developer/apps/usr/palm/applications/org.xbmc.kodi/xbmc-deps`.
-**NOTE:** `--with-platform` is mandatory for all webOS platforms
 
 --prefix should be set to where xbmc-deps are going to be built  
 --with-toolchain=/path/to/buildroot, --host=arm-linux or whatever your compiler is  
@@ -130,7 +115,7 @@ cd $HOME/kodi/tools/depends
 ./bootstrap
 ./configure   --prefix=$HOME/kodi-deps --host=arm-webos-linux-gnueabi \
               --with-toolchain=$HOME/kodi-dev/arm-webos-linux-gnueabi_sdk-buildroot \
-              --enable-debug=no \
+              --enable-debug=no
 ```
 
 Build tools and dependencies:

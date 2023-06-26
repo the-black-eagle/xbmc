@@ -9,13 +9,6 @@
 #import "OSXGLView.h"
 
 #include "ServiceBroker.h"
-#include "application/AppInboundProtocol.h"
-#include "application/AppParamParser.h"
-#include "application/Application.h"
-#include "messaging/ApplicationMessenger.h"
-#include "settings/AdvancedSettings.h"
-#include "settings/SettingsComponent.h"
-#include "utils/log.h"
 #import "windowing/osx/WinSystemOSX.h"
 
 #include "system_gl.h"
@@ -53,7 +46,7 @@
     m_pixFmt = [[NSOpenGLPixelFormat alloc] initWithAttributes:wattrs];
     m_glcontext = [[NSOpenGLContext alloc] initWithFormat:m_pixFmt shareContext:nil];
   }
-
+  self.wantsBestResolutionOpenGLSurface = YES;
   [self updateTrackingAreas];
 
   GLint swapInterval = 1;
@@ -186,8 +179,30 @@
     winSystem->signalMouseExited();
 }
 
-- (NSOpenGLContext*)getGLContext
+- (CGLContextObj)getGLContextObj
 {
-  return m_glcontext;
+  assert(m_glcontext);
+  return [m_glcontext CGLContextObj];
+}
+
+- (void)Update
+{
+  assert(m_glcontext);
+  [self NotifyContext];
+  [m_glcontext update];
+}
+
+- (void)NotifyContext
+{
+  assert(m_glcontext);
+  // signals/notifies the context that this view is current (required if we render out of DrawRect)
+  [m_glcontext makeCurrentContext];
+}
+
+- (void)FlushBuffer
+{
+  assert(m_glcontext);
+  [m_glcontext makeCurrentContext];
+  [m_glcontext flushBuffer];
 }
 @end

@@ -73,15 +73,28 @@ bool CDVDAudioCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
   m_pCodecContext->debug = 0;
   m_pCodecContext->workaround_bugs = 1;
 
+#if LIBAVCODEC_VERSION_MAJOR < 60
   if (pCodec->capabilities & AV_CODEC_CAP_TRUNCATED)
     m_pCodecContext->flags |= AV_CODEC_FLAG_TRUNCATED;
+#endif
 
   m_matrixEncoding = AV_MATRIX_ENCODING_NONE;
   m_channels = 0;
   av_channel_layout_uninit(&m_pCodecContext->ch_layout);
-  m_pCodecContext->ch_layout.order = AV_CHANNEL_ORDER_NATIVE;
-  m_pCodecContext->ch_layout.nb_channels = hints.channels;
-  m_hint_layout = hints.channellayout;
+
+  if (hints.channels > 0 && hints.channellayout > 0)
+  {
+    m_pCodecContext->ch_layout.order = AV_CHANNEL_ORDER_NATIVE;
+    m_pCodecContext->ch_layout.nb_channels = hints.channels;
+    m_pCodecContext->ch_layout.u.mask = hints.channellayout;
+  }
+  else if (hints.channels > 0)
+  {
+    av_channel_layout_default(&m_pCodecContext->ch_layout, hints.channels);
+  }
+
+  m_hint_layout = m_pCodecContext->ch_layout.u.mask;
+
   m_pCodecContext->sample_rate = hints.samplerate;
   m_pCodecContext->block_align = hints.blockalign;
   m_pCodecContext->bit_rate = hints.bitrate;
@@ -90,13 +103,14 @@ bool CDVDAudioCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
   if(m_pCodecContext->bits_per_coded_sample == 0)
     m_pCodecContext->bits_per_coded_sample = 16;
 
-  if( hints.extradata && hints.extrasize > 0 )
+  if (hints.extradata)
   {
-    m_pCodecContext->extradata = (uint8_t*)av_mallocz(hints.extrasize + AV_INPUT_BUFFER_PADDING_SIZE);
+    m_pCodecContext->extradata =
+        (uint8_t*)av_mallocz(hints.extradata.GetSize() + AV_INPUT_BUFFER_PADDING_SIZE);
     if(m_pCodecContext->extradata)
     {
-      m_pCodecContext->extradata_size = hints.extrasize;
-      memcpy(m_pCodecContext->extradata, hints.extradata, hints.extrasize);
+      m_pCodecContext->extradata_size = hints.extradata.GetSize();
+      memcpy(m_pCodecContext->extradata, hints.extradata.GetData(), hints.extradata.GetSize());
     }
   }
 

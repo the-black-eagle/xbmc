@@ -638,6 +638,9 @@ void DX::DeviceResources::ResizeBuffers()
     else if (use10bitSetting == 2)
       use10bit = true;
 
+    if (m_force8bit)
+      use10bit = false;
+
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
     swapChainDesc.Width = lround(m_outputSize.Width);
     swapChainDesc.Height = lround(m_outputSize.Height);
@@ -714,28 +717,16 @@ void DX::DeviceResources::ResizeBuffers()
     hr = swapChain.As(&m_swapChain); CHECK_ERR();
     m_stereoEnabled = bHWStereoEnabled;
 
-    if (CServiceBroker::GetLogging().IsLogLevelLogged(LOGDEBUG))
+    if (CServiceBroker::GetLogging().IsLogLevelLogged(LOGDEBUG) &&
+        CServiceBroker::GetLogging().CanLogComponent(LOGVIDEO))
     {
-      ComPtr<IDXGISwapChain4> swapChain4;
-      if (SUCCEEDED(m_swapChain.As(&swapChain4)))
+      std::string colorSpaces;
+      for (const DXGI_COLOR_SPACE_TYPE& colorSpace : GetSwapChainColorSpaces())
       {
-        UINT colorSpaceSupport = 0;
-        std::string colorSpaces{};
-        for (UINT colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-             colorSpace < DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_TOPLEFT_P2020; colorSpace++)
-        {
-          if (SUCCEEDED(swapChain4->CheckColorSpaceSupport(
-                  static_cast<DXGI_COLOR_SPACE_TYPE>(colorSpace), &colorSpaceSupport)) &&
-              (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) ==
-                  DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)
-          {
-            colorSpaces.append("\n");
-            colorSpaces.append(
-                DX::DXGIColorSpaceTypeToString(static_cast<DXGI_COLOR_SPACE_TYPE>(colorSpace)));
-          }
-        }
-        CLog::LogF(LOGDEBUG, "Color spaces supported by the swap chain:{}", colorSpaces);
+        colorSpaces.append("\n");
+        colorSpaces.append(DX::DXGIColorSpaceTypeToString(colorSpace));
       }
+      CLog::LogFC(LOGDEBUG, LOGVIDEO, "Color spaces supported by the swap chain:{}", colorSpaces);
     }
 
     // Ensure that DXGI does not queue more than one frame at a time. This both reduces latency and
@@ -743,6 +734,7 @@ void DX::DeviceResources::ResizeBuffers()
     ComPtr<IDXGIDevice1> dxgiDevice;
     hr = m_d3dDevice.As(&dxgiDevice); CHECK_ERR();
     dxgiDevice->SetMaximumFrameLatency(1);
+    m_usedSwapChain = false;
   }
 
   CLog::LogF(LOGDEBUG, "end resize buffers.");
@@ -970,6 +962,7 @@ void DX::DeviceResources::HandleDeviceLost(bool removed)
 bool DX::DeviceResources::Begin()
 {
   HRESULT hr = m_swapChain->Present(0, DXGI_PRESENT_TEST);
+  m_usedSwapChain = true;
 
   // If the device was removed either by a disconnection or a driver upgrade, we
   // must recreate all device resources.
@@ -1001,6 +994,7 @@ void DX::DeviceResources::Present()
   // frames that will never be displayed to the screen.
   DXGI_PRESENT_PARAMETERS parameters = {};
   HRESULT hr = m_swapChain->Present1(1, 0, &parameters);
+  m_usedSwapChain = true;
 
   // If the device was removed either by a disconnection or a driver upgrade, we
   // must recreate all device resources.
@@ -1171,6 +1165,14 @@ void DX::DeviceResources::CheckDXVA2SharedDecoderSurfaces()
 
   CLog::LogF(LOGINFO, "DXVA2 shared decoder surfaces is{}supported",
              m_DXVA2SharedDecoderSurfaces ? " " : " NOT ");
+
+  m_DXVASuperResolutionSupport =
+      m_d3dFeatureLevel >= D3D_FEATURE_LEVEL_12_1 &&
+      ((ad.VendorId == PCIV_Intel && driver.valid && driver.majorVersion >= 31) ||
+       (ad.VendorId == PCIV_NVIDIA && driver.valid && driver.majorVersion >= 530));
+
+  if (m_DXVASuperResolutionSupport)
+    CLog::LogF(LOGINFO, "DXVA Video Super Resolution is potentially supported");
 }
 
 VideoDriverInfo DX::DeviceResources::GetVideoDriverVersion()
@@ -1305,6 +1307,18 @@ void DX::DeviceResources::SetHdrColorSpace(const DXGI_COLOR_SPACE_TYPE colorSpac
 
   if (SUCCEEDED(m_swapChain.As(&swapChain3)))
   {
+    // Set the color space on a new swap chain - not mandated by MS documentation but needed
+    // at least for some AMD, at least up to Adrenalin 23.4.3 / Windows driver 31.0.14043.7000
+    if (m_usedSwapChain &&
+        m_IsTransferPQ != (colorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020))
+    {
+      // Temporary release, can't hold references during swap chain re-creation
+      swapChain3 = nullptr;
+      DestroySwapChain();
+      CreateWindowSizeDependentResources();
+      m_swapChain.As(&swapChain3);
+    }
+
     if (SUCCEEDED(swapChain3->SetColorSpace1(colorSpace)))
     {
       m_IsTransferPQ = (colorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020);
@@ -1354,12 +1368,17 @@ HDR_STATUS DX::DeviceResources::ToggleHDR()
   return hdrStatus;
 }
 
-void DX::DeviceResources::ApplyDisplaySettings()
+void DX::DeviceResources::ApplyDisplaySettings(bool force8bit)
 {
   CLog::LogF(LOGDEBUG, "Re-create swapchain due Display Settings changed");
 
+  if (force8bit)
+    m_force8bit = true;
+
   DestroySwapChain();
   CreateWindowSizeDependentResources();
+
+  m_force8bit = false;
 }
 
 DEBUG_INFO_RENDER DX::DeviceResources::GetDebugInfo() const
@@ -1384,8 +1403,8 @@ DEBUG_INFO_RENDER DX::DeviceResources::GetDebugInfo() const
       "Swapchain: {} buffers, flip {}, {}, EOTF: {} (Windows HDR {})", desc.BufferCount,
       (desc.SwapEffect == DXGI_SWAP_EFFECT_FLIP_DISCARD) ? "discard" : "sequential",
       Windowing()->IsFullScreen()
-          ? ((desc.Flags == DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH) ? "fullscreen exclusive"
-                                                                    : "fullscreen windowed")
+          ? ((desc.Flags & DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH) ? "fullscreen exclusive"
+                                                                   : "fullscreen windowed")
           : "windowed screen",
       m_IsTransferPQ ? "PQ" : "SDR", m_IsHDROutput ? "on" : "off");
 
@@ -1398,4 +1417,43 @@ DEBUG_INFO_RENDER DX::DeviceResources::GetDebugInfo() const
       DX::Windowing()->UseLimitedColor() ? "limited" : "full", range_min, range_max);
 
   return info;
+}
+
+std::vector<DXGI_COLOR_SPACE_TYPE> DX::DeviceResources::GetSwapChainColorSpaces() const
+{
+  if (!m_swapChain)
+    return {};
+
+  std::vector<DXGI_COLOR_SPACE_TYPE> result;
+  HRESULT hr;
+
+  ComPtr<IDXGISwapChain3> swapChain3;
+  if (SUCCEEDED(hr = m_swapChain.As(&swapChain3)))
+  {
+    UINT colorSpaceSupport = 0;
+    for (UINT colorSpace = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+         colorSpace < DXGI_COLOR_SPACE_YCBCR_STUDIO_G24_TOPLEFT_P2020; colorSpace++)
+    {
+      DXGI_COLOR_SPACE_TYPE cs = static_cast<DXGI_COLOR_SPACE_TYPE>(colorSpace);
+      if (SUCCEEDED(swapChain3->CheckColorSpaceSupport(cs, &colorSpaceSupport)) &&
+          (colorSpaceSupport & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT))
+        result.push_back(cs);
+    }
+  }
+  else
+  {
+    CLog::LogF(LOGDEBUG, "IDXGISwapChain3 is not available. Error {}", DX::GetErrorDescription(hr));
+  }
+  return result;
+}
+
+bool DX::DeviceResources::SetMultithreadProtected(bool enabled) const
+{
+  BOOL wasEnabled = FALSE;
+  ComPtr<ID3D11Multithread> multithread;
+  HRESULT hr = m_d3dDevice.As(&multithread);
+  if (SUCCEEDED(hr))
+    wasEnabled = multithread->SetMultithreadProtected(enabled ? TRUE : FALSE);
+
+  return (wasEnabled == TRUE ? true : false);
 }

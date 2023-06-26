@@ -1727,7 +1727,7 @@ int CVideoDatabase::AddActor(const std::string& name, const std::string& thumbUR
     int idActor = -1;
 
     // ATTENTION: the trimming of actor names should really not be done here but after the scraping / NFO-parsing
-    std::string trimmedName = name.c_str();
+    std::string trimmedName = name;
     StringUtils::Trim(trimmedName);
 
     std::string strSQL=PrepareSQL("select actor_id from actor where name like '%s'", trimmedName.substr(0, 255).c_str());
@@ -8141,7 +8141,7 @@ int CVideoDatabase::GetTvShowForEpisode(int idEpisode)
 int CVideoDatabase::GetSeasonForEpisode(int idEpisode)
 {
   char column[5];
-  sprintf(column, "c%0d", VIDEODB_ID_EPISODE_SEASON);
+  snprintf(column, sizeof(column), "c%0d", VIDEODB_ID_EPISODE_SEASON);
   std::string id = GetSingleValue("episode", column, PrepareSQL("idEpisode=%i", idEpisode));
   if (id.empty())
     return -1;

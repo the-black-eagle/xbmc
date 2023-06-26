@@ -21,9 +21,9 @@
 
 using namespace KODI;
 
-COverlayCodecWebVTT::COverlayCodecWebVTT() : CDVDOverlayCodec("WebVTT Subtitle Decoder")
+COverlayCodecWebVTT::COverlayCodecWebVTT()
+  : CDVDOverlayCodec("WebVTT Subtitle Decoder"), m_pOverlay(nullptr)
 {
-  m_pOverlay = nullptr;
 }
 
 bool COverlayCodecWebVTT::Open(CDVDStreamInfo& hints, CDVDCodecOptions& options)
@@ -39,7 +39,8 @@ bool COverlayCodecWebVTT::Open(CDVDStreamInfo& hints, CDVDCodecOptions& options)
   // Extradata can be provided by Inputstream addons (e.g. inputstream.adaptive)
   if (hints.extradata)
   {
-    std::string extradata{static_cast<char*>(hints.extradata), hints.extrasize};
+    std::string extradata{reinterpret_cast<char*>(hints.extradata.GetData()),
+                          hints.extradata.GetSize()};
     if (extradata == "file")
     {
       // WebVTT data like single file are sent one time only,
@@ -66,7 +67,11 @@ OverlayMessage COverlayCodecWebVTT::Decode(DemuxPacket* pPacket)
 
   m_webvttHandler.Reset();
 
-  m_webvttHandler.SetPeriodStart(pPacket->m_ptsOffsetCorrection);
+  // WebVTT subtitles has no relation with packet PTS then if
+  // a period/chapter change happens (e.g. HLS streaming) VP can detect a discontinuity
+  // and adjust the packet PTS by substracting the pts offset correction value,
+  // so here we have to adjust WebVTT subtitles PTS by substracting it at same way
+  m_webvttHandler.SetPeriodStart(pPacket->m_ptsOffsetCorrection * -1);
 
   if (m_isISOFormat)
   {

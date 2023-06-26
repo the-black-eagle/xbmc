@@ -23,9 +23,10 @@
 using namespace KODI;
 
 CDVDOverlayCodecSSA::CDVDOverlayCodecSSA()
-  : CDVDOverlayCodec("SSA Subtitle Decoder"), m_libass(std::make_shared<CDVDSubtitlesLibass>())
+  : CDVDOverlayCodec("SSA Subtitle Decoder"),
+    m_libass(std::make_shared<CDVDSubtitlesLibass>()),
+    m_pOverlay(nullptr)
 {
-  m_pOverlay = nullptr;
   m_order = 0;
   m_libass->Configure();
 }
@@ -37,7 +38,8 @@ bool CDVDOverlayCodecSSA::Open(CDVDStreamInfo& hints, CDVDCodecOptions& options)
 
   m_pOverlay.reset();
 
-  return m_libass->DecodeHeader(static_cast<char*>(hints.extradata), hints.extrasize);
+  return m_libass->DecodeHeader(reinterpret_cast<char*>(hints.extradata.GetData()),
+                                hints.extradata.GetSize());
 }
 
 OverlayMessage CDVDOverlayCodecSSA::Decode(DemuxPacket* pPacket)
