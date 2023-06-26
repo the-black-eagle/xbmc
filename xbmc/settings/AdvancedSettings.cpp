@@ -301,7 +301,7 @@ void CAdvancedSettings::Initialize()
   m_bMusicLibraryAllItemsOnBottom = false;
   m_bMusicLibraryCleanOnUpdate = false;
   m_bMusicLibraryArtistSortOnUpdate = false;
-  m_iMusicLibraryRecentlyAddedItems = 25;
+  m_iMusicLibraryRecentlyAddedItems = 96;
   m_strMusicLibraryAlbumFormat = "";
   m_prioritiseAPEv2tags = false;
   m_musicItemSeparator = " / ";
@@ -311,7 +311,7 @@ void CAdvancedSettings::Initialize()
   m_bMusicLibraryUseISODates = false;
 
   m_bVideoLibraryAllItemsOnBottom = false;
-  m_iVideoLibraryRecentlyAddedItems = 25;
+  m_iVideoLibraryRecentlyAddedItems = 96;
   m_bVideoLibraryCleanOnUpdate = false;
   m_bVideoLibraryUseFastHash = true;
   m_bVideoScannerIgnoreErrors = false;
