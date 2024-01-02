@@ -1013,9 +1013,9 @@ bool CFileItem::IsDeleted() const
   return false;
 }
 
-bool CFileItem::IsChapteredAudioBook() const
+bool CFileItem::IsAppleAudioBook() const
 {
-  return IsType(".m4b") || IsType(".mka");
+  return IsType(".m4b");
 }
 
 bool CFileItem::IsGame() const
@@ -1122,7 +1122,7 @@ bool CFileItem::IsFileFolder(EFileFolderType types) const
     || IsZIP()
     || IsRAR()
     || IsRSS()
-    || IsChapteredAudioBook()
+    || IsAppleAudioBook()
     || IsType(".ogg|.oga|.xbt")
 #if defined(TARGET_ANDROID)
     || IsType(".apk")

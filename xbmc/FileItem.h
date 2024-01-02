@@ -199,7 +199,7 @@ public:
    \brief Check whether an item is an audio book item.
    \return true if item is audiobook, false otherwise.
    */
-  bool IsChapteredAudioBook() const;
+  bool IsAppleAudioBook() const;
 
   bool IsGame() const;
   bool IsCUESheet() const;
