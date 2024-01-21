@@ -43,6 +43,7 @@
 #include "messaging/helpers/DialogHelper.h"
 #include "messaging/helpers/DialogOKHelper.h"
 #include "music/MusicDbUrl.h"
+#include "music/MusicFileItemClassify.h"
 #include "music/MusicLibraryQueue.h"
 #include "music/tags/MusicInfoTag.h"
 #include "network/Network.h"
@@ -78,6 +79,7 @@ using namespace XFILE;
 using namespace MUSICDATABASEDIRECTORY;
 using namespace KODI::MESSAGING;
 using namespace MUSIC_INFO;
+using namespace KODI::MUSIC;
 
 using ADDON::AddonPtr;
 using KODI::MESSAGING::HELPERS::DialogResponse;
@@ -3869,7 +3871,7 @@ bool CMusicDatabase::GetRecentlyAddedAlbums(VECALBUMS& albums, unsigned int limi
     // timestamps, nothing to do with when albums added to library)
     std::string strSQL =
         PrepareSQL("SELECT albumview.*, albumartistview.* "
-                   "FROM (SELECT idAlbum FROM album WHERE strAlbum != '' "
+                   "FROM (SELECT idAlbum FROM album WHERE strAlbum != '' AND strReleaseType == 'album' "
                    "ORDER BY dateAdded DESC LIMIT %u) AS recentalbums "
                    "JOIN albumview ON albumview.idAlbum = recentalbums.idAlbum "
                    "JOIN albumartistview ON albumview.idAlbum = albumartistview.idAlbum "
@@ -11195,7 +11197,7 @@ int CMusicDatabase::GetAudioBookCount()
   return GetSingleValueInt(strSQL);
 }
 
-int CMusicDatabase::GetBoxsetsCount()
+int CMusicDatabase::GetBoxsetsCount() const
 {
   return GetSingleValueInt("album", "count(idAlbum)", "bBoxedSet = 1");
 }
@@ -13694,9 +13696,13 @@ bool CMusicDatabase::GetFilter(CDbUrl& musicUrl, Filter& filter, SortDescription
       // Exclude any single albums (aka empty tagged albums)
       // This causes "albums"  media filter artist selection to only offer album artists
       option = options.find("show_singles");
-      if (option == options.end() || !option->second.asBoolean())
+      bool isAudioBook = filter.where.find("audiobook") != std::string::npos;
+      if ((option == options.end() || !option->second.asBoolean()) && !isAudioBook)
         filter.AppendWhere(PrepareSQL("albumview.strReleaseType = '%s'",
                                       CAlbum::ReleaseTypeToString(CAlbum::Album).c_str()));
+      else if (isAudioBook)
+        filter.AppendWhere(PrepareSQL("albumview.strReleaseType = '%s'",
+                                      CAlbum::ReleaseTypeToString(CAlbum::Audiobook).c_str()));
     }
   }
   else if (type == "discs")
@@ -13962,19 +13968,31 @@ bool CMusicDatabase::AddAudioBook(const CFileItem& item)
 
 bool CMusicDatabase::SetResumeBookmarkForAudioBook(const CFileItem& item, int bookmark)
 {
-  std::string strSQL = PrepareSQL("SELECT bookmark FROM audiobook "
-                                  "WHERE file='%s'",
-                                  item.GetDynPath().c_str());
-  if (!m_pDS->query(strSQL) || m_pDS->num_rows() == 0)
+  const int albumid = item.GetMusicInfoTag()->GetAlbumId();
+  std::string strSQL;
+  if (albumid > -1)
+    strSQL = PrepareSQL("SELECT bookmark FROM audiobook WHERE idBook='%i'", albumid);
+  else
+    strSQL =
+        PrepareSQL("SELECT bookmark FROM audiobook WHERE file='%s'", item.GetDynPath().c_str());
+
+  if (!m_pDS->query(strSQL.c_str()) || m_pDS->num_rows() == 0)
   {
     if (!AddAudioBook(item))
       return false;
   }
 
-  strSQL = PrepareSQL("UPDATE audiobook SET bookmark=%i "
-                      "WHERE file='%s'",
-                      bookmark, item.GetDynPath().c_str());
+  if (MUSIC::IsAudioBook(item))
+    //update the bookmark with the offset position in the file
+    strSQL = PrepareSQL("UPDATE audiobook SET bookmark=%i "
+                        "WHERE file='%s'", bookmark, item.GetDynPath().c_str());
 
+  else if (item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook &&
+           !MUSIC::IsAudioBook(item))
+    // update the bookmark with the last file played (mp3/flac/other audiobooks)
+    strSQL =
+        PrepareSQL("UPDATE audiobook SET bookmark=%i, file='%s' WHERE idBook=%i",
+                   item.GetMusicInfoTag()->GetTrackNumber(), item.GetDynPath().c_str(), albumid);
   return ExecuteQuery(strSQL);
 }
 
@@ -13982,10 +14000,15 @@ bool CMusicDatabase::GetResumeBookmarkForAudioBook(const CFileItem& item, int& b
 {
   std::string strSQL =
       PrepareSQL("SELECT bookmark FROM audiobook WHERE file='%s'", item.GetDynPath().c_str());
-  if (!m_pDS->query(strSQL) || m_pDS->num_rows() == 0)
+  if (!MUSIC::IsAudioBook(item) && !item.IsFolder() &&
+      item.GetMusicInfoTag()->GetAlbumReleaseType() == CAlbum::Audiobook)
+    strSQL = PrepareSQL("SELECT bookmark from audiobook where idBook='%i'",
+                        item.GetMusicInfoTag()->GetAlbumId());
+  if (!m_pDS->query(strSQL.c_str()) || m_pDS->num_rows() == 0)
     return false;
 
   bookmark = m_pDS->fv(0).get_asInt();
+  m_pDS->close();
   return true;
 }
 

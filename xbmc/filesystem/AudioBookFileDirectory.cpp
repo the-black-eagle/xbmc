@@ -267,6 +267,11 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
     item->GetMusicInfoTag()->SetTrackNumber(i+1);
     item->GetMusicInfoTag()->SetLoaded(true);
 
+    if (isAudioBook)
+      item->GetMusicInfoTag()->SetAlbumReleaseType(CAlbum::ReleaseType::Audiobook);
+    else
+      item->GetMusicInfoTag()->SetAlbumReleaseType(CAlbum::ReleaseType::Album);
+
     item->SetLabel(StringUtils::Format("{0:02}. {1} - {2}", i + 1,
                                        item->GetMusicInfoTag()->GetAlbum(),
                                        item->GetMusicInfoTag()->GetTitle()));
