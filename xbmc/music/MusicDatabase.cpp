@@ -775,6 +775,7 @@ bool CMusicDatabase::AddAlbum(CAlbum& album, int idSource)
                            song->strReleaseDate, //
                            song->strOrigReleaseDate, //
                            song->strDiscSubtitle, //
+                           song->strReleaseType, //
                            song->iTimesPlayed, //
                            song->iStartOffset, song->iEndOffset, //
                            song->lastPlayed, //
@@ -1021,6 +1022,7 @@ int CMusicDatabase::AddSong(const int idSong,
                             const std::string& strReleaseDate,
                             const std::string& strOrigReleaseDate,
                             std::string& strDiscSubtitle,
+                            const std::string& strReleaseType,
                             const int iTimesPlayed,
                             int iStartOffset,
                             int iEndOffset,
@@ -1037,6 +1039,7 @@ int CMusicDatabase::AddSong(const int idSong,
 {
   int idNew = -1;
   std::string strSQL;
+  bool isAudioBook = !StringUtils::CompareNoCase(strReleaseType, "audiobook");
   try
   {
     // We need at least the title
@@ -1413,6 +1416,8 @@ int CMusicDatabase::AddAlbum(const std::string& strAlbum,
     StringUtils::ToLower(strCheckFlag);
     if (strCheckFlag.find("boxset") != std::string::npos) //boxset flagged in album type
       bBoxedSet = true;
+    else if (strCheckFlag.find("audiobook") != std::string::npos) //audiobook flagged in album type
+      releaseType = CAlbum::Audiobook; // Often set when tagging from Musicbrainz
     if (m_pDS->num_rows() == 0)
     {
       m_pDS->close();
@@ -11182,7 +11187,15 @@ std::string CMusicDatabase::GetAlbumDiscTitle(int idAlbum, int idDisc)
   return albumtitle;
 }
 
-int CMusicDatabase::GetBoxsetsCount() const
+int CMusicDatabase::GetAudioBookCount()
+{
+  std::string strSQL =
+      PrepareSQL("SELECT COUNT(idAlbum) FROM album WHERE album.strReleaseType = '%s'",
+                 CAlbum::ReleaseTypeToString(CAlbum::Audiobook).c_str());
+  return GetSingleValueInt(strSQL);
+}
+
+int CMusicDatabase::GetBoxsetsCount()
 {
   return GetSingleValueInt("album", "count(idAlbum)", "bBoxedSet = 1");
 }
