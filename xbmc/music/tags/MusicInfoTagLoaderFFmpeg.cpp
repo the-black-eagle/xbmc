@@ -157,6 +157,38 @@ bool CMusicInfoTagLoaderFFmpeg::Load(const std::string& strFileName, CMusicInfoT
     while ((avtag = av_dict_get(st->metadata, "", avtag, AV_DICT_IGNORE_SUFFIX)))
       ParseTag(avtag);
 
+  //Look for any embedded art
+  for (size_t i = 0; i < fctx->nb_streams; ++i)
+  {
+    if ((fctx->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC) == 0)
+      continue;
+    AVDictionaryEntry* avtag;
+    avtag = av_dict_get(fctx->streams[i]->metadata, "filename", nullptr, AV_DICT_IGNORE_SUFFIX);
+    std::string value;
+    if (avtag)
+      value = avtag->value;
+    avtag = av_dict_get(fctx->streams[i]->metadata, "mimetype", nullptr, AV_DICT_IGNORE_SUFFIX);
+    if (!value.empty() && avtag)
+    {
+      std::string type;
+      if (value == "fanart.png" || value == "fanart.jpg")
+        type = "fanart";
+      else if (value == "cover.png" || value == "cover.jpg")
+        type = "thumb";
+      else if (value == "small_cover.png" || value == "small_cover.jpg")
+        type = "thumb";
+      if (type.empty())
+        continue;
+      const AVStream* fctx_pic = fctx->streams[i];
+      size_t size = fctx_pic->attached_pic.size;
+      uint8_t* pic{};
+      pic = fctx_pic->attached_pic.data;
+      tag.SetCoverArtInfo(size, type);
+      if (art)
+        art->Set(pic, size, type);
+    }
+  }
+
   if (!tag.GetTitle().empty())
     tag.SetLoaded(true);
 
