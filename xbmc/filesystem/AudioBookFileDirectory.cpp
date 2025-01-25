@@ -165,6 +165,55 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
   if (m_fctx->nb_chapters > 1)
     thumb = IMAGE_FILES::URLFromFile(url.Get(), "music");
 
+  // Look for any embedded art
+  size_t size = {0};
+  uint8_t* pic{};
+  std::string type;
+
+  for (size_t i = 0; i < m_fctx->nb_streams; ++i)
+  {
+    if ((m_fctx->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC) == 0)
+      continue;
+    AVDictionaryEntry* avtag = nullptr;
+    avtag = av_dict_get(m_fctx->streams[i]->metadata, "filename", nullptr, AV_DICT_IGNORE_SUFFIX);
+    std::string value;
+    if (avtag)
+      value = avtag->value;
+    avtag = av_dict_get(m_fctx->streams[i]->metadata, "mimetype", nullptr, AV_DICT_IGNORE_SUFFIX);
+    if (!value.empty() && avtag)
+    {
+      if (value == "fanart.png" || value == "fanart.jpg")
+        type = "fanart";
+      else if (value == "cover.png" || value == "cover.jpg")
+        type = "thumb";
+      else if (value == "small_cover.png" || value == "small_cover.jpg")
+        type = "thumb";
+    }
+    const AVStream* fctx_pic = m_fctx->streams[i];
+    size = fctx_pic->attached_pic.size;
+    // not all embedded pictures have tags, try and deduce the mimetype
+    if (size > 0 && type.empty())
+    {
+      static std::map<std::vector<uint8_t>, std::string> mime_types = {
+          {{255, 216, 255}, "image/jpeg"}, // JPG magic number
+          {{137, 80, 78, 71}, "image/png"}, // PNG magic number
+          {{66, 77}, "image/bmp"}}; // BMP magic number
+
+      pic = fctx_pic->attached_pic.data;
+      for (const auto& [magicnum, mime] : mime_types)
+      {
+        if (std::memcmp(magicnum.data(), pic, magicnum.size()) == 0)
+        {
+          value = mime;
+          type = "thumb";
+          break; // Stop checking once a match is found
+        }
+      }
+    }
+    if (!type.empty())
+      break; // We only need one cover
+  }
+
   for (size_t i=0;i<m_fctx->nb_chapters;++i)
   {
     tag=nullptr;
@@ -267,6 +316,8 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
     item->GetMusicInfoTag()->SetTrackNumber(i+1);
     item->GetMusicInfoTag()->SetLoaded(true);
 
+    if (size > 0 && !type.empty())
+      item->GetMusicInfoTag()->SetCoverArtInfo(size, type);
     item->SetLabel(StringUtils::Format("{0:02}. {1} - {2}", i + 1,
                                        item->GetMusicInfoTag()->GetAlbum(),
                                        item->GetMusicInfoTag()->GetTitle()));
