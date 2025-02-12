@@ -73,6 +73,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
   const bool isAudioBook = url.IsFileType("m4b");
   // Some tags are relevant to the whole album - these are read first
   CMusicInfoTag albumtag;
+  albumtag.SetLoaded(false);
 
   AVDictionaryEntry* tag=nullptr;
   while ((tag = av_dict_get(m_fctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
@@ -265,7 +266,6 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
         item->GetMusicInfoTag()->SetComment(desc);
     }
     item->GetMusicInfoTag()->SetTrackNumber(i+1);
-    item->GetMusicInfoTag()->SetLoaded(true);
 
     item->SetLabel(StringUtils::Format("{0:02}. {1} - {2}", i + 1,
                                        item->GetMusicInfoTag()->GetAlbum(),
@@ -293,6 +293,8 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
     item->SetProperty("audio_bookmark", item->GetStartOffset());
     if (!thumb.empty())
       item->SetArt("thumb", thumb);
+    if (!item->GetMusicInfoTag()->GetTitle().empty())
+      item->GetMusicInfoTag()->SetLoaded(true);
     items.Add(item);
   }
 
