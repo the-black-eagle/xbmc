@@ -4,6 +4,7 @@ set(SOURCES Album.cpp
             GUIViewStateMusic.cpp
             MusicDatabase.cpp
             MusicDbUrl.cpp
+            MusicEmbeddedCoverLoaderFFmpeg.cpp
             MusicEmbeddedImageFileLoader.cpp
             MusicInfoLoader.cpp
             MusicLibraryQueue.cpp
@@ -17,6 +18,7 @@ set(HEADERS Album.h
             GUIViewStateMusic.h
             MusicDatabase.h
             MusicDbUrl.h
+            MusicEmbeddedCoverLoaderFFmpeg.h
             MusicEmbeddedImageFileLoader.h
             MusicInfoLoader.h
             MusicLibraryQueue.h
