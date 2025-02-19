@@ -49,7 +49,7 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
   AVFormatContext* fctx = avformat_alloc_context();
   fctx->pb = ioctx;
 
-  if (file.IoControl(IOCTRL_SEEK_POSSIBLE, NULL) != 1)
+  if (file.IoControl(IOControl::SEEK_POSSIBLE, NULL) != 1)
     ioctx->seekable = 0;
 
   const AVInputFormat* iformat = nullptr;
@@ -92,7 +92,7 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
     }
     if (decoder)
     {
-      codec_info.codecName = avcodec_get_name(st->codecpar->codec_id);
+      std::string codec_name = avcodec_get_name(st->codecpar->codec_id);
       codec_info.bitRate = static_cast<int>(st->codecpar->bit_rate / 1000);
       codec_info.channels = st->codecpar->ch_layout.nb_channels;
       codec_info.bitsPerSample = (st->codecpar->bits_per_coded_sample != 0)
@@ -100,7 +100,28 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
                                      : st->codecpar->bits_per_raw_sample;
       codec_info.sampleRate = st->codecpar->sample_rate;
       codec_info.duration = st->duration / AV_TIME_BASE;
-      haveInfo = true;
+      if (st->codecpar->codec_id == AV_CODEC_ID_DTS)
+      {
+        if (st->codecpar->profile == FF_PROFILE_DTS_HD_MA)
+          codec_name = "dtshd_ma";
+        else if (st->codecpar->profile == FF_PROFILE_DTS_HD_MA_X)
+          codec_name = "dtshd_ma_x";
+        else if (st->codecpar->profile == FF_PROFILE_DTS_HD_MA_X_IMAX)
+          codec_name = "dtshd_ma_x_imax";
+        else if (st->codecpar->profile == FF_PROFILE_DTS_HD_HRA)
+          codec_name = "dtshd_hra";
+        else
+          codec_name = "dca";
+      }
+      if (st->codecpar->codec_id == AV_CODEC_ID_EAC3 &&
+          st->codecpar->profile == AV_PROFILE_EAC3_DDP_ATMOS)
+        codec_name = "eac3_ddp_atmos";
+
+      if (st->codecpar->codec_id == AV_CODEC_ID_TRUEHD &&
+          st->codecpar->profile == AV_PROFILE_TRUEHD_ATMOS)
+        codec_name = "truehd_atmos";
+      codec_info.codecName = codec_name;
+      haveInfo= true;
     }
   }
 
