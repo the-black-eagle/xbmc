@@ -25,7 +25,7 @@ void CMusicEmbeddedCoverLoaderFFmpeg::GetEmbeddedCover(AVFormatContext* fctx,
       continue;
 
     AVCodecID pic_id = fctx_pic->codecpar->codec_id;
-    const std::unordered_map<AVCodecID, std::string> mime_map = {{AV_CODEC_ID_MJPEG, "image/jpeg"},
+    const std::map<AVCodecID, std::string> mime_map = {{AV_CODEC_ID_MJPEG, "image/jpeg"},
                                                                  {AV_CODEC_ID_PNG, "image/png"},
                                                                  {AV_CODEC_ID_BMP, "image/bmp"}};
 
