@@ -238,7 +238,8 @@ IFileDirectory* CFileDirectoryFactory::Create(const CURL& url, CFileItem* pItem,
     return NULL;
   }
 
-  if (MUSIC::IsAudioBook(*pItem))
+
+  if (pItem->IsAudioBook() || pItem->IsMatroskaAudio()  || pItem->IsMatroskaVideo())
   {
     if (!pItem->HasMusicInfoTag() || pItem->GetEndOffset() <= 0)
     {
