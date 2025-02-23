@@ -1015,7 +1015,17 @@ bool CFileItem::IsDeleted() const
 
 bool CFileItem::IsAudioBook() const
 {
-  return IsType(".m4b") || IsType(".mka");
+  return IsType(".m4b");
+}
+
+bool CFileItem::IsMatroskaAudio() const
+{
+  return IsType(".mka");
+}
+
+bool CFileItem::IsMatroskaVideo() const
+{
+  return IsType(".mkv");
 }
 
 bool CFileItem::IsGame() const
@@ -1116,14 +1126,11 @@ bool CFileItem::IsFileFolder(EFileFolderType types) const
 
   if(types & always_type)
   {
+
     if(IsSmartPlayList()
-    || (IsPlayList() && CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_playlistAsFolders)
-    || IsAPK()
-    || IsZIP()
-    || IsRAR()
-    || IsRSS()
-    || IsAudioBook()
-    || IsType(".ogg|.oga|.xbt")
+    || (IsPlayList() && CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_playlistAsFolders) ||
+        IsAPK() || IsZIP() || IsRAR() || IsRSS() || IsAudioBook() || IsMatroskaAudio() ||
+         IsMatroskaVideo() || IsType(".ogg|.oga|.xbt")
 #if defined(TARGET_ANDROID)
     || IsType(".apk")
 #endif
