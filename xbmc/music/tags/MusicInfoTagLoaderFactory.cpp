@@ -88,9 +88,8 @@ IMusicInfoTagLoader* CMusicInfoTagLoaderFactory::CreateLoader(const CFileItem& i
     CMusicInfoTagLoaderSHN *pTagLoader = new CMusicInfoTagLoaderSHN();
     return pTagLoader;
   }
-  else if (strExtension == "mka" || strExtension == "mkv")
-    return new CMusicInfoTagLoaderMatroska();
-  else if (strExtension == "dsf" || strExtension == "dff")
+  else if (strExtension == "mka" || strExtension == "dsf" || strExtension == "mkv" ||
+           strExtension == "dff")
     return new CMusicInfoTagLoaderFFmpeg();
 
   return NULL;
