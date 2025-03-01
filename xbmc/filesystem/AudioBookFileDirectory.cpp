@@ -273,7 +273,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
   std::string thumb;
 
   if (m_fctx->nb_chapters > 1)
-    thumb = IMAGE_FILES::URLFromFile(url.Get(), "music");
+    thumb = CTextureUtils::GetWrappedImageURL(url.Get(), "music");
 
   // now get the AudioCodec -------------------------------------
   bool haveFFmpegInfo = false;
@@ -298,12 +298,15 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
   // Look for any embedded cover art
   CMusicEmbeddedCoverLoaderFFmpeg::GetEmbeddedCover(m_fctx, albumtag);
 
+  float chapter_size = 0;
+
+  bool chapter_error = false;
   for (size_t i=0;i<m_fctx->nb_chapters;++i)
   {
     if (m_fctx->chapters[i]->start < 0) // negative start time, ignore it
       continue;
     chapter_size = m_fctx->chapters[i]->end * av_q2d(m_fctx->chapters[i]->time_base);
-    if (chapter_size < 1 && !(url.IsFileType("mka")))
+    if (chapter_size < 1)
     {
       CLog::Log(LOGWARNING,
                 "CAudioBookFileDirectory: Tiny chapter of size {}s detected when scanning {} Most "
