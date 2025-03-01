@@ -187,13 +187,9 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
   }
 
   std::string thumb;
-  thumb = IMAGE_FILES::URLFromFile(url.Get(), "music");
-  /*! Look for any embedded cover art
-  * This can be dropped when taglib 2.3.1 is released with the embedded cover art performance
-  * fix for Matroska files and we can just use TagLib to read the embedded cover art for Matroska
-  * files. Until then, we need to use FFmpeg to read the embedded cover art for Matroska files.
-  */
-  CMusicEmbeddedCoverLoaderFFmpeg::GetEmbeddedCover(m_fctx, albumtag);
+
+  if (m_fctx->nb_chapters > 1)
+    thumb = IMAGE_FILES::URLFromFile(url.Get(), "music");
 
   // now get the AudioCodec -------------------------------------
   bool haveFFmpegInfo = false;
@@ -213,14 +209,14 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
   }
 
   float chapter_size = 0;
+
   bool chapter_error = false;
-  for (unsigned int i = 0; m_fctx->chapters && i < m_fctx->nb_chapters; ++i)
+  for (size_t i=0;i<m_fctx->nb_chapters;++i)
   {
-    if (!m_fctx->chapters[i] || m_fctx->chapters[i]->start < 0) // null or negative start time
+    if (m_fctx->chapters[i]->start < 0) // negative start time, ignore it
       continue;
-    chapter_size = (m_fctx->chapters[i]->end - m_fctx->chapters[i]->start) *
-                   av_q2d(m_fctx->chapters[i]->time_base);
-    if (chapter_size < 1) // Chapter must have positive time of more than 1 sec
+    chapter_size = m_fctx->chapters[i]->end * av_q2d(m_fctx->chapters[i]->time_base);
+    if (chapter_size < 1)
     {
       CLog::Log(LOGWARNING,
                 "CAudioBookFileDirectory: Tiny chapter of size {}s detected when scanning {} Most "
@@ -229,8 +225,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
       chapter_error = true;
       continue;
     }
-
-    tag = nullptr;
+    tag=nullptr;
     std::string chaptitle = StringUtils::Format(
         CServiceBroker::GetResourcesComponent().GetLocalizeStrings().Get(25010), i + 1);
     std::string chapauthor;
