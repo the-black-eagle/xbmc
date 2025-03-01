@@ -292,8 +292,7 @@ IFileDirectory* CFileDirectoryFactory::Create(const CURL& url, CFileItem* pItem,
     return NULL;
   }
 
-
-  if (pItem->IsAudioBook() || pItem->IsMatroskaAudio()  || pItem->IsMatroskaVideo())
+  if (pItem->IsAudioBook() || pItem->IsMatroskaAudio()  || pItem->IsMatroskaVideo() || (url.IsFileType("mp4")))
   {
     // .mkv doubles as a video container — only treat a chaptered .mkv as an
     // audiobook when browsed from a Music source, or a chaptered movie in a

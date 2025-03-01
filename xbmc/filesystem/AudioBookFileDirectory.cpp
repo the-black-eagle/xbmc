@@ -25,6 +25,8 @@
 #include "resources/ResourcesComponent.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/SettingsComponent.h"
+#include "utils/Mp4ChplReader.h"
+#include "utils/log.h"
 #include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
 #include "utils/log.h"
@@ -107,25 +109,81 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
       else if (StringUtils::CompareNoCase(tag->key, "description") == 0)
         desc = tag->value;
     }
-  }
-
-  std::map<std::string, std::string> fileTags;
-  std::map<unsigned long long, std::map<std::string, std::string>> chapterTags;
-  std::vector<std::tuple<unsigned long long, std::string, double, double, unsigned long long>>
-      chapterOrder;
-
-  if (!isAudioBook)
-  {
-    CMusicInfoTagLoaderMatroska::GetMatroskaMusicTags(url.Get(), fileTags, chapterTags,
-                                                      chapterOrder);
-    if (fileTags.empty())
-      return true;
-    /*!
-     * initially just get the (file) Album level tags to be use in subsequent tracks
-     * (chapters) processed below to create Kodi music Songs
-    */
-    for (const auto& t : fileTags)
-      CMusicInfoTagLoaderMatroska::ParseTag(t.first, t.second, separators, musicsep, albumtag);
+    else
+    {
+      std::string key = StringUtils::ToUpper(tag->key);
+      // track is matroska's discnumber when at level 50 (these tags) as set by mp3tag
+      // part_number is the matroska spec key
+      if (key == "TRACK" || key == "PART_NUMBER")
+        albumtag.SetDiscNumber(std::stoi(tag->value));
+      else if (key == "SUBTITLE" || key == "SETSUBTITLE")
+        albumtag.SetDiscSubtitle(tag->value);
+      else if (key == "TITLE")
+        albumtag.SetAlbum(tag->value);
+      else if (key == "ALBUM")
+        albumtag.SetAlbum(tag->value);
+      else if (key == "ARTIST")
+        albumtag.SetArtist(tag->value);
+      else if (key == "ARTISTSORT" || key == "ARTIST SORT")
+        albumtag.SetArtistSort(
+            StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
+      else if (key == "ALBUMARTIST" || key == "ALBUM ARTIST" || key == "ALBUM_ARTIST")
+        albumtag.SetAlbumArtist(
+            StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
+      else if (key == "ALBUMARTSTS" || key == "ALBUM ARTISTS")
+        albumtag.SetAlbumArtist(StringUtils::Split(tag->value, separators));
+      else if (key == "ALBUMARTISTSORT" || key == "ALBUM ARTIST SORT" || key == "SORT_ALBUM_ARTIST")
+        albumtag.SetAlbumArtistSort(
+            StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
+      else if (key == "MUSICBRAINZ_ARTISTID")
+        albumtag.SetMusicBrainzArtistID(StringUtils::Split(tag->value, separators));
+      else if (key == "MUSICBRAINZ_ALBUMARTISTID" || key == "MUSICBRAINZ ALBUM ARTIST ID")
+        albumtag.SetMusicBrainzAlbumArtistID(StringUtils::Split(tag->value, separators));
+      else if (key == "MUSICBRAINZ_ALBUMARTIST")
+        albumtag.SetAlbumArtist(tag->value);
+      else if (key == "MUSICBRAINZ_ALBUMID" || key == "MUSICBRAINZ ALBUM ID")
+        albumtag.SetMusicBrainzAlbumID(tag->value);
+      else if (key == "MUSICBRAINZ_RELEASEGROUPID" || key == "MUSICBRAINZ RELEASE GROUP ID")
+        albumtag.SetMusicBrainzReleaseGroupID(tag->value);
+      //else if (key == "MUSICBRAINZ_ALBUMRELEASECOUNTRY" || key == "MUSICBRAINZ ALBUM RELEASE COUNTRY")
+      // albumtag.Set
+      else if (key == "MUSICBRAINZ_ALBUMSTATUS")
+        albumtag.SetAlbumReleaseStatus(tag->value);
+      else if (key == "MUSICBRAINZ_ALBUMTYPE")
+        albumtag.SetMusicBrainzReleaseType(tag->value);
+      else if (key == "PUBLISHER")
+        albumtag.SetRecordLabel(tag->value);
+      // mp3tag info shows year but the value is stored in date_recorded
+      // equates to TDRC in id3v2.4 ISO 8601 yyyy-mm-dd or part thereof
+      else if (key == "YEAR" || key == "DATE_RECORDED")
+        albumtag.SetReleaseDate(tag->value);
+      else if (key == "ORIGYEAR") // ISO 8601 as above. Equates to TDOR in id3v2.4 (set by mp3tag)
+        albumtag.SetOriginalDate(tag->value);
+      else if (key == "MOOD")
+        albumtag.SetMood(tag->value);
+      // genre could be comma delimited or not. Temporarily add the comma just in case.  true trims
+      // any whitespace around the genre(s)
+      else if (key == "GENRE")
+      {
+        separators.emplace_back(",");
+        albumtag.SetGenre(StringUtils::Split(tag->value, separators), true);
+        separators.pop_back();
+      }
+      // comma separated list of role, person
+      else if (key == "INVOLVEDPEOPLE")
+      {
+        tagdata = StringUtils::Split(tag->value, ",");
+        AddCommaDelimitedString(tagdata, separators, albumtag);
+      }
+      else if (key == "SUBTITLE" || key == "SETSUBTITLE")
+        albumtag.SetDiscSubtitle(tag->value);
+      else if (key == "REMIXED_BY")
+        albumtag.AddArtistRole("Remixer", tag->value);
+      else if (key == "MIXED_BY" || key == "MIXER")
+        albumtag.AddArtistRole("Mixer", tag->value);
+      else if (key == "COMMENT")
+        albumtag.SetComment(tag->value);
+    }
   }
 
   std::string thumb;
@@ -192,6 +250,73 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
         else if (StringUtils::CompareNoCase(tag->key, "album") == 0)
           chapalbum = tag->value;
       }
+      else
+      {
+        std::string key = StringUtils::ToUpper(tag->key);
+        if (key == "TITLE")
+          item->GetMusicInfoTag()->SetTitle(tag->value);
+        else if (key == "ARTIST")
+          item->GetMusicInfoTag()->SetArtist(tag->value);
+        else if (key == "MUSICBRAINZ_TRACKID")
+          item->GetMusicInfoTag()->SetMusicBrainzTrackID(tag->value);
+        else if (key == "COMPOSER")
+          addRole("Composer", tag->value);
+        else if (key == "LYRICIST")
+          addRole("Lyricist", tag->value);
+        else if (key == "CONDUCTOR")
+          addRole("Conductor", tag->value);
+        else if (key == "WRITER")
+          addRole("Writer", tag->value);
+        else if (key == "ARRANGER")
+          addRole("Arranger", tag->value);
+        else if (key == "BAND")
+          addRole("Band", tag->value);
+        else if (key == "ENGINEER")
+          addRole("Engineer", tag->value);
+        else if (key == "PRODUCER")
+          addRole("Producer", tag->value);
+        else if (key == "REMIXED_BY")
+          addRole("Remixer", tag->value);
+        else if (key == "YEAR" || key == "DATE_RECORDED")
+          item->GetMusicInfoTag()->SetReleaseDate(tag->value);
+        else if (key == "ORIGYEAR")
+          item->GetMusicInfoTag()->SetOriginalDate(tag->value);
+        else if (key == "MIXED_BY" || key == "MIXER"  )
+          addRole("Mixer", tag->value);
+        else if (key == "SUBTITLE" || key == "SETSUBTITLE")
+          item->GetMusicInfoTag()->SetDiscSubtitle(tag->value);
+        else if (key == "COMMENT")
+          item->GetMusicInfoTag()->SetComment(tag->value);
+        else if (key == "MOOD")
+          item->GetMusicInfoTag()->SetMood(tag->value);
+        else if (key == "GENRE")
+        {
+          separators.emplace_back(",");
+          item->GetMusicInfoTag()->SetGenre(StringUtils::Split(tag->value, separators), true);
+          separators.pop_back();
+        }
+        // comma separated list of instrument, person
+        else if (key == "INSTRUMENTS")
+        {
+          tagdata = StringUtils::Split(tag->value, ",");
+          AddCommaDelimitedString(tagdata, separators, *item->GetMusicInfoTag());
+        }
+        // comma separated list of role, person
+        else if (key == "INVOLVEDPEOPLE")
+        {
+          tagdata = StringUtils::Split(tag->value, ",");
+          AddCommaDelimitedString(tagdata, separators, *item->GetMusicInfoTag());
+        }
+      }
+      /* The comma separated lists are outside the Matroska spec
+         (see https://www.matroska.org/technical/tagging.html) as it states to use multiple simple
+         tags for eg 2 or more composers.  However, ffmpeg returns just the last tag and drops the
+         rest (https://trac.ffmpeg.org/ticket/9641).  Therefore until (if) it gets fixed, this is
+         the best solution.
+       */
+    }
+    if (isAudioBook)
+    {
       item->GetMusicInfoTag()->SetTitle(chaptitle);
       item->GetMusicInfoTag()->SetAlbum(chapalbum.empty() ? album.empty() ? title : album
                                                           : chapalbum);
