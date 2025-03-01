@@ -167,11 +167,27 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
   }
 
   std::string thumb;
+
   if (m_fctx->nb_chapters > 1)
     thumb = IMAGE_FILES::URLFromFile(url.Get(), "music");
 
+  float chapter_size = 0;
+
+  bool chapter_error = false;
   for (size_t i=0;i<m_fctx->nb_chapters;++i)
   {
+    if (m_fctx->chapters[i]->start < 0) // negative start time, ignore it
+      continue;
+    chapter_size = m_fctx->chapters[i]->end * av_q2d(m_fctx->chapters[i]->time_base);
+    if (chapter_size < 1)
+    {
+      CLog::Log(LOGWARNING,
+                "CAudioBookFileDirectory: Tiny chapter of size {}s detected when scanning {} Most "
+                "likely this file needs the chapters correcting",
+                chapter_size, url.GetRedacted());
+      chapter_error = true;
+      continue;
+    }
     tag=nullptr;
     std::string chaptitle = StringUtils::Format(g_localizeStrings.Get(25010), i + 1);
     std::string chapauthor;
@@ -298,7 +314,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
         CUtil::ConvertMilliSecsToSecsInt(item->GetEndOffset() - item->GetStartOffset()));
     item->SetProperty("item_start", item->GetStartOffset());
     item->SetProperty("audio_bookmark", item->GetStartOffset());
-    if (!thumb.empty())
+    if (!thumb.empty() && !chapter_error)
       item->SetArt("thumb", thumb);
     items.Add(item);
   }
