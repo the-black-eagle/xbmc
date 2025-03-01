@@ -156,14 +156,16 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
             StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
       else if (key == "MUSICBRAINZ_ARTISTID")
         albumtag.SetMusicBrainzArtistID(StringUtils::Split(tag->value, separators));
-      else if (key == "MUSICBRAINZ_ALBUMARTISTID")
+      else if (key == "MUSICBRAINZ_ALBUMARTISTID" || key == "MUSICBRAINZ ALBUM ARTIST ID")
         albumtag.SetMusicBrainzAlbumArtistID(StringUtils::Split(tag->value, separators));
       else if (key == "MUSICBRAINZ_ALBUMARTIST")
         albumtag.SetAlbumArtist(tag->value);
-      else if (key == "MUSICBRAINZ_ALBUMID")
+      else if (key == "MUSICBRAINZ_ALBUMID" || key == "MUSICBRAINZ ALBUM ID")
         albumtag.SetMusicBrainzAlbumID(tag->value);
-      else if (key == "MUSICBRAINZ_RELEASEGROUPID")
+      else if (key == "MUSICBRAINZ_RELEASEGROUPID" || key == "MUSICBRAINZ RELEASE GROUP ID")
         albumtag.SetMusicBrainzReleaseGroupID(tag->value);
+      //else if (key == "MUSICBRAINZ_ALBUMRELEASECOUNTRY" || key == "MUSICBRAINZ ALBUM RELEASE COUNTRY")
+      // albumtag.Set
       else if (key == "MUSICBRAINZ_ALBUMSTATUS")
         albumtag.SetAlbumReleaseStatus(tag->value);
       else if (key == "MUSICBRAINZ_ALBUMTYPE")
