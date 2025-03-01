@@ -1020,7 +1020,7 @@ bool CFileItem::IsAudioBook() const
 
 bool CFileItem::IsMatroskaAudio() const
 {
-  return IsType(".mka");
+  return IsType(".mka|.mp4");
 }
 
 bool CFileItem::IsMatroskaVideo() const

@@ -18,6 +18,7 @@
 #include "music/tags/MusicInfoTag.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/SettingsComponent.h"
+#include "utils/log.h"
 #include "utils/StringUtils.h"
 
 using namespace XFILE;
@@ -115,12 +116,12 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
       else if (key == "ARTISTSORT" || key == "ARTIST SORT")
         albumtag.SetArtistSort(
             StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
-      else if (key == "ALBUMARTIST" || key == "ALBUM ARTIST")
+      else if (key == "ALBUMARTIST" || key == "ALBUM ARTIST" || key == "ALBUM_ARTIST")
         albumtag.SetAlbumArtist(
             StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
       else if (key == "ALBUMARTSTS" || key == "ALBUM ARTISTS")
         albumtag.SetAlbumArtist(StringUtils::Split(tag->value, separators));
-      else if (key == "ALBUMARTISTSORT" || key == "ALBUM ARTIST SORT")
+      else if (key == "ALBUMARTISTSORT" || key == "ALBUM ARTIST SORT" || key == "SORT_ALBUM_ARTIST")
         albumtag.SetAlbumArtistSort(
             StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
       else if (key == "COMPOSERSORT" || key == "COMPOSER SORT")
@@ -128,14 +129,16 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
             StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
       else if (key == "MUSICBRAINZ_ARTISTID")
         albumtag.SetMusicBrainzArtistID(StringUtils::Split(tag->value, separators));
-      else if (key == "MUSICBRAINZ_ALBUMARTISTID")
+      else if (key == "MUSICBRAINZ_ALBUMARTISTID" || key == "MUSICBRAINZ ALBUM ARTIST ID")
         albumtag.SetMusicBrainzAlbumArtistID(StringUtils::Split(tag->value, separators));
       else if (key == "MUSICBRAINZ_ALBUMARTIST")
         albumtag.SetAlbumArtist(tag->value);
-      else if (key == "MUSICBRAINZ_ALBUMID")
+      else if (key == "MUSICBRAINZ_ALBUMID" || key == "MUSICBRAINZ ALBUM ID")
         albumtag.SetMusicBrainzAlbumID(tag->value);
-      else if (key == "MUSICBRAINZ_RELEASEGROUPID")
+      else if (key == "MUSICBRAINZ_RELEASEGROUPID" || key == "MUSICBRAINZ RELEASE GROUP ID")
         albumtag.SetMusicBrainzReleaseGroupID(tag->value);
+      //else if (key == "MUSICBRAINZ_ALBUMRELEASECOUNTRY" || key == "MUSICBRAINZ ALBUM RELEASE COUNTRY")
+      // albumtag.Set
       else if (key == "MUSICBRAINZ_ALBUMSTATUS")
         albumtag.SetAlbumReleaseStatus(tag->value);
       else if (key == "MUSICBRAINZ_ALBUMTYPE")
@@ -169,7 +172,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
       }
       else if (key == "REMIXED_BY")
         albumtag.AddArtistRole("Remixer", tag->value);
-      else if (key == "MIXED_BY")
+      else if (key == "MIXED_BY" || key == "MIXER")
         albumtag.AddArtistRole("Mixer", tag->value);
       else if (key == "COMMENT")
         albumtag.SetComment(tag->value);
@@ -283,7 +286,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
           addRole("Producer", tag->value);
         else if (key == "REMIXED_BY")
           addRole("Remixer", tag->value);
-        else if (key == "MIXED_BY")
+        else if (key == "MIXED_BY" || key == "MIXER"  )
           addRole("Mixer", tag->value);
         else if (key == "SUBTITLE" || key == "SETSUBTITLE")
           item->GetMusicInfoTag()->SetDiscSubtitle(tag->value);
@@ -336,7 +339,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
       if (!desc.empty())
         item->GetMusicInfoTag()->SetComment(desc);
     }
-    item->GetMusicInfoTag()->SetTrackNumber(i+1);
+    item->GetMusicInfoTag()->SetTrackNumber(i + 1);
     item->GetMusicInfoTag()->SetLoaded(true);
 
     item->SetLabel(StringUtils::Format("{0:02}. {1} - {2}", i + 1,
