@@ -71,7 +71,7 @@
 
 #include "TagLibVFSStream.h"
 #include "MusicInfoTag.h"
-#include "MusicInfoFFmpeg.h"
+#include "MusicCodecInfoFFmpeg.h"
 #include "ReplayGain.h"
 #include "utils/RegExp.h"
 #include "utils/URIUtils.h"
@@ -1345,7 +1345,7 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   // it separately for those files that do contain it.
   unsigned int bitsPerSample = 0;
   int mpegLayer = 0;
-  fileInfo codec_info;
+  musicCodecInfo codec_info;
   std::string codec;
   bool haveFFmpegInfo = false;
 
