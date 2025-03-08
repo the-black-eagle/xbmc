@@ -30,7 +30,7 @@ static int64_t vfs_file_seek(void* h, int64_t pos, int whence)
 
 bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName, musicCodecInfo& codec_info)
 {
-  AVCodec* decoder = nullptr;
+  const AVCodec* decoder = nullptr;
   std::string codec = "";
   CFile file;
   bool haveInfo = false;
@@ -51,7 +51,7 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName, mu
   if (file.IoControl(IOCTRL_SEEK_POSSIBLE, NULL) != 1)
     ioctx->seekable = 0;
 
-  AVInputFormat* iformat = NULL;
+  const AVInputFormat* iformat = nullptr;
   av_probe_input_buffer(ioctx, &iformat, strFileName.c_str(), NULL, 0, 0);
 
   if (!ioctx)
