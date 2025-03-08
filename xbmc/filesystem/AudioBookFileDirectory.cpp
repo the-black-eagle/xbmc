@@ -76,6 +76,21 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
   // Some tags are relevant to the whole album - these are read first
   CMusicInfoTag albumtag;
 
+  int audiostream{0};
+
+  AVStream* st = nullptr;
+  for (unsigned int i = 0; i <= m_fctx->nb_streams; ++i)
+  {
+    st = m_fctx->streams[i];
+    if ( st && st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+      audiostream = i;
+      break;
+    }
+    else
+      continue;
+  }
+
   AVDictionaryEntry* tag=nullptr;
   while ((tag = av_dict_get(m_fctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
   {
@@ -179,11 +194,13 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
     }
   }
 
-  if (m_fctx->streams[0]->codecpar->bits_per_coded_sample)
+  if(m_fctx->streams[audiostream]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
   {
-    albumtag.SetBitRate(m_fctx->streams[0]->codecpar->bits_per_coded_sample);
-    albumtag.SetSampleRate(m_fctx->streams[0]->codecpar->sample_rate);
-    albumtag.SetNoOfChannels(m_fctx->streams[0]->codecpar->ch_layout.nb_channels);
+    albumtag.SetBitsPerSample(m_fctx->streams[audiostream]->codecpar->bits_per_coded_sample);
+    albumtag.SetSampleRate(m_fctx->streams[audiostream]->codecpar->sample_rate);
+    albumtag.SetBitRate(m_fctx->streams[audiostream]->codecpar->bit_rate);
+    albumtag.SetNoOfChannels(m_fctx->streams[audiostream]->codecpar->ch_layout.nb_channels);
+    albumtag.SetCodec(avcodec_get_name(m_fctx->streams[audiostream]->codecpar->codec_id));
   }
 
   std::string thumb;
