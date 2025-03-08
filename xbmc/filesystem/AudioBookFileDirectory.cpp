@@ -81,11 +81,15 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
 
   AVStream* st = nullptr;
   const AVCodec *dec = nullptr;
+  int audiostream{0};
+
+
   for (unsigned int i = 0; i <= m_fctx->nb_streams; ++i)
   {
     st = m_fctx->streams[i];
     if ( st && st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
     {
+      audiostream = i;
       break;
     }
     else
@@ -218,13 +222,14 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
         isMasterAudio = true;
     }
 
-  if( st && st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+  if(m_fctx->streams[audiostream]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
   {
-    std::string codec_name;
-    albumtag.SetBitsPerSample(st->codecpar->bits_per_coded_sample);
-    albumtag.SetSampleRate(st->codecpar->sample_rate);
-    albumtag.SetBitRate(st->codecpar->bit_rate);
-    albumtag.SetNoOfChannels(st->codecpar->ch_layout.nb_channels);
+    albumtag.SetBitsPerSample(m_fctx->streams[audiostream]->codecpar->bits_per_coded_sample);
+    albumtag.SetSampleRate(m_fctx->streams[audiostream]->codecpar->sample_rate);
+    albumtag.SetBitRate(m_fctx->streams[audiostream]->codecpar->bit_rate);
+    albumtag.SetNoOfChannels(m_fctx->streams[audiostream]->codecpar->ch_layout.nb_channels);
+    albumtag.SetCodec(avcodec_get_name(m_fctx->streams[audiostream]->codecpar->codec_id));
+  }
     codec_name = avcodec_get_name(st->codecpar->codec_id);
     dec = avcodec_find_decoder(st->codecpar->codec_id);
     if (dec->id == AV_CODEC_ID_DTS)
@@ -248,7 +253,6 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
          dec->profiles->profile == AV_PROFILE_TRUEHD_ATMOS)
       codec_name = "truehd_atmos";
     albumtag.SetCodec(codec_name);
-  }
 
   std::string thumb;
 
