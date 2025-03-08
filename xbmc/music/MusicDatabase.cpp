@@ -12870,6 +12870,12 @@ void CMusicDatabase::SetPropertiesFromAlbum(CFileItem& item, const CAlbum& album
   item.SetProperty("album_duration",
                    StringUtils::SecondsToTimeString(album.iAlbumDuration,
                                                     static_cast<TIME_FORMAT>(TIME_FORMAT_GUESS)));
+  if (album.songs.size() >0)
+  {
+    item.SetProperty("album_codec", album.songs[0].strCodec);
+    item.SetProperty("album_bitspersample", album.songs[0].iBitsPerSample);
+    item.SetProperty("album_samplerate", album.songs[0].iSampleRate);
+  }
 }
 
 void CMusicDatabase::SetPropertiesForFileItem(CFileItem& item)
