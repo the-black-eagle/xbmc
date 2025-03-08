@@ -5,17 +5,16 @@
  *  SPDX-License-Identifier: GPL-2.0-or-later
  *  See LICENSES/README.md for more information.
  */
+ 
+#pragma once
 
 #pragma once
 
 #include <string>
 
-struct musicCodecInfo
-{
-public:
-
 typedef struct musicCodecInfo
 {
+public:
   int bitsPerSample = 0;
   int sampleRate = 0;
   int bitRate = 0;

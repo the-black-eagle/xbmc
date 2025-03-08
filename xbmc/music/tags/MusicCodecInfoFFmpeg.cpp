@@ -28,10 +28,11 @@ static int64_t vfs_file_seek(void* h, int64_t pos, int whence)
     return pFile->Seek(pos, whence & ~AVSEEK_FORCE);
 }
 
-bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName, musicCodecInfo& codec_info)
+bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
+                                              musicCodecInfo& codec_info)
 {
   const AVCodec* decoder = nullptr;
-  std::string codec = "";
+  std::string codec;
   CFile file;
   bool haveInfo = false;
   if (!file.Open(strFileName))
@@ -71,9 +72,20 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName, mu
     fctx->flags |= AVFMT_FLAG_NOPARSE;
     if (avformat_find_stream_info(fctx, nullptr) >= 0)
     {
-      int streamIndex = -1;
-      // Look for the default audio stream first
-      for (unsigned int i = 0; i < fctx->nb_streams; ++i)
+      bool gotStream = false;
+      for (unsigned int i = 0; i <= fctx->nb_streams; ++i)
+      {
+        st = fctx->streams[i];
+        if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+        {
+          gotStream = true;
+          break;
+        }
+        else
+          continue;
+      }
+      if (!gotStream)
+        return haveInfo;
       {
         if (fctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
         {
@@ -163,6 +175,19 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName, mu
         }
       }
     }
+    if (decoder)
+    {
+      codec_info.codecName = avcodec_get_name(st->codecpar->codec_id);
+      codec_info.bitRate = static_cast<int>(st->codecpar->bit_rate / 1000);
+      codec_info.channels = st->codecpar->ch_layout.nb_channels;
+      codec_info.bitsPerSample = (st->codecpar->bits_per_coded_sample != 0)
+                                     ? st->codecpar->bits_per_coded_sample
+                                     : st->codecpar->bits_per_raw_sample;
+      codec_info.sampleRate = st->codecpar->sample_rate;
+      codec_info.duration = st->duration / AV_TIME_BASE;
+      haveInfo = true;
+    }
+  }
 
     avformat_close_input(&fctx);
   }
