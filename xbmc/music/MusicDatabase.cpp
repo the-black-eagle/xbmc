@@ -9453,7 +9453,7 @@ void CMusicDatabase::UpdateTables(int version)
   // The last schema change needing forced rescanning was 73.
   // This is because Kodi can now read and process extra tags involved in the creation of box sets
 
-  SetMusicNeedsTagScan(73);
+  SetMusicNeedsTagScan(83);
 
   // After all updates, store the original db version.
   // This indicates the version of tag processing that was used to populate db
@@ -9462,7 +9462,7 @@ void CMusicDatabase::UpdateTables(int version)
 
 int CMusicDatabase::GetSchemaVersion() const
 {
-  return 83;
+  return 84;
 }
 
 int CMusicDatabase::GetMusicNeedsTagScan()
@@ -12838,6 +12838,12 @@ void CMusicDatabase::SetPropertiesFromAlbum(CFileItem& item, const CAlbum& album
   item.SetProperty("album_duration",
                    StringUtils::SecondsToTimeString(album.iAlbumDuration,
                                                     static_cast<TIME_FORMAT>(TIME_FORMAT_GUESS)));
+  if (album.songs.size() >0)
+  {
+    item.SetProperty("album_codec", album.songs[0].strCodec);
+    item.SetProperty("album_bitspersample", album.songs[0].iBitsPerSample);
+    item.SetProperty("album_samplerate", album.songs[0].iSampleRate);
+  }
 }
 
 void CMusicDatabase::SetPropertiesForFileItem(CFileItem& item)
@@ -12868,7 +12874,7 @@ void CMusicDatabase::SetPropertiesForFileItem(CFileItem& item)
   if (idAlbum > -1)
   {
     CAlbum album;
-    if (GetAlbum(idAlbum, album, false))
+    if (GetAlbum(idAlbum, album, true))
       SetPropertiesFromAlbum(item, album);
   }
 }
