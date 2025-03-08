@@ -92,7 +92,8 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
     }
     if (decoder)
     {
-      std::string codec_name = avcodec_get_name(st->codecpar->codec_id);
+
+      codec_info.codecName = avcodec_get_name(st->codecpar->codec_id);
       codec_info.bitRate = static_cast<int>(st->codecpar->bit_rate / 1000);
       codec_info.channels = st->codecpar->ch_layout.nb_channels;
       codec_info.bitsPerSample = (st->codecpar->bits_per_coded_sample != 0)
