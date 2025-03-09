@@ -12854,7 +12854,8 @@ void CMusicDatabase::SetPropertiesFromAlbum(CFileItem& item, const CAlbum& album
   {
     item.SetProperty("album_codec", album.songs[0].strCodec);
     item.SetProperty("album_bitspersample", album.songs[0].iBitsPerSample);
-    item.SetProperty("album_samplerate", album.songs[0].iSampleRate);
+    item.SetProperty("album_samplerate", StringUtils::Format("{:.5}", static_cast<double>(album.songs[0].iSampleRate) / 1000.0));
+    item.SetProperty("album_channels", album.songs[0].iChannels );
   }
 }
 
