@@ -240,6 +240,7 @@ bool CMusicInfoTagLoaderFFmpeg::Load(const std::string& strFileName,
     tag.SetSampleRate(codec_info.sampleRate);
     tag.SetBitsPerSample(codec_info.bitsPerSample);
     tag.SetCodec(codec_info.codecName);
+    tag.SetNoOfChannels(codec_info.channels);
   }
 
   if (!tag.GetTitle().empty())
