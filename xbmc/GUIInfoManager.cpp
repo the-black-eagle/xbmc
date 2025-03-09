@@ -6972,8 +6972,14 @@ const infomap container_str[]  = {{ "property",         CONTAINER_PROPERTY },
 ///     @return **True** when the selected item has video extras.
 ///     <p><hr>
 ///     @skinning_v21 **[New Infolabel]** \link ListItem_HasVideoExtras `ListItem.HasVideoExtras`\endlink
-///     @skinning_v21 **[New Infolabel]** \link ListItem_HdrType `ListItem.HdrType`\endlink
-///   }
+///   }
+///   \table_row3{   <b>`ListItem.HdrType`</b>,
+///                  \anchor ListItem_HdrType
+///                  _string_,
+///     @return String containing the name of the detected HDR type or empty if not HDR. See \ref StreamHdrType for the list of possible values.
+///     <p><hr>
+///     @skinning_v20 **[New Infolabel]** \link ListItem_HdrType `ListItem.HdrType`\endlink
+///   }
 ///   \table_row3{   <b>`ListItem.MusicBitsPerSample`</b>,
 ///                  \anchor ListItem_MusicBitsPerSample
 ///                  _string_,
