@@ -95,129 +95,115 @@ bool CMusicInfoTagLoaderFFmpeg::Load(const std::string& strFileName,
   if (musicsep.find_first_of(";/,&|#") == std::string::npos)
     separators.push_back(musicsep);
   std::vector<std::string> tagdata;
+  std::string value;
 
   auto&& ParseTag = [&](AVDictionaryEntry* avtag)
   {
-    if (StringUtils::CompareNoCase(avtag->key, "album") == 0)
-      tag.SetAlbum(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "artist") == 0)
-      tag.SetArtist(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "album_artist") == 0 ||
-             StringUtils::CompareNoCase(avtag->key, "album artist") == 0)
-      tag.SetAlbumArtist(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "title") == 0)
-      tag.SetTitle(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "genre") == 0)
-      tag.SetGenre(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "part_number") == 0 ||
-             StringUtils::CompareNoCase(avtag->key, "track") == 0)
-      tag.SetTrackNumber(static_cast<int>(strtol(avtag->value, nullptr, 10)));
-    else if (StringUtils::CompareNoCase(avtag->key, "disc") == 0)
-      tag.SetDiscNumber(static_cast<int>(strtol(avtag->value, nullptr, 10)));
-    else if (StringUtils::CompareNoCase(avtag->key, "date") == 0)
-      tag.SetReleaseDate(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "compilation") == 0)
-      tag.SetCompilation((strtol(avtag->value, nullptr, 10) == 0) ? false : true);
-    else if (StringUtils::CompareNoCase(avtag->key, "encoded_by") == 0)
+      std::string key = StringUtils::ToUpper(avtag->key);
+      std::string value = avtag->value;
+    if (key == "ALBUM")
+      tag.SetAlbum(value);
+    else if (key == "ARTIST")
+      tag.SetArtist(value);
+    else if (key == "ALBUM_ARTIST" || key == "ALBUM ARTIST")
+      tag.SetAlbumArtist(value);
+    else if (key ==  "TITLE")
+      tag.SetTitle(value);
+    else if (key ==  "GENRE")
+      tag.SetGenre(value);
+    else if (key ==  "PART_NUMBER" || key ==  "TRACK")
+      tag.SetTrackNumber(std::stoi(value));
+    else if (key ==  "DISC")
+      tag.SetDiscNumber(std::stoi(value));
+    else if (key ==  "DATE")
+      tag.SetReleaseDate(value);
+    else if (key ==  "COMPILATION" || key == "TCMP")
+      tag.SetCompilation((std::stoi(value)) ? false : true);
+    else if (key ==  "ENCODED_BY")
     {
     }
-    else if (StringUtils::CompareNoCase(avtag->key, "composer") == 0)
-      tag.AddArtistRole("Composer", avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "performer") == 0) // Conductor or TPE3 tag
-      tag.AddArtistRole("Conductor", avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "TEXT") == 0)
-      tag.AddArtistRole("Lyricist", avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "TPE4") == 0)
-      tag.AddArtistRole("Remixer", avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "LABEL") == 0 ||
-             StringUtils::CompareNoCase(avtag->key, "TPUB") == 0)
-      tag.SetRecordLabel(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "copyright") == 0 ||
-             StringUtils::CompareNoCase(avtag->key, "TCOP") == 0)
+    else if (key ==  "COMPOSER")
+      tag.AddArtistRole("Composer", value);
+    else if (key ==  "PERFORMER") // Conductor or TPE3 tag
+      tag.AddArtistRole("Conductor", value);
+    else if (key ==  "TEXT")
+      tag.AddArtistRole("Lyricist", value);
+    else if (key ==  "TPE4")
+      tag.AddArtistRole("Remixer", value);
+    else if (key ==  "LABEL" || key ==  "TPUB")
+      tag.SetRecordLabel(value);
+    else if (key ==  "COPYRIGHT" || key ==  "TCOP")
     {
     } // Copyright message
-    else if (StringUtils::CompareNoCase(avtag->key, "TDRC") == 0)
-      tag.SetReleaseDate(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "TDOR") == 0 ||
-             StringUtils::CompareNoCase(avtag->key, "TORY") == 0)
-      tag.SetOriginalDate(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "TDAT") == 0)
-      tag.AddReleaseDate(avtag->value, true); // MMDD part
-    else if (StringUtils::CompareNoCase(avtag->key, "TYER") == 0)
-      tag.AddReleaseDate(avtag->value); // YYYY part
-    else if (StringUtils::CompareNoCase(avtag->key, "TBPM") == 0)
-      tag.SetBPM(static_cast<int>(strtol(avtag->value, nullptr, 10)));
-    else if (StringUtils::CompareNoCase(avtag->key, "TDTG") == 0)
+    else if (key ==  "TDRC")
+      tag.SetReleaseDate(value);
+    else if (key ==  "TDOR" || key ==  "TORY")
+      tag.SetOriginalDate(value);
+    else if (key ==  "TDAT")
+      tag.AddReleaseDate(value, true); // MMDD part
+    else if (key ==  "TYER")
+      tag.AddReleaseDate(value); // YYYY part
+    else if (key ==  "TBPM")
+      tag.SetBPM(std::stoi(value));
+    else if (key ==  "TDTG")
     {
     } // Tagging time
-    else if (StringUtils::CompareNoCase(avtag->key, "language") == 0 ||
-             StringUtils::CompareNoCase(avtag->key, "TLAN") == 0)
+    else if (key ==  "LANGUAGE" || key ==  "TLAN")
     {
     } // Languages
-    else if (StringUtils::CompareNoCase(avtag->key, "mood") == 0 ||
-             StringUtils::CompareNoCase(avtag->key, "TMOO") == 0)
-      tag.SetMood(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "artist-sort") == 0 ||
-             StringUtils::CompareNoCase(avtag->key, "TSOP") == 0)
-    {
-    }
-    else if (StringUtils::CompareNoCase(avtag->key, "TSO2") == 0)
-    {
-    } // Album artist sort
-    else if (StringUtils::CompareNoCase(avtag->key, "TSOC") == 0)
-    {
-    } // composer sort
-    else if (StringUtils::CompareNoCase(avtag->key, "TSST") == 0)
-      tag.SetDiscSubtitle(avtag->value);
+    else if (key ==  "MOOD" || key ==  "TMOO")
+      tag.SetMood(value);
+    else if (key ==  "ARTIST-SORT" || key ==  "TSOP" || key == "ARTISTSORT" || key == "ARTIST SORT")
+      tag.SetArtistSort(StringUtils::Join(StringUtils::Split(value, separators), musicsep));
+    else if (key ==  "TSO2" || key == "ALBUMARTISTSORT" || key == "ALBUM ARTIST SORT")
+      tag.SetAlbumArtistSort(StringUtils::Join(StringUtils::Split(value, separators), musicsep));
+    else if (key ==  "TSOC" || key == "COMPOSERSORT" || key == "COMPOSER SORT")
+      tag.SetComposerSort(StringUtils::Join(StringUtils::Split(value, separators), musicsep));
+    else if (key ==  "TSST")
+      tag.SetDiscSubtitle(value);
     // the above values are all id3v2.3/4 frames, we could also have text frames
-    else if (StringUtils::CompareNoCase(avtag->key, "MUSICBRAINZ ARTIST ID") == 0)
-      tag.SetMusicBrainzArtistID(StringUtils::Split(avtag->value, separators));
-    else if (StringUtils::CompareNoCase(avtag->key, "MUSICBRAINZ ALBUM ID") == 0)
-      tag.SetMusicBrainzAlbumID(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "MUSICBRAINZ RELEASEGROUP ID") == 0)
-      tag.SetMusicBrainzReleaseGroupID(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "MUSICBRAINZ ALBUM ARTIST ID") == 0)
-      tag.SetMusicBrainzAlbumArtistID(StringUtils::Split(avtag->value, separators));
-    else if (StringUtils::CompareNoCase(avtag->key, "MUSICBRAINZ ALBUM ARTIST") == 0)
-      tag.SetAlbumArtist(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "MUSICBRAINZ ALBUM TYPE") == 0)
-      tag.SetMusicBrainzReleaseType(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "MUSICBRAINZ ALBUM STATUS") == 0)
-      tag.SetAlbumReleaseStatus(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "ALBUM ARTIST") == 0)
-      tag.SetAlbumArtist(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "ALBUMARTIST") == 0)
-      tag.SetAlbumArtist(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "ALBUM ARTIST SORT") == 0)
-      tag.SetAlbumArtistSort(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "ALBUMARTISTSORT") == 0)
-      tag.SetAlbumArtistSort(avtag->value);
-    else if (StringUtils::CompareNoCase(avtag->key, "ARTISTS") == 0)
-      tag.SetMusicBrainzArtistHints(StringUtils::Split(avtag->value, separators));
-    else if (StringUtils::CompareNoCase(avtag->key, "ALBUMARTISTS") == 0)
-      tag.SetMusicBrainzAlbumArtistHints(StringUtils::Split(avtag->value, separators));
-    else if (StringUtils::CompareNoCase(avtag->key, "ALBUM ARTISTS") == 0)
-      tag.SetMusicBrainzAlbumArtistHints(StringUtils::Split(avtag->value, separators));
-    else if (StringUtils::CompareNoCase(avtag->key, "WRITER") == 0)
-      tag.AddArtistRole("Writer", StringUtils::Split(avtag->value, separators));
-    else if (StringUtils::CompareNoCase(avtag->key, "PERFORMER") == 0)
+    else if (key ==  "MUSICBRAINZ ARTIST ID")
+      tag.SetMusicBrainzArtistID(StringUtils::Split(value, separators));
+    else if (key ==  "MUSICBRAINZ ALBUM ID")
+      tag.SetMusicBrainzAlbumID(value);
+    else if (key ==  "MUSICBRAINZ RELEASEGROUP ID")
+      tag.SetMusicBrainzReleaseGroupID(value);
+    else if (key ==  "MUSICBRAINZ ALBUM ARTIST ID")
+      tag.SetMusicBrainzAlbumArtistID(StringUtils::Split(value, separators));
+    else if (key ==  "MUSICBRAINZ ALBUM ARTIST")
+      tag.SetAlbumArtist(value);
+    else if (key ==  "MUSICBRAINZ ALBUM TYPE")
+      tag.SetMusicBrainzReleaseType(value);
+    else if (key ==  "MUSICBRAINZ ALBUM STATUS")
+      tag.SetAlbumReleaseStatus(value);
+    else if (key ==  "ALBUM ARTIST" || key ==  "ALBUMARTIST")
+      tag.SetAlbumArtist(value);
+    else if (key ==  "ALBUM ARTIST SORT" || key ==  "ALBUMARTISTSORT")
+      tag.SetAlbumArtistSort(value);
+    else if (key ==  "ARTISTS")
+      tag.SetMusicBrainzArtistHints(StringUtils::Split(value, separators));
+    else if (key ==  "ALBUMARTISTS" || key ==  "ALBUM ARTISTS")
+      tag.SetMusicBrainzAlbumArtistHints(StringUtils::Split(value, separators));
+    else if (key ==  "WRITER")
+      tag.AddArtistRole("Writer", StringUtils::Split(value, separators));
+    else if (key ==  "PERFORMER")
     {
       tagdata = StringUtils::Split(avtag->key, separators);
       AddRole(tagdata, separators, tag);
     }
-    else if (StringUtils::CompareNoCase(avtag->key, "ARRANGER") == 0)
+    else if (key ==  "ARRANGER")
     {
       tagdata = StringUtils::Split(avtag->key, separators);
       AddRole(tagdata, separators, tag);
     }
-    else if (StringUtils::CompareNoCase(avtag->key, "LYRICIST") == 0)
-      tag.AddArtistRole("Lyricist", StringUtils::Split(avtag->value, separators));
-    else if (StringUtils::CompareNoCase(avtag->key, "COMPOSER") == 0)
-      tag.AddArtistRole("Composer", StringUtils::Split(avtag->value, separators));
-    else if (StringUtils::CompareNoCase(avtag->key, "CONDUCTOR") == 0)
-      tag.AddArtistRole("Conductor", StringUtils::Split(avtag->value, separators));
-    else if (StringUtils::CompareNoCase(avtag->key, "ENGINEER") == 0)
-      tag.AddArtistRole("Engineer", StringUtils::Split(avtag->value, separators));
+    else if (key ==  "LYRICIST")
+      tag.AddArtistRole("Lyricist", StringUtils::Split(value, separators));
+    else if (key ==  "COMPOSER")
+      tag.AddArtistRole("Composer", StringUtils::Split(value, separators));
+    else if (key ==  "CONDUCTOR")
+      tag.AddArtistRole("Conductor", StringUtils::Split(value, separators));
+    else if (key ==  "ENGINEER")
+      tag.AddArtistRole("Engineer", StringUtils::Split(value, separators));
   };
 
   AVDictionaryEntry* avtag = nullptr;
