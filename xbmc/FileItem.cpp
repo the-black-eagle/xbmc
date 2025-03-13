@@ -899,7 +899,8 @@ bool CFileItem::IsFileFolder(FileFolderType types) const
     if (PLAYLIST::IsSmartPlayList(*this) ||
         (PLAYLIST::IsPlayList(*this) &&
          CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_playlistAsFolders) ||
-        IsAPK() || IsZIP() || IsRAR() || IsRSS() || MUSIC::IsAudioBook(*this) ||
+        IsAPK() || IsZIP() || IsRAR() || IsRSS() || MUSIC::IsAudioBook(*this) || IsMatroskaAudio() || IsMatroskaVideo() || IsType(".mp4") ||
+        IsType(".ogg|.oga|.xbt")
 #if defined(TARGET_ANDROID)
         IsType(".apk") ||
 #endif
