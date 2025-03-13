@@ -76,21 +76,6 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
   // Some tags are relevant to the whole album - these are read first
   CMusicInfoTag albumtag;
 
-  int audiostream{0};
-
-  AVStream* st = nullptr;
-  for (unsigned int i = 0; i <= m_fctx->nb_streams; ++i)
-  {
-    st = m_fctx->streams[i];
-    if ( st && st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
-    {
-      audiostream = i;
-      break;
-    }
-    else
-      continue;
-  }
-
   AVDictionaryEntry* tag=nullptr;
   while ((tag = av_dict_get(m_fctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
   {
@@ -194,13 +179,59 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
     }
   }
 
-  if(m_fctx->streams[audiostream]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+  AVStream* st = nullptr;
+  std::string codec_name = "unknown";
+  // Try to find the first audio stream.  If none just skip over them all
+  for (unsigned int i = 0; i < m_fctx->nb_streams; ++i)
   {
-    albumtag.SetBitsPerSample(m_fctx->streams[audiostream]->codecpar->bits_per_coded_sample);
-    albumtag.SetSampleRate(m_fctx->streams[audiostream]->codecpar->sample_rate);
-    albumtag.SetBitRate(m_fctx->streams[audiostream]->codecpar->bit_rate);
-    albumtag.SetNoOfChannels(m_fctx->streams[audiostream]->codecpar->ch_layout.nb_channels);
-    albumtag.SetCodec(avcodec_get_name(m_fctx->streams[audiostream]->codecpar->codec_id));
+    st = m_fctx->streams[i];
+    if (st && st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+      bool isMasterAudio = false;
+      bool hasAtmos = false;
+      // Codec test only detects dts core - see if we can get a hint from the stream's metadata
+      // ffmpeg 6.0.1 can't detect HD audio profiles, so this is the only way to try to figure it out
+      while ((tag = av_dict_get(st->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+      {
+        std::string codecDesc = StringUtils::ToUpper(tag->value);
+        if (StringUtils::Contains(codecDesc, "HDMA") ||
+            StringUtils::Contains(codecDesc, "DTS-HD") ||
+            StringUtils::Contains(codecDesc, "Master Audio"))
+        {
+          isMasterAudio = true;
+          break;
+        }
+        else if (StringUtils::Contains(codecDesc, "ATMOS") ||
+                 StringUtils::Contains(codecDesc, "JOC"))
+        {
+          hasAtmos = true;
+          break;
+        }
+      }
+      const AVCodec* dec = nullptr;
+
+      albumtag.SetBitsPerSample(st->codecpar->bits_per_coded_sample);
+      albumtag.SetSampleRate(st->codecpar->sample_rate);
+      albumtag.SetBitRate(st->codecpar->bit_rate);
+      albumtag.SetNoOfChannels(st->codecpar->ch_layout.nb_channels);
+      codec_name = avcodec_get_name(st->codecpar->codec_id);
+      dec = avcodec_find_decoder(st->codecpar->codec_id);
+
+      if (dec->id == AV_CODEC_ID_DTS)
+      {
+        if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA || isMasterAudio == true)
+          codec_name = "dtshd_ma";
+        else
+          codec_name = "dca";
+      }
+      if (dec->id == AV_CODEC_ID_EAC3 && hasAtmos)
+        codec_name = "eac3_ddp_atmos";
+
+      if (dec->id == AV_CODEC_ID_TRUEHD && hasAtmos)
+        codec_name = "truehd_atmos";
+      albumtag.SetCodec(codec_name);
+      break;
+    }
   }
 
   std::string thumb;
@@ -219,7 +250,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
     if (m_fctx->chapters[i]->start < 0) // negative start time, ignore it
       continue;
     chapter_size = m_fctx->chapters[i]->end * av_q2d(m_fctx->chapters[i]->time_base);
-    if (chapter_size < 1)
+    if (chapter_size < 1 && !(url.IsFileType("mka")))
     {
       CLog::Log(LOGWARNING,
                 "CAudioBookFileDirectory: Tiny chapter of size {}s detected when scanning {} Most "
