@@ -501,6 +501,11 @@ void CMusicDatabase::CreateViews()
               "iDiscTotal, "
               "(SELECT MAX(song.lastplayed) FROM song "
               "WHERE song.idAlbum = album.idAlbum) AS lastplayed, "
+              "(SELECT DISTINCT song.strCodec FROM song WHERE song.idAlbum = album.idAlbum) AS strCodec, "
+              "(SELECT DISTINCT song.iChannels FROM song WHERE song.idAlbum = Album.idAlbum) as iChannels, "
+              "(SELECT DISTINCT song.iBitrate FROM song WHERE song.idAlbum = album.idAlbum) AS iBitrate, "
+              "(SELECT DISTINCT song.iSampleRate FROM song WHERE song.idAlbum = album.idAlbum) AS iSampleRate, "
+              "(SELECT DISTINCT song.iBitsPerSample	FROM song WHERE song.idAlbum = Album.idAlbum) AS iBitsPerSample, "
               "iAlbumDuration "
               "FROM album");
 
@@ -3296,6 +3301,11 @@ CAlbum CMusicDatabase::GetAlbumFromDataset(const dbiplus::sql_record* const reco
   album.SetDateNew(record->at(offset + album_dateNew).get_asString());
   album.SetDateUpdated(record->at(offset + album_dateModified).get_asString());
   album.SetLastPlayed(record->at(offset + album_dtLastPlayed).get_asString());
+  album.strCodec = record->at(offset + album_strCodec).get_asString();
+  album.iChannels = record->at(offset + album_iChannels).get_asInt();
+  album.iBitrate = record->at(offset + album_iBitrate).get_asInt();
+  album.iSampleRate = record->at(offset + album_iSampleRate).get_asInt();
+  album.iBitsPerSample = record->at(offset + album_iBitsPerSample).get_asInt();
   album.iAlbumDuration = record->at(offset + album_iAlbumDuration).get_asInt();
   return album;
 }
@@ -12838,13 +12848,6 @@ void CMusicDatabase::SetPropertiesFromAlbum(CFileItem& item, const CAlbum& album
   item.SetProperty("album_duration",
                    StringUtils::SecondsToTimeString(album.iAlbumDuration,
                                                     static_cast<TIME_FORMAT>(TIME_FORMAT_GUESS)));
-  if (album.songs.size() >0)
-  {
-    item.SetProperty("album_codec", album.songs[0].strCodec);
-    item.SetProperty("album_bitspersample", album.songs[0].iBitsPerSample);
-    item.SetProperty("album_samplerate", StringUtils::Format("{:.5}", static_cast<double>(album.songs[0].iSampleRate) / 1000.0));
-    item.SetProperty("album_channels", album.songs[0].iChannels );
-  }
 }
 
 void CMusicDatabase::SetPropertiesForFileItem(CFileItem& item)

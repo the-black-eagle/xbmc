@@ -1074,6 +1074,11 @@ private:
     album_strReleaseType,
     album_iTotalDiscs,
     album_dtLastPlayed,
+    album_strCodec,
+    album_iChannels,
+    album_iBitrate,
+    album_iSampleRate,
+    album_iBitsPerSample,
     album_iAlbumDuration,
     album_enumCount // end of the enum, do not add past here
   } AlbumFields;
