@@ -342,7 +342,10 @@ bool CMusicGUIInfo::GetLabel(std::string& value,
         int BitRate = tag->GetBitRate();
         if (BitRate > 0)
         {
-          value = std::to_string(BitRate);
+          if (BitRate > 100000)
+            value = StringUtils::Format("{:.0f}", static_cast<double>(BitRate) / 1000.0);
+          else
+            value = std::to_string(BitRate);
           return true;
         }
         break;
