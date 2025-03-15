@@ -221,13 +221,19 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
       {
         if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA || isMasterAudio == true)
           codec_name = "dtshd_ma";
+        else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X)
+          codec_name = "dts_x";
+        else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X_IMAX)
+          codec_name = "dts_x_imax";
         else
           codec_name = "dca";
       }
-      if (dec->id == AV_CODEC_ID_EAC3 && hasAtmos)
+      if (dec->id == AV_CODEC_ID_EAC3 &&
+          (hasAtmos || dec->profiles->profile == FF_PROFILE_EAC3_DDP_ATMOS))
         codec_name = "eac3_ddp_atmos";
 
-      if (dec->id == AV_CODEC_ID_TRUEHD && hasAtmos)
+      if (dec->id == AV_CODEC_ID_TRUEHD &&
+          (hasAtmos || dec->profiles->profile == FF_PROFILE_TRUEHD_ATMOS))
         codec_name = "truehd_atmos";
       albumtag.SetCodec(codec_name);
       break;
@@ -473,6 +479,7 @@ bool CAudioBookFileDirectory::ContainsFiles(const CURL& url)
 
   m_fctx = avformat_alloc_context();
   m_fctx->pb = m_ioctx;
+  m_fctx->flags |= AVFMT_FLAG_CUSTOM_IO;
 
   if (file.IoControl(IOCTRL_SEEK_POSSIBLE, nullptr) == 0)
     m_ioctx->seekable = 0;
