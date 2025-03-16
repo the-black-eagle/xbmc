@@ -432,29 +432,13 @@
 				<usecontrolcoords>true</usecontrolcoords>
 				<control type="group">
 					<width>115</width>
-					<visible>!String.IsEmpty($PARAM[infolabel_prefix]ListItem.Duration)</visible>
-					<visible>Container.Content(albums) + ![Window.IsVisible(songinformation) | Window.IsVisible(musicinformation)]</visible>
+					<visible>!String.IsEmpty(ListItem.MusicCodec)</visible>
 					<control type="label">
 						<width>110</width>
 						<height>60</height>
 						<align>center</align>
 						<aligny>center</aligny>
-						<label>$INFO[$PARAM[infolabel_prefix]ListItem.Duration]</label>
-						<font>font_flag</font>
-					</control>
-					<include content="MediaFlag">
-						<param name="texture" value="flags/flag.png" />
-					</include>
-				</control>
-				<control type="group">
-					<width>115</width>
-					<visible>!String.IsEmpty($PARAM[infolabel_prefix]ListItem.FileExtension)</visible>
-					<control type="label">
-						<width>110</width>
-						<height>60</height>
-						<align>center</align>
-						<aligny>center</aligny>
-						<label>$INFO[$PARAM[infolabel_prefix]ListItem.FileExtension]</label>
+						<label>$INFO[$PARAM[infolabel_prefix]ListItem.MusicCodec]</label>
 						<font>font_flag</font>
 					</control>
 					<include content="MediaFlag">
@@ -511,14 +495,30 @@
 					</include>
 				</control>
 				<control type="group">
-					<visible>!String.IsEmpty(ListItem.BMP)</visible>
+					<visible>!String.IsEmpty(ListItem.BPM)</visible>
 					<width>115</width>
 					<control type="label">
 						<width>110</width>
 						<height>60</height>
 						<align>center</align>
 						<aligny>center</aligny>
-						<label>$INFO[ListItem.BMP, ,bpm]</label>
+						<label>$INFO[ListItem.BPM, ,bpm]</label>
+						<font>font_flag</font>
+					</control>
+					<include content="MediaFlag">
+						<param name="texture" value="flags/flag.png" />
+					</include>
+				</control>
+				<control type="group">
+					<width>115</width>
+					<visible>!String.IsEmpty($PARAM[infolabel_prefix]ListItem.Duration)</visible>
+					<visible>Container.Content(albums) + ![Window.IsVisible(songinformation) | Window.IsVisible(musicinformation)]</visible>
+					<control type="label">
+						<width>110</width>
+						<height>60</height>
+						<align>center</align>
+						<aligny>center</aligny>
+						<label>$INFO[$PARAM[infolabel_prefix]ListItem.Duration]</label>
 						<font>font_flag</font>
 					</control>
 					<include content="MediaFlag">
