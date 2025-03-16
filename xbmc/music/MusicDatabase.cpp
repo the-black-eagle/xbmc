@@ -514,7 +514,7 @@ void CMusicDatabase::CreateViews()
               "WHERE song.idAlbum = album.idAlbum) AS lastplayed, "
               "(SELECT DISTINCT song.strCodec FROM song WHERE song.idAlbum = album.idAlbum) AS strCodec, "
               "(SELECT DISTINCT song.iChannels FROM song WHERE song.idAlbum = Album.idAlbum) as iChannels, "
-              "(SELECT DISTINCT song.iBitrate FROM song WHERE song.idAlbum = album.idAlbum) AS iBitrate, "
+              "CAST ((SELECT avg(song.iBitrate) FROM song WHERE song.idAlbum = album.idAlbum) AS int) AS iBitrate, "
               "(SELECT DISTINCT song.iSampleRate FROM song WHERE song.idAlbum = album.idAlbum) AS iSampleRate, "
               "(SELECT DISTINCT song.iBitsPerSample	FROM song WHERE song.idAlbum = Album.idAlbum) AS iBitsPerSample, "
               "iAlbumDuration "
