@@ -139,6 +139,8 @@ static const translateField fields[] = {
   { "hdrtype",           FieldHdrType,                 CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 false, 20474 },
   { "hasversions",       FieldHasVideoVersions,        CDatabaseQueryRule::BOOLEAN_FIELD,  NULL,                                 false, 20475 },
   { "hasextras",         FieldHasVideoExtras,          CDatabaseQueryRule::BOOLEAN_FIELD,  NULL,                                 false, 20476 },
+  { "albumcodec",        FieldAlbumCodec,              CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 true,  21446 },
+  { "bitspersample",     FieldBitsPerSample,           CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 true,  612 },
 };
 // clang-format on
 
@@ -427,6 +429,9 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
     fields.push_back(FieldLastPlayed);
     fields.push_back(FieldPath);
     fields.push_back(FieldAlbumStatus);
+    fields.push_back(FieldAlbumCodec);
+    fields.push_back(FieldBitsPerSample);
+    fields.push_back(FieldNoOfChannels);
     fields.push_back(FieldDateAdded);
     fields.push_back(FieldDateModified);
     fields.push_back(FieldDateNew);
@@ -985,6 +990,18 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
       query = negate +
               " EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " + GetField(FieldId, strType) +
               " AND song.strDiscSubtitle" + parameter + ")";
+    else if (m_field == FieldAlbumCodec)
+      query = negate + 
+              " EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " + GetField(FieldId, strType) +
+              " AND song.strCodec " + parameter + ")";
+    else if (m_field == FieldBitsPerSample)
+      query = negate +
+              " EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " + GetField(FieldId, strType) +
+              " AND song.iBitsPerSample " + parameter + ")";
+    else if (m_field == FieldNoOfChannels)
+      query = negate +
+              "EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " + GetField(FieldId, strType) +
+              " AND song.iChannels " + parameter + ")";
     else if (m_field == FieldYear || m_field == FieldOrigYear)
     {
       std::string field;
