@@ -352,6 +352,21 @@ void CGUIDialogSmartPlaylistRule::OnBrowse()
     videodatabase.GetTagsNav(basePath + "tags/", items, type);
     iLabel = 20459;
   }
+  else if ((m_rule.m_field == FieldAlbumCodec) || (m_rule.m_field == FieldBitsPerSample))
+  {
+    std::string reqField;
+    if (m_rule.m_field == FieldAlbumCodec)
+    {
+      iLabel = 21446;
+      reqField = "strCodec";
+    }
+    else if (m_rule.m_field == FieldBitsPerSample)
+    {
+      iLabel = 612;
+      reqField = "iBitsPerSample";
+    }
+    database.GetMusicDetails(items, reqField);
+  }
   else
   { //! @todo Add browseability in here.
     assert(false);
