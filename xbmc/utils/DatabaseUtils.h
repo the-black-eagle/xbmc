@@ -151,6 +151,8 @@ typedef enum
   FieldHdrType,
   FieldProvider,
   FieldUserPreference,
+  FieldAlbumCodec,
+  FieldBitsPerSample,
   FieldMax
 } Field;
 
