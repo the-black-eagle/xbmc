@@ -153,7 +153,10 @@ enum class Field
   USER_PREFERENCE,
   HAS_VIDEO_VERSIONS,
   HAS_VIDEO_EXTRAS,
+  ALBUM_CODEC,
+  BITS_PER_SAMPLE,
   MAX
+
 };
 
 using Fields = std::set<Field>;
