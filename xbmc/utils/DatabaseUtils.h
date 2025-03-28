@@ -153,6 +153,8 @@ typedef enum
   FieldUserPreference,
   FieldHasVideoVersions,
   FieldHasVideoExtras,
+  FieldAlbumCodec,
+  FieldBitsPerSample,
   FieldMax
 } Field;
 
