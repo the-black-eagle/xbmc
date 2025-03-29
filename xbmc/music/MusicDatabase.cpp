@@ -512,11 +512,16 @@ void CMusicDatabase::CreateViews()
               "iDiscTotal, "
               "(SELECT MAX(song.lastplayed) FROM song "
               "WHERE song.idAlbum = album.idAlbum) AS lastplayed, "
-              "(SELECT DISTINCT song.strCodec FROM song WHERE song.idAlbum = album.idAlbum) AS strCodec, "
-              "(SELECT DISTINCT song.iChannels FROM song WHERE song.idAlbum = Album.idAlbum) as iChannels, "
-              "CAST ((SELECT avg(song.iBitrate) FROM song WHERE song.idAlbum = album.idAlbum) AS int) AS iBitrate, "
-              "(SELECT DISTINCT song.iSampleRate FROM song WHERE song.idAlbum = album.idAlbum) AS iSampleRate, "
-              "(SELECT DISTINCT song.iBitsPerSample	FROM song WHERE song.idAlbum = Album.idAlbum) AS iBitsPerSample, "
+              "(SELECT song.strCodec FROM song WHERE song.idAlbum = album.idAlbum LIMIT 1)"
+              " AS strCodec, "
+              "(SELECT song.iChannels FROM song WHERE song.idAlbum = album.idAlbum LIMIT 1)"
+              " as iChannels, "
+              "(SELECT ROUND(AVG(song.iBitrate)) FROM song WHERE song.idAlbum = album.idAlbum"
+              " LIMIT 1) AS iBitrate , "
+              "(SELECT song.iSampleRate FROM song WHERE song.idAlbum = album.idAlbum LIMIT 1)"
+              " AS iSampleRate, "
+              "(SELECT song.iBitsPerSample FROM song WHERE song.idAlbum = album.idAlbum LIMIT 1)"
+              " AS iBitsPerSample, "
               "iAlbumDuration "
               "FROM album");
 
@@ -9479,10 +9484,10 @@ void CMusicDatabase::UpdateTables(int version)
   // The original db version when the tags were scanned, and the minimal db version needed are
   // later used to determine if a forced rescan should be prompted
 
-  // The last schema change needing forced rescanning was 73.
-  // This is because Kodi can now read and process extra tags involved in the creation of box sets
+  // The last schema change needing forced rescanning was 84.
+  // This is because Kodi can now read and process extra info for codec information etc
 
-  SetMusicNeedsTagScan(83);
+  SetMusicNeedsTagScan(84);
 
   // After all updates, store the original db version.
   // This indicates the version of tag processing that was used to populate db
@@ -13306,8 +13311,14 @@ int CMusicDatabase::GetOrderFilter(const std::string& type,
     if (StringUtils::EndsWith(name, "strArtists") || StringUtils::EndsWith(name, "strArtist"))
     {
       if (StringUtils::EndsWith(name, "strArtists"))
-        sortSQL = SortnameBuildSQL("artistsortname", sorting.sortAttributes, name,
-                                   table + "strArtistSort");
+      {
+        if (StringUtils::StartsWith(name, "albumview"))
+          sortSQL = SortnameBuildSQL("artistsortname", sorting.sortAttributes, name,
+                                     "albumview.strArtistSort");
+        else
+          sortSQL =
+              SortnameBuildSQL("artistsortname", sorting.sortAttributes, name, "strArtistSort");
+      }
       else
         sortSQL = SortnameBuildSQL("artistsortname", sorting.sortAttributes, name, "strSortName");
       if (!sortSQL.empty())
@@ -14075,4 +14086,38 @@ std::vector<std::string> CMusicDatabase::GetUsedImages(
     CLog::LogF(LOGERROR, "failed");
   }
   return {};
+void CMusicDatabase::GetMusicDetails(CFileItemList& items, std::string& reqField)
+{
+  try
+  {
+    if (nullptr == m_pDB)
+      return;
+    if (nullptr == m_pDS)
+      return;
+    std::string strSQL = StringUtils::Format(
+        "SELECT DISTINCT {} FROM song WHERE {} IS NOT NULL AND {} <> ''", reqField,
+        reqField, reqField);
+    if (reqField == "iBitsPerSample")
+      {
+        std::string strSQLExtra = StringUtils::Format(" AND {} <> 0", reqField);
+        strSQL += strSQLExtra;
+      }
+    CLog::Log(LOGDEBUG, LOGDATABASE, "CMusicDatabase::GetMusicDetails: Query {}", strSQL);
+    if (!m_pDS->query(strSQL.c_str()))
+      return;
+    while (!m_pDS->eof())
+    {
+      std::shared_ptr<CFileItem> pItem = std::make_shared<CFileItem>(m_pDS->fv(0).get_asString());
+      items.Add(pItem);
+      m_pDS->next();
+    }
+    m_pDS->close();
+    return;
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "{} failed", __FUNCTION__);
+  }
+
+  return;
 }
