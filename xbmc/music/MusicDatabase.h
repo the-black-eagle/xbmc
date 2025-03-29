@@ -655,6 +655,7 @@ public:
   int GetSongsCount(const Filter& filter = Filter());
   bool GetFilter(CDbUrl& musicUrl, Filter& filter, SortDescription& sorting) override;
   int GetOrderFilter(const std::string& type, const SortDescription& sorting, Filter& filter);
+  void GetMusicDetails(CFileItemList& items, std::string& reqField);
 
   /////////////////////////////////////////////////
   // Party Mode
