@@ -216,7 +216,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
       bool isMasterAudio = false;
       bool hasAtmos = false;
       // Codec test only detects dts core - see if we can get a hint from the stream's metadata
-      // ffmpeg 6.0.1 can't detect HD audio profiles, so this is the only way to try to figure it out
+      // ffmpeg 6.0.1 can't detect HD audio profiles, HDMA can be figured from the codec priv_data
       while ((tag = av_dict_get(st->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
       {
         std::string codecDesc = StringUtils::ToUpper(tag->value);
@@ -235,6 +235,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
         }
       }
       const AVCodec* dec = nullptr;
+      AVCodecContext* codec_ctx = nullptr;
 
       albumtag.SetBitsPerSample(st->codecpar->bits_per_coded_sample);
       albumtag.SetSampleRate(st->codecpar->sample_rate);
@@ -242,10 +243,22 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
       albumtag.SetNoOfChannels(st->codecpar->ch_layout.nb_channels);
       codec_name = avcodec_get_name(st->codecpar->codec_id);
       dec = avcodec_find_decoder(st->codecpar->codec_id);
+      codec_ctx = avcodec_alloc_context3(dec);
+      avcodec_parameters_to_context(codec_ctx, st->codecpar);
+
+      if (nullptr != codec_ctx->priv_data)
+      {
+        uint8_t* priv_bytes = (uint8_t*)codec_ctx->priv_data;
+        if (priv_bytes[0] == 0x40 && priv_bytes[1] == 0x10 && priv_bytes[2] == 0x4f &&
+            priv_bytes[3] == 0x5a && priv_bytes[4] == 0x55 && priv_bytes[5] == 0x55)
+          isMasterAudio = true;
+      }
+      avcodec_free_context(&codec_ctx);
+      av_free(codec_ctx);
 
       if (dec->id == AV_CODEC_ID_DTS)
       {
-        if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA || isMasterAudio == true)
+        if ((dec->profiles->profile == FF_PROFILE_DTS_HD_MA) || isMasterAudio)
           codec_name = "dtshd_ma";
         else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X)
           codec_name = "dts_x";
@@ -255,14 +268,14 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
           codec_name = "dca";
       }
       if (dec->id == AV_CODEC_ID_EAC3 &&
-          (hasAtmos || dec->profiles->profile == FF_PROFILE_EAC3_DDP_ATMOS))
+          (hasAtmos || (dec->profiles->profile == FF_PROFILE_EAC3_DDP_ATMOS)))
         codec_name = "eac3_ddp_atmos";
 
       if (dec->id == AV_CODEC_ID_TRUEHD &&
-          (hasAtmos || dec->profiles->profile == FF_PROFILE_TRUEHD_ATMOS))
+          (hasAtmos || (dec->profiles->profile == FF_PROFILE_TRUEHD_ATMOS)))
         codec_name = "truehd_atmos";
       albumtag.SetCodec(codec_name);
-      break;
+      break; // first audio stream should be best quality, stop once we've checked a stream
     }
   }
     codec_name = avcodec_get_name(st->codecpar->codec_id);
