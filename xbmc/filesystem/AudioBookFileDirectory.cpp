@@ -223,8 +223,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
       if (nullptr != codec_ctx->priv_data)
       {
         uint8_t* priv_bytes = (uint8_t*)codec_ctx->priv_data;
-        if (priv_bytes[0] == 0x40 && priv_bytes[1] == 0x10 && priv_bytes[2] == 0x4f &&
-            priv_bytes[3] == 0x5a && priv_bytes[4] == 0x55 && priv_bytes[5] == 0x55)
+        if (priv_bytes[0] == 0x40) //0x40 - dtshd_ma 0x80 - truehd
           isMasterAudio = true;
       }
       avcodec_free_context(&codec_ctx);
