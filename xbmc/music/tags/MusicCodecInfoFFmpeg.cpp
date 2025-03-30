@@ -73,7 +73,7 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
     if (avformat_find_stream_info(fctx, nullptr) >= 0)
     {
       bool gotStream = false;
-      for (unsigned int i = 0; i <= fctx->nb_streams; ++i)
+      for (unsigned int i = 0; i < fctx->nb_streams; ++i)
       {
         st = fctx->streams[i];
         if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
