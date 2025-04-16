@@ -5928,14 +5928,7 @@ bool CMusicDatabase::GetAlbumsByWhere(
         // Set icon now to avoid slow per item processing in FillInDefaultIcon later
         pItem->SetProperty("icon_never_overlay", true);
         pItem->SetArt("icon", "DefaultAlbumCover.png");
-        m_pDS2->open();
-        std::string strSQL = PrepareSQL(
-            "select  album.strAlbum, path.strPath from album join song on album.idAlbum = "
-            "song.idAlbum join path on song.idPath = path.idPath where album.idAlbum = %i limit 1",
-            record->at(album_idAlbum).get_asInt());
-        m_pDS2->query(strSQL);
-        pItem->GetMusicInfoTag()->SetURL(m_pDS2->fv("strPath").get_asString());
-        m_pDS2->close();
+        pItem->GetMusicInfoTag()->SetURL(GetPathForAlbum(record->at(album_idAlbum).get_asInt()));
 
         items.Add(std::move(pItem));
       }
@@ -14120,4 +14113,27 @@ void CMusicDatabase::GetMusicDetails(CFileItemList& items, std::string& reqField
   }
 
   return;
+}
+
+std::string CMusicDatabase::GetPathForAlbum(int idAlbum)
+{
+  std::string albumPath;
+  try
+  { // use 2nd data set as we are likely called in a loop using 1st set
+    m_pDS2->open();
+    std::string strSQL = PrepareSQL(
+        "select  album.strAlbum, path.strPath from album join song on album.idAlbum = "
+        "song.idAlbum join path on song.idPath = path.idPath where album.idAlbum = %i limit 1",
+        idAlbum);
+    if (!m_pDS2->query(strSQL) || m_pDS2->num_rows() == 0)
+      return albumPath;
+    albumPath = m_pDS2->fv(1).get_asString();
+    m_pDS2->close();
+    return albumPath;
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "{} failed", __FUNCTION__);
+  }
+  return "";
 }
