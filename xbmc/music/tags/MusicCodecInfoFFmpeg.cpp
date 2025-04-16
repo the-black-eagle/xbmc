@@ -92,8 +92,66 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
     }
     if (decoder)
     {
+      std::string codec_name = "unknown";
 
-      codec_info.codecName = avcodec_get_name(st->codecpar->codec_id);
+      bool isMasterAudio = false;
+      bool hasAtmos = false;
+      AVDictionaryEntry* tag=nullptr;
+      // Codec test only detects dts core - see if we can get a hint from the stream's metadata
+      // ffmpeg 6.0.1 can't detect HD audio profiles, HDMA can be figured from the codec priv_data
+      while ((tag = av_dict_get(st->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+      {
+        std::string codecDesc = StringUtils::ToUpper(tag->value);
+        if (StringUtils::Contains(codecDesc, "HDMA") ||
+            StringUtils::Contains(codecDesc, "DTS-HD") ||
+            StringUtils::Contains(codecDesc, "Master Audio"))
+        {
+          isMasterAudio = true;
+          break;
+        }
+        else if (StringUtils::Contains(codecDesc, "ATMOS") ||
+                 StringUtils::Contains(codecDesc, "JOC"))
+        {
+          hasAtmos = true;
+          break;
+        }
+      }
+      const AVCodec* dec = nullptr;
+      AVCodecContext* codec_ctx = nullptr;
+
+      codec_name = avcodec_get_name(st->codecpar->codec_id);
+      dec = avcodec_find_decoder(st->codecpar->codec_id);
+      codec_ctx = avcodec_alloc_context3(dec);
+      avcodec_parameters_to_context(codec_ctx, st->codecpar);
+
+      if (nullptr != codec_ctx->priv_data)
+      {
+        uint8_t* priv_bytes = (uint8_t*)codec_ctx->priv_data;
+        if (priv_bytes[0] == 0x40) //0x40 - dtshd_ma 0x80 - truehd
+          isMasterAudio = true;
+      }
+      avcodec_free_context(&codec_ctx);
+      av_free(codec_ctx);
+
+      if (dec->id == AV_CODEC_ID_DTS)
+      {
+        if ((dec->profiles->profile == FF_PROFILE_DTS_HD_MA) || isMasterAudio)
+          codec_name = "dtshd_ma";
+        else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X)
+          codec_name = "dts_x";
+        else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X_IMAX)
+          codec_name = "dts_x_imax";
+        else
+          codec_name = "dca";
+      }
+      if (dec->id == AV_CODEC_ID_EAC3 &&
+          (hasAtmos || (dec->profiles->profile == FF_PROFILE_EAC3_DDP_ATMOS)))
+        codec_name = "eac3_ddp_atmos";
+
+      if (dec->id == AV_CODEC_ID_TRUEHD &&
+          (hasAtmos || (dec->profiles->profile == FF_PROFILE_TRUEHD_ATMOS)))
+        codec_name = "truehd_atmos";
+      codec_info.codecName = codec_name;
       codec_info.bitRate = static_cast<int>(st->codecpar->bit_rate / 1000);
       codec_info.channels = st->codecpar->ch_layout.nb_channels;
       codec_info.bitsPerSample = (st->codecpar->bits_per_coded_sample != 0)
