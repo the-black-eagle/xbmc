@@ -210,11 +210,6 @@ bool CMusicInfoTagLoaderFFmpeg::Load(const std::string& strFileName,
   while ((avtag = av_dict_get(fctx->metadata, "", avtag, AV_DICT_IGNORE_SUFFIX)))
     ParseTag(avtag);
 
-  const AVStream* st = fctx->streams[0];
-  if (st)
-    while ((avtag = av_dict_get(st->metadata, "", avtag, AV_DICT_IGNORE_SUFFIX)))
-      ParseTag(avtag);
-
   // Look for any embedded cover art
   CMusicEmbeddedCoverLoaderFFmpeg::GetEmbeddedCover(fctx, tag, art);
   bool haveFFmpegInfo = false;
