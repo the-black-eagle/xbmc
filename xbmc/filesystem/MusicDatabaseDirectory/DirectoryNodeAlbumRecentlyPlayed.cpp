@@ -12,6 +12,7 @@
 #include "FileItemList.h"
 #include "guilib/LocalizeStrings.h"
 #include "music/MusicDatabase.h"
+#include "music/tags/MusicInfoTag.h"
 #include "utils/StringUtils.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
@@ -58,7 +59,9 @@ bool CDirectoryNodeAlbumRecentlyPlayed::GetContent(CFileItemList& items) const
   {
     CAlbum& album=albums[i];
     std::string strDir = StringUtils::Format("{}{}/", BuildPath(), album.idAlbum);
+    std::string albumPath = musicdatabase.GetPathForAlbum(album.idAlbum);
     CFileItemPtr pItem(new CFileItem(strDir, album));
+    pItem->GetMusicInfoTag()->SetURL(albumPath);
     items.Add(pItem);
   }
 

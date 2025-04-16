@@ -372,6 +372,7 @@ public:
   std::string GetAlbumDiscTitle(int idAlbum, int idDisc);
   bool SetAlbumUserrating(const int idAlbum, int userrating);
   int GetAlbumDiscsCount(int idAlbum);
+  std::string GetPathForAlbum(int idAlbum);
 
   /////////////////////////////////////////////////
   // Artist CRUD
