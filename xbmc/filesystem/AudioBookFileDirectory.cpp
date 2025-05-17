@@ -181,75 +181,94 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
 
   AVStream* st = nullptr;
   std::string codec_name = "unknown";
-  // Try to find the first audio stream.  If none just skip over them all
+  int streamIndex = -1;
+  // Look for the default audio stream first
   for (unsigned int i = 0; i < m_fctx->nb_streams; ++i)
   {
-    st = m_fctx->streams[i];
-    if (st && st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+    if (m_fctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
     {
-      bool isMasterAudio = false;
-      bool hasAtmos = false;
-      // Codec test only detects dts core - see if we can get a hint from the stream's metadata
-      // ffmpeg 6.0.1 can't detect HD audio profiles, HDMA can be figured from the codec priv_data
-      while ((tag = av_dict_get(st->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+      if (m_fctx->streams[i]->disposition & AV_DISPOSITION_DEFAULT)
       {
-        std::string codecDesc = StringUtils::ToUpper(tag->value);
-        if (StringUtils::Contains(codecDesc, "HDMA") ||
-            StringUtils::Contains(codecDesc, "DTS-HD") ||
-            StringUtils::Contains(codecDesc, "Master Audio"))
-        {
-          isMasterAudio = true;
-          break;
-        }
-        else if (StringUtils::Contains(codecDesc, "ATMOS") ||
-                 StringUtils::Contains(codecDesc, "JOC"))
-        {
-          hasAtmos = true;
-          break;
-        }
+        streamIndex = i;
+        break; // Found a default audio stream, however, more than 1 stream can be set as default !!
       }
-      const AVCodec* dec = nullptr;
-      AVCodecContext* codec_ctx = nullptr;
-
-      albumtag.SetBitsPerSample(st->codecpar->bits_per_coded_sample);
-      albumtag.SetSampleRate(st->codecpar->sample_rate);
-      albumtag.SetBitRate(st->codecpar->bit_rate);
-      albumtag.SetNoOfChannels(st->codecpar->ch_layout.nb_channels);
-      codec_name = avcodec_get_name(st->codecpar->codec_id);
-      dec = avcodec_find_decoder(st->codecpar->codec_id);
-      codec_ctx = avcodec_alloc_context3(dec);
-      avcodec_parameters_to_context(codec_ctx, st->codecpar);
-
-      if (nullptr != codec_ctx->priv_data)
-      {
-        uint8_t* priv_bytes = (uint8_t*)codec_ctx->priv_data;
-        if (priv_bytes[0] == 0x40) //0x40 - dtshd_ma 0x80 - truehd
-          isMasterAudio = true;
-      }
-      avcodec_free_context(&codec_ctx);
-      av_free(codec_ctx);
-
-      if (dec->id == AV_CODEC_ID_DTS)
-      {
-        if ((dec->profiles->profile == FF_PROFILE_DTS_HD_MA) || isMasterAudio)
-          codec_name = "dtshd_ma";
-        else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X)
-          codec_name = "dts_x";
-        else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X_IMAX)
-          codec_name = "dts_x_imax";
-        else
-          codec_name = "dca";
-      }
-      if (dec->id == AV_CODEC_ID_EAC3 &&
-          (hasAtmos || (dec->profiles->profile == FF_PROFILE_EAC3_DDP_ATMOS)))
-        codec_name = "eac3_ddp_atmos";
-
-      if (dec->id == AV_CODEC_ID_TRUEHD &&
-          (hasAtmos || (dec->profiles->profile == FF_PROFILE_TRUEHD_ATMOS)))
-        codec_name = "truehd_atmos";
-      albumtag.SetCodec(codec_name);
-      break; // first audio stream should be best quality, stop once we've checked a stream
     }
+  }
+  // If no default stream was found, look for the first audio stream as usually highest quality 1st
+  if (streamIndex == -1)
+  {
+    for (unsigned int i = 0; i < m_fctx->nb_streams; ++i)
+    {
+      if (m_fctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+      {
+        streamIndex = i;
+        break; // Found the first audio stream
+      }
+    }
+  }
+  if (streamIndex > -1)
+  {
+    st = m_fctx->streams[streamIndex];
+    bool isMasterAudio = false;
+    bool hasAtmos = false;
+
+    // Codec test only detects dts core - see if we can get a hint from the stream's metadata
+    // ffmpeg 6.0.1 can't detect HD audio profiles, HDMA can be figured from the codec priv_data
+    while ((tag = av_dict_get(st->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+    {
+      std::string codecDesc = StringUtils::ToUpper(tag->value);
+      if (StringUtils::Contains(codecDesc, "HDMA") || StringUtils::Contains(codecDesc, "DTS-HD") ||
+          StringUtils::Contains(codecDesc, "Master Audio"))
+      {
+        isMasterAudio = true;
+        break;
+      }
+      else if (StringUtils::Contains(codecDesc, "ATMOS") || StringUtils::Contains(codecDesc, "JOC"))
+      {
+        hasAtmos = true;
+        break;
+      }
+    }
+    const AVCodec* dec = nullptr;
+    AVCodecContext* codec_ctx = nullptr;
+
+    albumtag.SetBitsPerSample(st->codecpar->bits_per_coded_sample);
+    albumtag.SetSampleRate(st->codecpar->sample_rate);
+    albumtag.SetBitRate(st->codecpar->bit_rate);
+    albumtag.SetNoOfChannels(st->codecpar->ch_layout.nb_channels);
+    codec_name = avcodec_get_name(st->codecpar->codec_id);
+    dec = avcodec_find_decoder(st->codecpar->codec_id);
+    codec_ctx = avcodec_alloc_context3(dec);
+    avcodec_parameters_to_context(codec_ctx, st->codecpar);
+
+    if (nullptr != codec_ctx->priv_data)
+    {
+      uint8_t* priv_bytes = (uint8_t*)codec_ctx->priv_data;
+      if (priv_bytes[0] == 0x40) //0x40 - dtshd_ma 0x80 - truehd
+        isMasterAudio = true;
+    }
+    avcodec_free_context(&codec_ctx);
+    av_free(codec_ctx);
+
+    if (dec->id == AV_CODEC_ID_DTS)
+    {
+      if ((dec->profiles->profile == FF_PROFILE_DTS_HD_MA) || isMasterAudio)
+        codec_name = "dtshd_ma";
+      else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X)
+        codec_name = "dts_x";
+      else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X_IMAX)
+        codec_name = "dts_x_imax";
+      else
+        codec_name = "dca";
+    }
+    if (dec->id == AV_CODEC_ID_EAC3 &&
+        (hasAtmos || (dec->profiles->profile == FF_PROFILE_EAC3_DDP_ATMOS)))
+      codec_name = "eac3_ddp_atmos";
+
+    if (dec->id == AV_CODEC_ID_TRUEHD &&
+        (hasAtmos || (dec->profiles->profile == FF_PROFILE_TRUEHD_ATMOS)))
+      codec_name = "truehd_atmos";
+    albumtag.SetCodec(codec_name);
   }
 
   std::string thumb;
