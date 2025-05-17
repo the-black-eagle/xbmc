@@ -72,20 +72,20 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
     fctx->flags |= AVFMT_FLAG_NOPARSE;
     if (avformat_find_stream_info(fctx, nullptr) >= 0)
     {
-      bool gotStream = false;
+      int streamIndex = -1;
+      // Look for the default audio stream first
       for (unsigned int i = 0; i < fctx->nb_streams; ++i)
       {
-        st = fctx->streams[i];
-        if (st->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+        if (fctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
         {
-          gotStream = true;
-          break;
+          if (fctx->streams[i]->disposition & AV_DISPOSITION_DEFAULT)
+          {
+            streamIndex = i;
+            break; // Found the default audio stream, no need to check further
+          }
         }
-        else
-          continue;
       }
-      if (!gotStream)
-        return haveInfo;
+      if (streamIndex == -1)
       {
         if (fctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
         {
@@ -175,7 +175,10 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
         }
       }
     }
-    if (decoder)
+
+    if (fctx)
+      avformat_close_input(&fctx);
+    if (ioctx)
     {
       std::string codec_name = "unknown";
 
@@ -266,9 +269,11 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
         codec_name = "truehd_atmos";
       codec_info.codecName = codec_name;
       haveInfo= true;
+      av_free(ioctx->buffer);
+      av_free(ioctx);
     }
+    return haveInfo;
   }
-
     avformat_close_input(&fctx);
   }
   av_free(ioctx->buffer);
