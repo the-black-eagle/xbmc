@@ -316,7 +316,7 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
     if (m_fctx->chapters[i]->start < 0) // negative start time, ignore it
       continue;
     chapter_size = m_fctx->chapters[i]->end * av_q2d(m_fctx->chapters[i]->time_base);
-    if (chapter_size < 1 && !(url.IsFileType("mka")))
+    if (chapter_size < 1 && chapter_size > 0) // Chapter must have positive time of more than 1 sec
     {
       CLog::Log(LOGWARNING,
                 "CAudioBookFileDirectory: Tiny chapter of size {}s detected when scanning {} Most "
