@@ -292,7 +292,8 @@ IFileDirectory* CFileDirectoryFactory::Create(const CURL& url, CFileItem* pItem,
     return NULL;
   }
 
-  if (pItem->IsAudioBook() || pItem->IsMatroskaAudio()  || pItem->IsMatroskaVideo() || (url.IsFileType("mp4")))
+  if (pItem->IsAudioBook() || pItem->IsMatroskaAudio() || pItem->IsMatroskaVideo() ||
+      (url.IsFileType("mp4")))
   {
     // .mkv doubles as a video container — only treat a chaptered .mkv as an
     // audiobook when browsed from a Music source, or a chaptered movie in a
@@ -306,11 +307,16 @@ IFileDirectory* CFileDirectoryFactory::Create(const CURL& url, CFileItem* pItem,
     // expensive FFmpeg ContainsFiles() probe.
     if (!pItem->HasMusicInfoTag() || pItem->GetEndOffset() <= 0)
     {
-      if (HasChaptersInMusicDb(url))
-        return nullptr;
-      auto pDir = std::make_unique<CAudioBookFileDirectory>();
-      if (pDir->ContainsFiles(url))
-        return pDir.release();
+      VECSOURCES* musicSources = CMediaSourceSettings::GetInstance().GetSources("music");
+      bool isSource;
+      int sourceIndex = CUtil::GetMatchingSource(pItem->GetPath(), *musicSources, isSource);
+      if (sourceIndex >= 0 && sourceIndex < static_cast<int>(musicSources->size()))
+      {
+        std::unique_ptr<CAudioBookFileDirectory> pDir(new CAudioBookFileDirectory);
+        if (pDir->ContainsFiles(url))
+          return pDir.release();
+      }
+      return NULL;
     }
     return nullptr;
   }
