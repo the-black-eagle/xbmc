@@ -151,8 +151,6 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
         albumtag.SetMusicBrainzAlbumID(tag->value);
       else if (key == "MUSICBRAINZ_RELEASEGROUPID" || key == "MUSICBRAINZ RELEASE GROUP ID")
         albumtag.SetMusicBrainzReleaseGroupID(tag->value);
-      //else if (key == "MUSICBRAINZ_ALBUMRELEASECOUNTRY" || key == "MUSICBRAINZ ALBUM RELEASE COUNTRY")
-      // albumtag.Set
       else if (key == "MUSICBRAINZ_ALBUMSTATUS")
         albumtag.SetAlbumReleaseStatus(tag->value);
       else if (key == "MUSICBRAINZ_ALBUMTYPE")
@@ -236,64 +234,47 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url,
   if (streamIndex > -1)
   {
     st = m_fctx->streams[streamIndex];
-    bool isMasterAudio = false;
-    bool hasAtmos = false;
-
-    // Codec test only detects dts core - see if we can get a hint from the stream's metadata
-    // ffmpeg 6.0.1 can't detect HD audio profiles, HDMA can be figured from the codec priv_data
-    while ((tag = av_dict_get(st->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
-    {
-      std::string codecDesc = StringUtils::ToUpper(tag->value);
-      if (StringUtils::Contains(codecDesc, "HDMA") || StringUtils::Contains(codecDesc, "DTS-HD") ||
-          StringUtils::Contains(codecDesc, "Master Audio"))
-      {
-        isMasterAudio = true;
-        break;
-      }
-      else if (StringUtils::Contains(codecDesc, "ATMOS") || StringUtils::Contains(codecDesc, "JOC"))
-      {
-        hasAtmos = true;
-        break;
-      }
-    }
-    const AVCodec* dec = nullptr;
-    AVCodecContext* codec_ctx = nullptr;
 
     albumtag.SetBitsPerSample(st->codecpar->bits_per_coded_sample);
     albumtag.SetSampleRate(st->codecpar->sample_rate);
     albumtag.SetBitRate(st->codecpar->bit_rate);
     albumtag.SetNoOfChannels(st->codecpar->ch_layout.nb_channels);
     codec_name = avcodec_get_name(st->codecpar->codec_id);
-    dec = avcodec_find_decoder(st->codecpar->codec_id);
-    codec_ctx = avcodec_alloc_context3(dec);
-    avcodec_parameters_to_context(codec_ctx, st->codecpar);
-
-    if (nullptr != codec_ctx->priv_data)
+    int par_profile = st->codecpar->profile;
+    if (st->codecpar->codec_id == AV_CODEC_ID_DTS)
     {
-      uint8_t* priv_bytes = (uint8_t*)codec_ctx->priv_data;
-      if (priv_bytes[0] == 0x40) //0x40 - dtshd_ma 0x80 - truehd
-        isMasterAudio = true;
+      switch (par_profile)
+      {
+        case FF_PROFILE_DTS_HD_MA_X:
+          codec_name = "dtshd_ma_x";
+          break;
+        case FF_PROFILE_DTS_HD_MA_X_IMAX:
+          codec_name = "dtshd_ma_x_imax";
+          break;
+        case FF_PROFILE_DTS_ES:
+          codec_name = "dts_es";
+          break;
+        case FF_PROFILE_DTS_96_24:
+          codec_name = "dts_96_24";
+          break;
+        case FF_PROFILE_DTS_HD_HRA:
+          codec_name = "dtshd_hra";
+          break;
+        case FF_PROFILE_DTS_EXPRESS:
+          codec_name = "dts_express";
+          break;
+        case FF_PROFILE_DTS_HD_MA:
+          codec_name = "dtshd_ma";
+          break;
+        default:
+          codec_name = "dca";
+          break;
+      }
     }
-    avcodec_free_context(&codec_ctx);
-    av_free(codec_ctx);
-
-    if (dec->id == AV_CODEC_ID_DTS)
-    {
-      if ((dec->profiles->profile == FF_PROFILE_DTS_HD_MA) || isMasterAudio)
-        codec_name = "dtshd_ma";
-      else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X)
-        codec_name = "dts_x";
-      else if (dec->profiles->profile == FF_PROFILE_DTS_HD_MA_X_IMAX)
-        codec_name = "dts_x_imax";
-      else
-        codec_name = "dca";
-    }
-    if (dec->id == AV_CODEC_ID_EAC3 &&
-        (hasAtmos || (dec->profiles->profile == FF_PROFILE_EAC3_DDP_ATMOS)))
+    if (st->codecpar->codec_id == AV_CODEC_ID_EAC3 && par_profile == FF_PROFILE_EAC3_DDP_ATMOS)
       codec_name = "eac3_ddp_atmos";
 
-    if (dec->id == AV_CODEC_ID_TRUEHD &&
-        (hasAtmos || (dec->profiles->profile == FF_PROFILE_TRUEHD_ATMOS)))
+    if (st->codecpar->codec_id == AV_CODEC_ID_TRUEHD && par_profile == FF_PROFILE_TRUEHD_ATMOS)
       codec_name = "truehd_atmos";
     albumtag.SetCodec(codec_name);
   }
@@ -555,6 +536,7 @@ bool CAudioBookFileDirectory::ContainsFiles(const CURL& url)
   av_probe_input_buffer(m_ioctx, &iformat, url.Get().c_str(), nullptr, 0, 0);
 
   bool contains = false;
+
   if (avformat_open_input(&m_fctx, url.Get().c_str(), iformat, nullptr) < 0)
   {
     if (m_fctx)
@@ -563,6 +545,10 @@ bool CAudioBookFileDirectory::ContainsFiles(const CURL& url)
     av_free(m_ioctx);
     return false;
   }
+  m_fctx->flags |= AVFMT_FLAG_NOPARSE;
+  int err = avformat_find_stream_info(m_fctx, NULL);
+  if (err < 0)
+    CLog::Log(LOGERROR, "Can't detect codec info in file {}", url.GetRedacted());
 
   contains = m_fctx->nb_chapters > 1;
 
