@@ -902,9 +902,10 @@ constexpr std::array<InfoMap, 58> player_labels = {{
     {"scenemarkers",          PLAYER_SCENE_MARKERS},
     {"hasscenemarkers",       PLAYER_HAS_SCENE_MARKERS},
     {"chapters",              PLAYER_CHAPTERS},
+    {"chapterlength",PLAYER_CHAPTERLENGTH},
+    {"chapterelapsed",PLAYER_CHAPTER_ELAPSED},
 }};
 // clang-format on
-
 /// \page modules__infolabels_boolean_conditions
 ///   \table_row3{   <b>`Player.Art(type)`</b>,
 ///                  \anchor Player_Art_type
@@ -4208,7 +4209,11 @@ constexpr std::array<InfoMap, 82> videoplayer = {{
     {"episodepart",           VIDEOPLAYER_EPISODEPART},
     {"mediaproviders",        VIDEOPLAYER_MEDIAPROVIDERS},
     {"titleextrainfo",        VIDEOPLAYER_TITLE_EXTRAINFO},
+    { "chapterlength",    VIDEOPLAYER_CHAPTERLENGTH},
+    { "chapterelapsed",   PLAYER_CHAPTER_ELAPSED},
+    { "ismusicvideo",     VIDEOPLAYER_IS_MUSIC_VIDEO},
 }};
+
 // clang-format on
 
 /// \page modules__infolabels_boolean_conditions
