@@ -81,7 +81,8 @@ constexpr uint32_t PLAYER_EDITLIST                   = 69;
 constexpr uint32_t PLAYER_CUTS                       = 70;
 constexpr uint32_t PLAYER_SCENE_MARKERS              = 71;
 constexpr uint32_t PLAYER_HAS_SCENE_MARKERS          = 72;
-// unused id 73 to 80
+constexpr uint32_t PLAYER_CHAPTER_ELAPSED            = 73;
+// unused id 74 to 80
 
 // Keep player infolabels that work with offset and position together
 constexpr uint32_t PLAYER_PATH                       = 81;
@@ -295,6 +296,8 @@ constexpr uint32_t VIDEOPLAYER_UNIQUEID              = 294;
 constexpr uint32_t VIDEOPLAYER_AUDIOSTREAMCOUNT      = 295;
 constexpr uint32_t VIDEOPLAYER_VIDEOVERSION_NAME     = 296;
 constexpr uint32_t VIDEOPLAYER_VIDEOSTREAMCOUNT      = 297;
+constexpr uint32_t VIDEOPLAYER_CHAPTERLENGTH         = 298;
+
 
 // Videoplayer infobools
 constexpr uint32_t VIDEOPLAYER_HASSUBTITLES          = 300;
@@ -309,6 +312,7 @@ constexpr uint32_t VIDEOPLAYER_HAS_INFO              = 308;
 constexpr uint32_t VIDEOPLAYER_HASTELETEXT           = 309;
 constexpr uint32_t VIDEOPLAYER_IS_STEREOSCOPIC       = 310;
 constexpr uint32_t VIDEOPLAYER_HAS_VIDEOVERSIONS     = 311;
+constexpr uint32_t VIDEOPLAYER_IS_MUSIC_VIDEO        = 312;
 
 // PVR infolabels
 constexpr uint32_t VIDEOPLAYER_TITLE_EXTRAINFO       = 312;
