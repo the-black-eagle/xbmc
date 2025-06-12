@@ -860,7 +860,7 @@ constexpr std::array<InfoMap, 7> integer_bools = {{
 ///     <p>
 ///   }
 // clang-format off
-constexpr std::array<InfoMap, 60> player_labels = {{
+constexpr std::array<InfoMap, 62> player_labels = {{
     {"hasmedia",              PLAYER_HAS_MEDIA},
     {"hasaudio",              PLAYER_HAS_AUDIO},
     {"hasvideo",              PLAYER_HAS_VIDEO},
@@ -921,9 +921,10 @@ constexpr std::array<InfoMap, 60> player_labels = {{
     {"chapters",              PLAYER_CHAPTERS},
     {"bookmarks",             PLAYER_BOOKMARKS},
     {"hasbookmarks",          PLAYER_HAS_BOOKMARKS},
+    {"chapterlength",PLAYER_CHAPTERLENGTH},
+    {"chapterelapsed",PLAYER_CHAPTER_ELAPSED},
 }};
 // clang-format on
-
 /// \page modules__infolabels_boolean_conditions
 ///   \table_row3{   <b>`Player.Art(type)`</b>,
 ///                  \anchor Player_Art_type
@@ -4403,7 +4404,11 @@ constexpr std::array<InfoMap, 88> videoplayer = {{
     {"mediaproviders",        VIDEOPLAYER_MEDIAPROVIDERS},
     {"titleextrainfo",        VIDEOPLAYER_TITLE_EXTRAINFO},
     {"hdrdetail",             VIDEOPLAYER_HDR_DETAIL},
+    { "chapterlength",    VIDEOPLAYER_CHAPTERLENGTH},
+    { "chapterelapsed",   PLAYER_CHAPTER_ELAPSED},
+    { "ismusicvideo",     VIDEOPLAYER_IS_MUSIC_VIDEO},
 }};
+
 // clang-format on
 
 /// \page modules__infolabels_boolean_conditions
