@@ -32,7 +32,6 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
                                               musicCodecInfo& codec_info)
 {
   const AVCodec* decoder = nullptr;
-  std::string codec;
   CFile file;
   bool haveInfo = false;
   if (!file.Open(strFileName))
@@ -110,6 +109,7 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
 
       if (streamIndex != -1)
       {
+<<<<<<< HEAD
         st = fctx->streams[streamIndex];
         decoder = avcodec_find_decoder(st->codecpar->codec_id);
         if (decoder)
@@ -173,6 +173,56 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
             codec_info.duration = 0;
           haveInfo = true;
         }
+=======
+        std::string codec_name = "unknown";
+
+        codec_name = avcodec_get_name(st->codecpar->codec_id);
+        int par_profile = st->codecpar->profile;
+        if (st->codecpar->codec_id == AV_CODEC_ID_DTS)
+        {
+          switch (par_profile)
+          {
+            case FF_PROFILE_DTS_HD_MA_X:
+              codec_name = "dtshd_ma_x";
+              break;
+            case FF_PROFILE_DTS_HD_MA_X_IMAX:
+              codec_name = "dtshd_ma_x_imax";
+              break;
+            case FF_PROFILE_DTS_ES:
+              codec_name = "dts_es";
+              break;
+            case FF_PROFILE_DTS_96_24:
+              codec_name = "dts_96_24";
+              break;
+            case FF_PROFILE_DTS_HD_HRA:
+              codec_name = "dtshd_hra";
+              break;
+            case FF_PROFILE_DTS_EXPRESS:
+              codec_name = "dts_express";
+              break;
+            case FF_PROFILE_DTS_HD_MA:
+              codec_name = "dtshd_ma";
+              break;
+            default:
+              codec_name = "dca";
+              break;
+          }
+        }
+        if (st->codecpar->codec_id == AV_CODEC_ID_EAC3 && par_profile == FF_PROFILE_EAC3_DDP_ATMOS)
+          codec_name = "eac3_ddp_atmos";
+
+        if (st->codecpar->codec_id == AV_CODEC_ID_TRUEHD && par_profile == FF_PROFILE_TRUEHD_ATMOS)
+          codec_name = "truehd_atmos";
+        codec_info.codecName = codec_name;
+        codec_info.bitRate = static_cast<int>(st->codecpar->bit_rate / 1000);
+        codec_info.channels = st->codecpar->ch_layout.nb_channels;
+        codec_info.bitsPerSample = (st->codecpar->bits_per_coded_sample != 0)
+                                       ? st->codecpar->bits_per_coded_sample
+                                       : st->codecpar->bits_per_raw_sample;
+        codec_info.sampleRate = st->codecpar->sample_rate;
+        codec_info.duration = st->duration / AV_TIME_BASE;
+        haveInfo = true;
+>>>>>>> bd7a7ee120 ([MUSIC] Improve codec detection)
       }
     }
 
@@ -272,7 +322,6 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
       av_free(ioctx->buffer);
       av_free(ioctx);
     }
-    return haveInfo;
   }
     avformat_close_input(&fctx);
   }
