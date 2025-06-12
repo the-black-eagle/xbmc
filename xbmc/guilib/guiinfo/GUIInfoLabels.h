@@ -50,7 +50,7 @@
 #define PLAYER_SUBTITLE_DELAY        42
 #define PLAYER_AUDIO_DELAY           43
 #define PLAYER_PASSTHROUGH           44
-// unused 45
+#define PLAYER_CHAPTERLENGTH         45
 // unused 46
 #define PLAYER_SEEKOFFSET            47
 #define PLAYER_PROGRESS_CACHE        48
@@ -78,6 +78,7 @@
 #define PLAYER_CUTS 70
 #define PLAYER_SCENE_MARKERS 71
 #define PLAYER_HAS_SCENE_MARKERS 72
+#define PLAYER_CHAPTER_ELAPSED       73
 // Keep player infolabels that work with offset and position together
 #define PLAYER_PATH                  81
 #define PLAYER_FILEPATH              82
@@ -278,6 +279,7 @@
 #define VIDEOPLAYER_UNIQUEID          294
 #define VIDEOPLAYER_AUDIOSTREAMCOUNT  295
 #define VIDEOPLAYER_VIDEOVERSION_NAME 296
+#define VIDEOPLAYER_CHAPTERLENGTH     297
 
 // Videoplayer infobools
 #define VIDEOPLAYER_HASSUBTITLES      300
@@ -292,6 +294,7 @@
 #define VIDEOPLAYER_HASTELETEXT       309
 #define VIDEOPLAYER_IS_STEREOSCOPIC   310
 #define VIDEOPLAYER_HAS_VIDEOVERSIONS 311
+#define VIDEOPLAYER_IS_MUSIC_VIDEO    312
 
 // PVR infolabels
 #define VIDEOPLAYER_EVENT             313

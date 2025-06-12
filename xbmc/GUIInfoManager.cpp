@@ -924,7 +924,9 @@ const infomap player_labels[] = {{"hasmedia", PLAYER_HAS_MEDIA},
                                  {"cuts", PLAYER_CUTS},
                                  {"scenemarkers", PLAYER_SCENE_MARKERS},
                                  {"hasscenemarkers", PLAYER_HAS_SCENE_MARKERS},
-                                 {"chapters", PLAYER_CHAPTERS}};
+                                 {"chapters", PLAYER_CHAPTERS},
+                                 {"chapterlength",PLAYER_CHAPTERLENGTH},
+                                 {"chapterelapsed",PLAYER_CHAPTER_ELAPSED}};
 
 /// \page modules__infolabels_boolean_conditions
 ///   \table_row3{   <b>`Player.Art(type)`</b>,
@@ -4024,7 +4026,10 @@ const infomap videoplayer[] =    {{ "title",            VIDEOPLAYER_TITLE },
                                   { "hdrtype",          VIDEOPLAYER_HDR_TYPE },
                                   { "art",              VIDEOPLAYER_ART},
                                   { "videoversionname", VIDEOPLAYER_VIDEOVERSION_NAME},
-                                  { "hasvideoversions", VIDEOPLAYER_HAS_VIDEOVERSIONS}
+                                  { "hasvideoversions", VIDEOPLAYER_HAS_VIDEOVERSIONS},
+                                  { "chapterlength",    VIDEOPLAYER_CHAPTERLENGTH},
+                                  { "chapterelapsed",   PLAYER_CHAPTER_ELAPSED},
+                                  { "ismusicvideo",     VIDEOPLAYER_IS_MUSIC_VIDEO}
 };
 // clang-format on
 

@@ -633,6 +633,19 @@ bool CVideoGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
       }
       break;
     }
+    case VIDEOPLAYER_CHAPTERLENGTH:
+    {
+      int chap = m_appPlayer->GetChapter();
+      int chapStart = m_appPlayer->GetChapterPos(chap);
+      int chapEnd;
+      if (chap >= m_appPlayer->GetChapterCount())
+        chapEnd = std::lrint(g_application.GetTotalTime());
+      else
+        chapEnd = m_appPlayer->GetChapterPos(chap + 1);
+      value = StringUtils::Format("{:02}", chapEnd - chapStart);
+      return true;
+      break;
+    }
     case VIDEOPLAYER_VIDEO_BITRATE:
     {
       int iBitrate = m_videoInfo.bitrate;
@@ -845,6 +858,9 @@ bool CVideoGUIInfo::GetBool(bool& value, const CGUIListItem *gitem, int contextW
       return true;
     case VIDEOPLAYER_IS_STEREOSCOPIC:
       value = !CServiceBroker::GetDataCacheCore().GetVideoStereoMode().empty();
+      return true;
+    case VIDEOPLAYER_IS_MUSIC_VIDEO:
+      value = item->HasMusicInfoTag();
       return true;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
