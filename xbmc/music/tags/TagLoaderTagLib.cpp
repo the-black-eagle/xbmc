@@ -1426,6 +1426,7 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
     tag.SetSampleRate(codec_info.sampleRate);
     tag.SetBitsPerSample(codec_info.bitsPerSample);
     tag.SetCodec(codec_info.codecName);
+    tag.SetNoOfChannels(codec_info.channels);
   }
 
   if (asf)
