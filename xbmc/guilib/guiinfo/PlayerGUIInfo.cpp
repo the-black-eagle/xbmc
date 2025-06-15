@@ -172,7 +172,10 @@ int CPlayerGUIInfo::GetChapterElapsedTime(int chapterIdx) const
 {
   int now = GetPlayTime();
   int chapStart = m_appPlayer->GetChapterPos(chapterIdx);
-  return now - chapStart;
+  int elapsed = now -chapStart;
+  if (elapsed < 0)
+    elapsed = 0;
+  return elapsed;
 }
 
 bool CPlayerGUIInfo::GetLabel(std::string& value, const CFileItem *item, int contextWindow, const CGUIInfo &info, std::string *fallback) const
