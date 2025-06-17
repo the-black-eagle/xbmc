@@ -14044,6 +14044,7 @@ std::vector<std::string> CMusicDatabase::GetUsedImages(
     CLog::LogF(LOGERROR, "failed");
   }
   return {};
+}
 void CMusicDatabase::GetMusicDetails(CFileItemList& items, std::string& reqField)
 {
   try
