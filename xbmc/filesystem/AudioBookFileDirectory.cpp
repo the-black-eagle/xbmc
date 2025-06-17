@@ -212,16 +212,6 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
         albumtag.SetComment(tag->value);
     }
   }
-    bool isMasterAudio = false;
-    // Codec test only detects dts core - see if we can get a hint from the stream's metadata
-    while ((tag = av_dict_get(st->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
-    {
-      std::string test1 = tag->key;
-      std::string test2 = StringUtils::ToUpper(tag->value);
-    if (StringUtils::Contains(test2, "HDMA") || StringUtils::Contains(test2, "DTS-HD")
-     || StringUtils::Contains(test2, "Master Audio"))
-        isMasterAudio = true;
-    }
 
   AVStream* st = nullptr;
   std::string codec_name = "unknown";
@@ -296,12 +286,12 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
 
     if (st->codecpar->codec_id == AV_CODEC_ID_TRUEHD && par_profile == FF_PROFILE_TRUEHD_ATMOS)
       codec_name = "truehd_atmos";
-    albumtag.SetCodec(codec_name);
   }
+  albumtag.SetCodec(codec_name);
+
   std::string thumb;
 
   if (m_fctx->nb_chapters > 1)
-    thumb = CTextureUtils::GetWrappedImageURL(url.Get(), "music");
 
   // now get the AudioCodec -------------------------------------
   bool haveFFmpegInfo = false;
@@ -323,6 +313,8 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
   float chapter_size = 0;
 
   bool chapter_error = false;
+
+  thumb = IMAGE_FILES::URLFromFile(url.Get(), "music");
   // Look for any embedded cover art
   CMusicEmbeddedCoverLoaderFFmpeg::GetEmbeddedCover(m_fctx, albumtag);
 
