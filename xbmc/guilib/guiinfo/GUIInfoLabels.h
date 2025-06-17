@@ -84,7 +84,8 @@ constexpr uint32_t PLAYER_HAS_SCENE_MARKERS          = 72;
 constexpr uint32_t PLAYER_BOOKMARKS                  = 73;
 constexpr uint32_t PLAYER_HAS_BOOKMARKS              = 74;
 constexpr uint32_t PLAYER_CHAPTER_ELAPSED            = 75;
-// unused id 76 to 80
+constexpr uint32_t PLAYER_CHAPTERLENGTH              = 76;
+// unused id 77 to 80
 
 // Keep player infolabels that work with offset and position together
 constexpr uint32_t PLAYER_PATH                       = 81;
