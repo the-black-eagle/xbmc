@@ -923,6 +923,7 @@ constexpr std::array<InfoMap, 62> player_labels = {{
     {"hasbookmarks",          PLAYER_HAS_BOOKMARKS},
     {"chapterlength",PLAYER_CHAPTERLENGTH},
     {"chapterelapsed",PLAYER_CHAPTER_ELAPSED},
+
 }};
 // clang-format on
 /// \page modules__infolabels_boolean_conditions
@@ -4315,7 +4316,15 @@ constexpr std::array<InfoMap, 46> musicplayer = {{
 ///
 /// -----------------------------------------------------------------------------
 // clang-format off
+<<<<<<< HEAD
 constexpr std::array<InfoMap, 88> videoplayer = {{
+=======
+<<<<<<< HEAD
+constexpr std::array<InfoMap, 83> videoplayer = {{
+=======
+constexpr std::array<InfoMap, 85> videoplayer = {{
+>>>>>>> b9846230ef ([MUSIC] Update gui arrays for Piers)
+>>>>>>> 0e4019dc29 ([MUSIC] Update gui arrays for Piers)
     {"title",                 VIDEOPLAYER_TITLE},
     {"genre",                 VIDEOPLAYER_GENRE},
     {"country",               VIDEOPLAYER_COUNTRY},
@@ -7759,7 +7768,12 @@ constexpr std::array<InfoMap, 3> container_str = {{
 ///
 /// -----------------------------------------------------------------------------
 // clang-format off
+<<<<<<< HEAD
 constexpr std::array<InfoMap, 227> listitem_labels = {{ 
+=======
+
+constexpr std::array<InfoMap, 229> listitem_labels = {{ 
+>>>>>>> b9846230ef ([MUSIC] Update gui arrays for Piers)
                                   {"thumb",            LISTITEM_THUMB },
                                   { "icon",             LISTITEM_ICON },
                                   { "actualicon",       LISTITEM_ACTUAL_ICON },
