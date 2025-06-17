@@ -252,7 +252,7 @@ IFileDirectory* CFileDirectoryFactory::Create(const CURL& url, CFileItem* pItem,
   }
   else if (pItem->IsMatroskaVideo() || url.IsFileType("mp4"))
   {
-    VECSOURCES* musicSources = CMediaSourceSettings::GetInstance().GetSources("music");
+    std::vector<CMediaSource>* musicSources = CMediaSourceSettings::GetInstance().GetSources("music");
     bool isSource;
     int sourceIndex = CUtil::GetMatchingSource(pItem->GetPath(), *musicSources, isSource);
     if (sourceIndex >= 0 && sourceIndex < static_cast<int>(musicSources->size()))
