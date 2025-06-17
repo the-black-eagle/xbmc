@@ -14066,6 +14066,7 @@ std::vector<std::string> CMusicDatabase::GetUsedImages(
     CLog::Log(LOGERROR, "{}, failed", __FUNCTION__);
   }
   return {};
+}
 void CMusicDatabase::GetMusicDetails(CFileItemList& items, std::string& reqField)
 {
   try
