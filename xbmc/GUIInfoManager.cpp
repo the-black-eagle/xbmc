@@ -11246,6 +11246,8 @@ int CGUIInfoManager::TranslateListItem(const Property& cat, const Property& prop
   {
     for (const auto& listitem_label : listitem_labels) // these ones don't have or need an id
     {
+      if (nullptr == listitem_label.str)
+        continue;
       if (prop.Name() == listitem_label.str)
       {
         ret = listitem_label.val;
