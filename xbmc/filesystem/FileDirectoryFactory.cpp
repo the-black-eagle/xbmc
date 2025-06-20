@@ -27,6 +27,7 @@
 #include "ServiceBroker.h"
 #include "SmartPlaylistDirectory.h"
 #include "URL.h"
+#include "Util.h"
 #include "XbtDirectory.h"
 #include "ZipDirectory.h"
 #include "addons/AudioDecoder.h"
@@ -35,6 +36,7 @@
 #include "addons/addoninfo/AddonInfo.h"
 #include "playlists/PlayListFactory.h"
 #include "playlists/SmartPlayList.h"
+#include "settings/MediaSourceSettings.h"
 #include "utils/StringUtils.h"
 #include "utils/log.h"
 
@@ -235,13 +237,29 @@ IFileDirectory* CFileDirectoryFactory::Create(const CURL& url, CFileItem* pItem,
     return NULL;
   }
 
-  if (pItem->IsAudioBook())
+  if (pItem->IsAudioBook() || pItem->IsMatroskaAudio())
   {
     if (!pItem->HasMusicInfoTag() || pItem->GetEndOffset() <= 0)
     {
       std::unique_ptr<CAudioBookFileDirectory> pDir(new CAudioBookFileDirectory);
-      if (pDir->ContainsFiles(url))
-        return pDir.release();
+        if (pDir->ContainsFiles(url))
+          return pDir.release();
+    }
+    return NULL;
+  }
+  else if (pItem->IsMatroskaVideo() || url.IsFileType("mp4"))
+  {
+    VECSOURCES* musicSources = CMediaSourceSettings::GetInstance().GetSources("music");
+    bool isSource;
+    int sourceIndex = CUtil::GetMatchingSource(pItem->GetPath(), *musicSources, isSource);
+    if (sourceIndex >= 0 && sourceIndex < static_cast<int>(musicSources->size()))
+    {
+       if (!pItem->HasMusicInfoTag() || pItem->GetEndOffset() <= 0)
+      {
+        std::unique_ptr<CAudioBookFileDirectory> pDir(new CAudioBookFileDirectory);
+          if (pDir->ContainsFiles(url))
+            return pDir.release();
+      }
     }
     return NULL;
   }

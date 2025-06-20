@@ -9,7 +9,10 @@
 #pragma once
 
 #include "DirectoryNode.h"
-
+namespace MUSIC_INFO
+{
+class CMusicInfoTag;
+}
 namespace XFILE
 {
   namespace MUSICDATABASEDIRECTORY

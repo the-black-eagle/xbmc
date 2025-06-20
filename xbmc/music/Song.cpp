@@ -74,7 +74,9 @@ CSong::CSong(CFileItem& item)
   iBPM = tag.GetBPM();
   iSampleRate = tag.GetSampleRate();
   iBitRate = tag.GetBitRate();
+  iBitsPerSample = tag.GetBitsPerSample();
   iChannels = tag.GetNoOfChannels();
+  strCodec = tag.GetCodec();
   songVideoURL = tag.GetSongVideoURL();
 }
 
@@ -240,6 +242,8 @@ void CSong::Serialize(CVariant& value) const
   value["bpm"] = iBPM;
   value["bitrate"] = iBitRate;
   value["samplerate"] = iSampleRate;
+  value["bitspersample"] = iBitsPerSample;
+  value["codec"] = strCodec;
   value["channels"] = iChannels;
   value["songvideourl"] = songVideoURL;
 }
@@ -281,6 +285,8 @@ void CSong::Clear()
   iBPM = 0;
   iBitRate = 0;
   iSampleRate = 0;
+  iBitsPerSample = 0;
+  strCodec.clear();
   iChannels =  0;
   songVideoURL.clear();
 
