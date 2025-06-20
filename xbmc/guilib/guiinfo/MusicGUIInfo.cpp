@@ -365,6 +365,7 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         break;
       }
       case LISTITEM_MUSIC_CODEC:
+      case MUSICPLAYER_CODEC:
         value = tag->GetCodec();
         return true;
 
@@ -509,9 +510,8 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
       }
       break;
     }
-    case MUSICPLAYER_CODEC:
-      value = m_audioInfo.codecName;
-      return true;
+    default:
+      break;
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
