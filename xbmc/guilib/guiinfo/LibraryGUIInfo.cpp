@@ -67,6 +67,9 @@ void CLibraryGUIInfo::SetLibraryBool(int condition, bool value)
     case LIBRARY_HAS_BOXSETS:
       m_libraryHasBoxsets = value ? 1 : 0;
       break;
+    case LIBRARY_HAS_MUSIC_CONCERTS:
+      m_libraryHasMusicConcerts = value ? 1 : 0;
+      break;
     default:
       break;
   }
@@ -82,6 +85,7 @@ void CLibraryGUIInfo::ResetLibraryBools()
   m_libraryHasSingles = -1;
   m_libraryHasCompilations = -1;
   m_libraryHasBoxsets = -1;
+  m_libraryHasMusicConcerts = -1;
   m_libraryRoleCounts.clear();
 }
 
@@ -217,6 +221,20 @@ bool CLibraryGUIInfo::GetBool(bool& value, const CGUIListItem *gitem, int contex
         }
       }
       value = m_libraryHasBoxsets > 0;
+      return true;
+    }
+    case LIBRARY_HAS_MUSIC_CONCERTS:
+    {
+      if (m_libraryHasMusicConcerts < 0)
+      {
+        CMusicDatabase db;
+        if (db.Open())
+        {
+          m_libraryHasMusicConcerts = (db.GetConcertsCount() > 0) ? 1 : 0;
+          db.Close();
+        }
+      }
+      value = m_libraryHasMusicConcerts > 0;
       return true;
     }
     case LIBRARY_HAS_VIDEO:

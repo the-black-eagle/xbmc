@@ -10825,6 +10825,8 @@ int CGUIInfoManager::TranslateSingleString(const std::string &strCondition, bool
           return LIBRARY_HAS_COMPILATIONS;
         else if (content == "boxsets")
           return LIBRARY_HAS_BOXSETS;
+        else if (content == "musicconcerts")
+          return LIBRARY_HAS_MUSIC_CONCERTS;
         else if (content == "role" && prop.num_params() > 1)
           return AddMultiInfo(CGUIInfo(LIBRARY_HAS_ROLE, prop.param(1), 0));
       }

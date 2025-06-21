@@ -11260,6 +11260,13 @@ int CMusicDatabase::GetArtistCountForRole(const std::string& strRole) const
   return GetSingleValueInt(strSQL);
 }
 
+int CMusicDatabase::GetConcertsCount()
+{
+  std::string strSQL = "SELECT COUNT (DISTINCT idPath) FROM path WHERE LOWER(path.strPath) LIKE "
+                      "'%.mkv/' OR LOWER(path.strPath) LIKE '%.mp4/'";
+  return GetSingleValueInt(strSQL);
+}
+
 bool CMusicDatabase::SetPathHash(const std::string& path, const std::string& hash)
 {
   try
@@ -14138,3 +14145,4 @@ std::string CMusicDatabase::GetPathForAlbum(int idAlbum)
   }
   return "";
 }
+
