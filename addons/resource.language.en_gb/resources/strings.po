@@ -15196,7 +15196,7 @@ msgstr ""
 #: xbmc/dialogs/GUIDialogMediaFilter.cpp
 #: xbmc/playlist/SmartPlayList.cpp
 msgctxt "#21486"
-msgid "Music concertS"
+msgid "Music concerts"
 msgstr ""
 
 #empty strings from id 21487 to 21601
