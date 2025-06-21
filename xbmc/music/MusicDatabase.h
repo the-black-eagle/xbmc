@@ -173,6 +173,8 @@ public:
               int iBitRate,
               int iSampleRate,
               int iChannels,
+              int iBitsPerSample,
+              const std::string& strCodec,
               const std::string& songVideoURL,
               const ReplayGain& replayGain);
   bool GetSong(int idSong, CSong& song);
@@ -212,6 +214,8 @@ public:
    \param iBPM [in] the beats per minute of a song
    \param iBitRate [in] the bitrate of the song file
    \param iSampleRate [in] the sample rate of the song file
+   \param iBitsPerSample [in] the bitspersample of the song file or zero if not supported
+   \param strCodec [in] name of the codec used or empty string if unknown
    \param iChannels [in] the number of audio channels in the song file
    \param songVideoURL [in] url link to a video of the song
    \return the id of the song
@@ -243,6 +247,8 @@ public:
                  int iBitRate,
                  int iSampleRate,
                  int iChannels,
+                 int iBitsPerSample,
+                 const std::string& strCodec,
                  const std::string& songVideoURL);
 
   //// Misc Song
@@ -366,6 +372,7 @@ public:
   std::string GetAlbumDiscTitle(int idAlbum, int idDisc);
   bool SetAlbumUserrating(const int idAlbum, int userrating);
   int GetAlbumDiscsCount(int idAlbum);
+  std::string GetPathForAlbum(int idAlbum);
 
   /////////////////////////////////////////////////
   // Artist CRUD
@@ -546,6 +553,8 @@ public:
 
   int GetSinglesCount();
 
+  int GetConcertsCount();
+
   int GetArtistCountForRole(int role);
   int GetArtistCountForRole(const std::string& strRole);
 
@@ -650,6 +659,7 @@ public:
   int GetSongsCount(const Filter& filter = Filter());
   bool GetFilter(CDbUrl& musicUrl, Filter& filter, SortDescription& sorting) override;
   int GetOrderFilter(const std::string& type, const SortDescription& sorting, Filter& filter);
+  void GetMusicDetails(CFileItemList& items, std::string& reqField);
 
   /////////////////////////////////////////////////
   // Party Mode
@@ -1029,6 +1039,8 @@ private:
     song_iBPM,
     song_iBitRate,
     song_iSampleRate,
+    song_iBitsPerSample,
+    song_strCodec,
     song_iChannels,
     song_songVideoURL,
     song_iAlbumDuration,
@@ -1073,6 +1085,11 @@ private:
     album_strReleaseType,
     album_iTotalDiscs,
     album_dtLastPlayed,
+    album_strCodec,
+    album_iChannels,
+    album_iBitrate,
+    album_iSampleRate,
+    album_iBitsPerSample,
     album_iAlbumDuration,
     album_enumCount // end of the enum, do not add past here
   } AlbumFields;

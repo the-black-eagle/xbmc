@@ -139,6 +139,9 @@ static const translateField fields[] = {
   { "hdrtype",           FieldHdrType,                 CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 false, 20474 },
   { "hasversions",       FieldHasVideoVersions,        CDatabaseQueryRule::BOOLEAN_FIELD,  NULL,                                 false, 20475 },
   { "hasextras",         FieldHasVideoExtras,          CDatabaseQueryRule::BOOLEAN_FIELD,  NULL,                                 false, 20476 },
+  { "albumcodec",        FieldAlbumCodec,              CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 true,  21446 },
+  { "bitspersample",     FieldBitsPerSample,           CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 true,  612 },
+  { "ismusicconcert",    FieldIsMusicConcert,          CDatabaseQueryRule::BOOLEAN_FIELD,  NULL,                                 false, 21486},
 };
 // clang-format on
 
@@ -427,9 +430,13 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
     fields.push_back(FieldLastPlayed);
     fields.push_back(FieldPath);
     fields.push_back(FieldAlbumStatus);
+    fields.push_back(FieldAlbumCodec);
+    fields.push_back(FieldBitsPerSample);
+    fields.push_back(FieldNoOfChannels);
     fields.push_back(FieldDateAdded);
     fields.push_back(FieldDateModified);
     fields.push_back(FieldDateNew);
+    fields.push_back(FieldIsMusicConcert);
   }
   else if (type == "artists")
   {
@@ -875,6 +882,9 @@ std::string CSmartPlaylistRule::GetBooleanQuery(const std::string &negate, const
       return negate + GetField(m_field, strType);
     if (m_field == FieldIsBoxset)
       return negate + "albumview.bBoxedSet = 1";
+    if (m_field == FieldIsMusicConcert)
+      return negate + "idAlbum IN (SELECT DISTINCT idAlbum FROM song WHERE LOWER(song.strFileName) "
+                      "LIKE '%.mkv' OR LOWER(song.strFileName) LIKE '%.mp4')";
   }
   return "";
 }
@@ -985,6 +995,18 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
       query = negate +
               " EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " + GetField(FieldId, strType) +
               " AND song.strDiscSubtitle" + parameter + ")";
+    else if (m_field == FieldAlbumCodec)
+      query = negate + 
+              " EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " + GetField(FieldId, strType) +
+              " AND song.strCodec " + parameter + ")";
+    else if (m_field == FieldBitsPerSample)
+      query = negate +
+              " EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " + GetField(FieldId, strType) +
+              " AND song.iBitsPerSample " + parameter + ")";
+    else if (m_field == FieldNoOfChannels)
+      query = negate +
+              "EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " + GetField(FieldId, strType) +
+              " AND song.iChannels " + parameter + ")";
     else if (m_field == FieldYear || m_field == FieldOrigYear)
     {
       std::string field;

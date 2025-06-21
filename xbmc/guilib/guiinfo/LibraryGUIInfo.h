@@ -44,6 +44,7 @@ private:
   mutable int m_libraryHasSingles;
   mutable int m_libraryHasCompilations;
   mutable int m_libraryHasBoxsets;
+  mutable int m_libraryHasMusicConcerts;
 
   //Count of artists in music library contributing to song by role e.g. composers, conductors etc.
   //For checking visibility of custom nodes for a role.
