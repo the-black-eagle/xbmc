@@ -553,6 +553,8 @@ public:
 
   int GetSinglesCount();
 
+  int GetConcertsCount();
+
   int GetArtistCountForRole(int role);
   int GetArtistCountForRole(const std::string& strRole);
 
