@@ -549,6 +549,7 @@ public:
 
   int GetArtistCountForRole(int role) const;
   int GetArtistCountForRole(const std::string& strRole) const;
+  int GetConcertsCount();
 
   /*! \brief Increment the playcount of an item
    Increments the playcount and updates the last played date
