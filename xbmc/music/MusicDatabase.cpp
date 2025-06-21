@@ -11262,8 +11262,8 @@ int CMusicDatabase::GetArtistCountForRole(const std::string& strRole) const
 
 int CMusicDatabase::GetConcertsCount()
 {
-  std::string strSQL = "SELECT COUNT (DISTINCT idPath) FROM path WHERE LOWER(path.strPath) LIKE "
-                      "'%.mkv/' OR LOWER(path.strPath) LIKE '%.mp4/'";
+  std::string strSQL = "SELECT COUNT (DISTINCT idAlbum) FROM song WHERE LOWER(song.strFileName) "
+                      "LIKE '%.mkv' OR LOWER(song.strFileName) LIKE '%.mp4'";
   return GetSingleValueInt(strSQL);
 }
 
