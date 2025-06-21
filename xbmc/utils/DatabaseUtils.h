@@ -155,6 +155,7 @@ typedef enum
   FieldHasVideoExtras,
   FieldAlbumCodec,
   FieldBitsPerSample,
+  FieldIsMusicConcert,
   FieldMax
 } Field;
 

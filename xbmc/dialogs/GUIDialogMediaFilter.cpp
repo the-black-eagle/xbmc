@@ -120,6 +120,7 @@ static const CGUIDialogMediaFilter::Filter filterList[] = {
   { "albums",       FieldCompilation,   204,    SettingType::Boolean, "toggle", "",         CDatabaseQueryRule::OPERATOR_FALSE },
   { "albums",       FieldIsBoxset,      38074,  SettingType::Boolean, "toggle", "",         CDatabaseQueryRule::OPERATOR_FALSE },
   { "albums",       FieldOrigYear,      38078,  SettingType::String,  "edit",   "string",   CDatabaseQueryRule::OPERATOR_CONTAINS },
+  { "albums",       FieldIsMusicConcert,21486,  SettingType::Boolean, "toggle", "",         CDatabaseQueryRule::OPERATOR_FALSE},
 
   { "songs",        FieldTitle,         556,    SettingType::String,  "edit",   "string",   CDatabaseQueryRule::OPERATOR_CONTAINS },
   { "songs",        FieldAlbum,         558,    SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
