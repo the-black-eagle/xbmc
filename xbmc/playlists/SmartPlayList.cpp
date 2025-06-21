@@ -145,7 +145,10 @@ static const auto fields = std::array{
   TranslateField{ "hasversions",       Field::HAS_VIDEO_VERSIONS,         BOOLEAN_FIELD,  nullptr,                              false, 20475 },
   TranslateField{ "hasextras",         Field::HAS_VIDEO_EXTRAS,           BOOLEAN_FIELD,  nullptr,                              false, 20476 },
   TranslateField{ "hdrdetail",         Field::HDR_DETAIL,                 TEXTIN_FIELD,   nullptr,                              false, 20478 },
-=======
+  TranslateField{ "albumcodec",        Field::ALBUM_CODEC,                TEXT_FIELD,     nullptr,                              true,  21446 },
+  TranslateField{ "bitspersample",     Field::BITS_PER_SAMPLE,            TEXT_FIELD,     nullptr,                              true,  612 },
+  TranslateField{ "ismusicconcert",    Field::IS_MUSIC_CONCERT,           BOOLEAN_FIELD,  nullptr,                              false, 21486},
+
 static const translateField fields[] = {
   { "none",              FieldNone,                    CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 false, 231 },
   { "filename",          FieldFilename,                CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 false, 561 },
@@ -233,9 +236,7 @@ static const translateField fields[] = {
   { "hdrtype",           FieldHdrType,                 CDatabaseQueryRule::TEXTIN_FIELD,   NULL,                                 false, 20474 },
   { "hasversions",       FieldHasVideoVersions,        CDatabaseQueryRule::BOOLEAN_FIELD,  NULL,                                 false, 20475 },
   { "hasextras",         FieldHasVideoExtras,          CDatabaseQueryRule::BOOLEAN_FIELD,  NULL,                                 false, 20476 },
-  { "albumcodec",        FieldAlbumCodec,              CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 true,  21446 },
-  { "bitspersample",     FieldBitsPerSample,           CDatabaseQueryRule::TEXT_FIELD,     NULL,                                 true,  612 },
->>>>>>> 5f852b1f2d ([MUSIC] Extend smartplaylists to use codec/samplerate etc for albums not just songs)
+ 
 };
 // clang-format on
 
@@ -490,7 +491,11 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
     fields.push_back(FieldDateAdded);
     fields.push_back(FieldDateModified);
     fields.push_back(FieldDateNew);
+<<<<<<< HEAD
 >>>>>>> 5f852b1f2d ([MUSIC] Extend smartplaylists to use codec/samplerate etc for albums not just songs)
+=======
+    fields.push_back(FieldIsMusicConcert);
+>>>>>>> c44ce2adf6 (Add Music Concerts xml node, allow filtering of music concerts and add to smartplaylists)
   }
   else if (type == "artists")
   {
@@ -865,6 +870,9 @@ std::string CSmartPlaylistRule::GetBooleanQuery(const std::string &negate, const
       return negate + GetField(m_field, strType);
     if (m_field == static_cast<int>(Field::IS_BOXSET))
       return negate + "albumview.bBoxedSet = 1";
+    if (m_field == FieldIsMusicConcert)
+      return negate + "idAlbum IN (SELECT DISTINCT idAlbum FROM song WHERE LOWER(song.strFileName) "
+                      "LIKE '%.mkv' OR LOWER(song.strFileName) LIKE '%.mp4')";
   }
   return "";
 }

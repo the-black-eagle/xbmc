@@ -155,8 +155,8 @@ enum class Field
   HAS_VIDEO_EXTRAS,
   ALBUM_CODEC,
   BITS_PER_SAMPLE,
+  IS_MUSIC_CONCERT,
   MAX
-
 };
 
 using Fields = std::set<Field>;
