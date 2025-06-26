@@ -15193,7 +15193,13 @@ msgctxt "#21485"
 msgid "Supported file extensions and media types"
 msgstr ""
 
-#empty strings from id 21486 to 21601
+#: xbmc/dialogs/GUIDialogMediaFilter.cpp
+#: xbmc/playlist/SmartPlayList.cpp
+msgctxt "#21486"
+msgid "Music concerts"
+msgstr ""
+
+#empty strings from id 21487 to 21601
 
 #: xbmc/Util.cpp
 msgctxt "#21602"

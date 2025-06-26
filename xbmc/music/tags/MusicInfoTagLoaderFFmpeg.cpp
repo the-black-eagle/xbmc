@@ -6,23 +6,25 @@
  *  See LICENSES/README.md for more information.
  */
 
-#include "MusicInfoTagLoaderFFmpeg.h"
-
 #include "MusicInfoTag.h"
+#include "MusicInfoTagLoaderFFmpeg.h"
 #include "cores/FFmpeg.h"
 #include "filesystem/File.h"
+#include "music/MusicEmbeddedCoverLoaderFFmpeg.h"
+#include "settings/AdvancedSettings.h"
+#include "settings/SettingsComponent.h"
 #include "utils/StringUtils.h"
 
 using namespace MUSIC_INFO;
 using namespace XFILE;
 
-static int vfs_file_read(void *h, uint8_t* buf, int size)
+static int vfs_file_read(void* h, uint8_t* buf, int size)
 {
   CFile* pFile = static_cast<CFile*>(h);
   return pFile->Read(buf, size);
 }
 
-static int64_t vfs_file_seek(void *h, int64_t pos, int whence)
+static int64_t vfs_file_seek(void* h, int64_t pos, int whence)
 {
   CFile* pFile = static_cast<CFile*>(h);
   if (whence == AVSEEK_SIZE)
@@ -35,7 +37,9 @@ CMusicInfoTagLoaderFFmpeg::CMusicInfoTagLoaderFFmpeg(void) = default;
 
 CMusicInfoTagLoaderFFmpeg::~CMusicInfoTagLoaderFFmpeg() = default;
 
-bool CMusicInfoTagLoaderFFmpeg::Load(const std::string& strFileName, CMusicInfoTag& tag, EmbeddedArt *art)
+bool CMusicInfoTagLoaderFFmpeg::Load(const std::string& strFileName,
+                                     CMusicInfoTag& tag,
+                                     EmbeddedArt* art)
 {
   tag.SetLoaded(false);
 
@@ -48,9 +52,8 @@ bool CMusicInfoTagLoaderFFmpeg::Load(const std::string& strFileName, CMusicInfoT
   if (blockSize > 1)
     bufferSize = blockSize;
   uint8_t* buffer = (uint8_t*)av_malloc(bufferSize);
-  AVIOContext* ioctx = avio_alloc_context(buffer, bufferSize, 0,
-                                          &file, vfs_file_read, NULL,
-                                          vfs_file_seek);
+  AVIOContext* ioctx =
+      avio_alloc_context(buffer, bufferSize, 0, &file, vfs_file_read, NULL, vfs_file_seek);
 
   AVFormatContext* fctx = avformat_alloc_context();
   fctx->pb = ioctx;
@@ -85,77 +88,141 @@ bool CMusicInfoTagLoaderFFmpeg::Load(const std::string& strFileName, CMusicInfoT
      Any changes to ID3v2 tag processing in CTagLoaderTagLib need to be
      repeated here
   */
-  auto&& ParseTag = [&tag](AVDictionaryEntry* avtag)
-                          {
-                            if (StringUtils::CompareNoCase(avtag->key, "album") == 0)
-                              tag.SetAlbum(avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "artist") == 0)
-                              tag.SetArtist(avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "album_artist") == 0 ||
-                                     StringUtils::CompareNoCase(avtag->key, "album artist") == 0)
-                              tag.SetAlbumArtist(avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "title") == 0)
-                              tag.SetTitle(avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "genre") == 0)
-                              tag.SetGenre(avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "part_number") == 0 ||
-                                     StringUtils::CompareNoCase(avtag->key, "track") == 0)
-                              tag.SetTrackNumber(
-                                  static_cast<int>(strtol(avtag->value, nullptr, 10)));
-                            else if (StringUtils::CompareNoCase(avtag->key, "disc") == 0)
-                              tag.SetDiscNumber(
-                                  static_cast<int>(strtol(avtag->value, nullptr, 10)));
-                            else if (StringUtils::CompareNoCase(avtag->key, "date") == 0)
-                              tag.SetReleaseDate(avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "compilation") == 0)
-                              tag.SetCompilation((strtol(avtag->value, nullptr, 10) == 0) ? false : true);
-                            else if (StringUtils::CompareNoCase(avtag->key, "encoded_by") == 0) {}
-                            else if (StringUtils::CompareNoCase(avtag->key, "composer") == 0)
-                              tag.AddArtistRole("Composer", avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "performer") == 0) // Conductor or TPE3 tag
-                              tag.AddArtistRole("Conductor", avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "TEXT") == 0)
-                              tag.AddArtistRole("Lyricist", avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "TPE4") == 0)
-                              tag.AddArtistRole("Remixer", avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "LABEL") == 0 ||
-                                     StringUtils::CompareNoCase(avtag->key, "TPUB") == 0)
-                              tag.SetRecordLabel(avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "copyright") == 0 ||
-                                     StringUtils::CompareNoCase(avtag->key, "TCOP") == 0) {} // Copyright message
-                            else if (StringUtils::CompareNoCase(avtag->key, "TDRC") == 0)
-                              tag.SetReleaseDate(avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "TDOR") == 0  ||
-                                     StringUtils::CompareNoCase(avtag->key, "TORY") == 0)
-                              tag.SetOriginalDate(avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key , "TDAT") == 0)
-                              tag.AddReleaseDate(avtag->value, true); // MMDD part
-                            else if (StringUtils::CompareNoCase(avtag->key, "TYER") == 0)
-                              tag.AddReleaseDate(avtag->value); // YYYY part
-                            else if (StringUtils::CompareNoCase(avtag->key, "TBPM") == 0)
-                              tag.SetBPM(static_cast<int>(strtol(avtag->value, nullptr, 10)));
-                            else if (StringUtils::CompareNoCase(avtag->key, "TDTG") == 0) {} // Tagging time
-                            else if (StringUtils::CompareNoCase(avtag->key, "language") == 0 ||
-                                     StringUtils::CompareNoCase(avtag->key, "TLAN") == 0) {} // Languages
-                            else if (StringUtils::CompareNoCase(avtag->key, "mood") == 0 ||
-                                     StringUtils::CompareNoCase(avtag->key, "TMOO") == 0)
-                              tag.SetMood(avtag->value);
-                            else if (StringUtils::CompareNoCase(avtag->key, "artist-sort") == 0 ||
-                                     StringUtils::CompareNoCase(avtag->key, "TSOP") == 0) {}
-                            else if (StringUtils::CompareNoCase(avtag->key, "TSO2") == 0) {}  // Album artist sort
-                            else if (StringUtils::CompareNoCase(avtag->key, "TSOC") == 0) {}  // composer sort
-                            else if (StringUtils::CompareNoCase(avtag->key, "TSST") == 0)
-                              tag.SetDiscSubtitle(avtag->value);
-                          };
+  std::vector<std::string> separators{" feat. ", " ft. ", " Feat. ", " Ft. ",  ";", ":",
+                                      "|",       "#",     "/",       " with ", "&"};
+  const std::string musicsep =
+      CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator;
+  if (musicsep.find_first_of(";/,&|#") == std::string::npos)
+    separators.push_back(musicsep);
+  std::vector<std::string> tagdata;
+  std::string value;
 
-  AVDictionaryEntry* avtag=nullptr;
+  auto&& ParseTag = [&](AVDictionaryEntry* avtag)
+  {
+      std::string key = StringUtils::ToUpper(avtag->key);
+      std::string value = avtag->value;
+    if (key == "ALBUM")
+      tag.SetAlbum(value);
+    else if (key == "ARTIST")
+      tag.SetArtist(value);
+    else if (key == "ALBUM_ARTIST" || key == "ALBUM ARTIST")
+      tag.SetAlbumArtist(value);
+    else if (key ==  "TITLE")
+      tag.SetTitle(value);
+    else if (key ==  "GENRE")
+      tag.SetGenre(value);
+    else if (key ==  "PART_NUMBER" || key ==  "TRACK")
+      tag.SetTrackNumber(std::stoi(value));
+    else if (key ==  "DISC")
+      tag.SetDiscNumber(std::stoi(value));
+    else if (key ==  "DATE")
+      tag.SetReleaseDate(value);
+    else if (key ==  "COMPILATION" || key == "TCMP")
+      tag.SetCompilation((std::stoi(value)) ? false : true);
+    else if (key ==  "ENCODED_BY")
+    {
+    }
+    else if (key ==  "COMPOSER")
+      tag.AddArtistRole("Composer", value);
+    else if (key ==  "PERFORMER") // Conductor or TPE3 tag
+      tag.AddArtistRole("Conductor", value);
+    else if (key ==  "TEXT")
+      tag.AddArtistRole("Lyricist", value);
+    else if (key ==  "TPE4")
+      tag.AddArtistRole("Remixer", value);
+    else if (key ==  "LABEL" || key ==  "TPUB")
+      tag.SetRecordLabel(value);
+    else if (key ==  "COPYRIGHT" || key ==  "TCOP")
+    {
+    } // Copyright message
+    else if (key ==  "TDRC")
+      tag.SetReleaseDate(value);
+    else if (key ==  "TDOR" || key ==  "TORY")
+      tag.SetOriginalDate(value);
+    else if (key ==  "TDAT")
+      tag.AddReleaseDate(value, true); // MMDD part
+    else if (key ==  "TYER")
+      tag.AddReleaseDate(value); // YYYY part
+    else if (key ==  "TBPM")
+      tag.SetBPM(std::stoi(value));
+    else if (key ==  "TDTG")
+    {
+    } // Tagging time
+    else if (key ==  "LANGUAGE" || key ==  "TLAN")
+    {
+    } // Languages
+    else if (key ==  "MOOD" || key ==  "TMOO")
+      tag.SetMood(value);
+    else if (key ==  "ARTIST-SORT" || key ==  "TSOP" || key == "ARTISTSORT" || key == "ARTIST SORT")
+      tag.SetArtistSort(StringUtils::Join(StringUtils::Split(value, separators), musicsep));
+    else if (key ==  "TSO2" || key == "ALBUMARTISTSORT" || key == "ALBUM ARTIST SORT")
+      tag.SetAlbumArtistSort(StringUtils::Join(StringUtils::Split(value, separators), musicsep));
+    else if (key ==  "TSOC" || key == "COMPOSERSORT" || key == "COMPOSER SORT")
+      tag.SetComposerSort(StringUtils::Join(StringUtils::Split(value, separators), musicsep));
+    else if (key ==  "TSST")
+      tag.SetDiscSubtitle(value);
+    // the above values are all id3v2.3/4 frames, we could also have text frames
+    else if (key ==  "MUSICBRAINZ ARTIST ID")
+      tag.SetMusicBrainzArtistID(StringUtils::Split(value, separators));
+    else if (key ==  "MUSICBRAINZ ALBUM ID")
+      tag.SetMusicBrainzAlbumID(value);
+    else if (key ==  "MUSICBRAINZ RELEASEGROUP ID")
+      tag.SetMusicBrainzReleaseGroupID(value);
+    else if (key ==  "MUSICBRAINZ ALBUM ARTIST ID")
+      tag.SetMusicBrainzAlbumArtistID(StringUtils::Split(value, separators));
+    else if (key ==  "MUSICBRAINZ ALBUM ARTIST")
+      tag.SetAlbumArtist(value);
+    else if (key ==  "MUSICBRAINZ ALBUM TYPE")
+      tag.SetMusicBrainzReleaseType(value);
+    else if (key ==  "MUSICBRAINZ ALBUM STATUS")
+      tag.SetAlbumReleaseStatus(value);
+    else if (key ==  "ALBUM ARTIST" || key ==  "ALBUMARTIST")
+      tag.SetAlbumArtist(value);
+    else if (key ==  "ALBUM ARTIST SORT" || key ==  "ALBUMARTISTSORT")
+      tag.SetAlbumArtistSort(value);
+    else if (key ==  "ARTISTS")
+      tag.SetMusicBrainzArtistHints(StringUtils::Split(value, separators));
+    else if (key ==  "ALBUMARTISTS" || key ==  "ALBUM ARTISTS")
+      tag.SetMusicBrainzAlbumArtistHints(StringUtils::Split(value, separators));
+    else if (key ==  "WRITER")
+      tag.AddArtistRole("Writer", StringUtils::Split(value, separators));
+    else if (key ==  "PERFORMER")
+    {
+      tagdata = StringUtils::Split(avtag->key, separators);
+      AddRole(tagdata, separators, tag);
+    }
+    else if (key ==  "ARRANGER")
+    {
+      tagdata = StringUtils::Split(avtag->key, separators);
+      AddRole(tagdata, separators, tag);
+    }
+    else if (key ==  "LYRICIST")
+      tag.AddArtistRole("Lyricist", StringUtils::Split(value, separators));
+    else if (key ==  "COMPOSER")
+      tag.AddArtistRole("Composer", StringUtils::Split(value, separators));
+    else if (key ==  "CONDUCTOR")
+      tag.AddArtistRole("Conductor", StringUtils::Split(value, separators));
+    else if (key ==  "ENGINEER")
+      tag.AddArtistRole("Engineer", StringUtils::Split(value, separators));
+  };
+
+  AVDictionaryEntry* avtag = nullptr;
   while ((avtag = av_dict_get(fctx->metadata, "", avtag, AV_DICT_IGNORE_SUFFIX)))
     ParseTag(avtag);
 
-  const AVStream* st = fctx->streams[0];
-  if (st)
-    while ((avtag = av_dict_get(st->metadata, "", avtag, AV_DICT_IGNORE_SUFFIX)))
-      ParseTag(avtag);
+  // Look for any embedded cover art
+  CMusicEmbeddedCoverLoaderFFmpeg::GetEmbeddedCover(fctx, tag, art);
+  bool haveFFmpegInfo = false;
+  musicCodecInfo codec_info;
+  haveFFmpegInfo = CMusicCodecInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
+  if (haveFFmpegInfo) // use data from FFmpeg if taglib data missing or not accurate
+  {
+    tag.SetBitRate(codec_info.bitRate);
+    tag.SetSampleRate(codec_info.sampleRate);
+    tag.SetBitsPerSample(codec_info.bitsPerSample);
+    tag.SetCodec(codec_info.codecName);
+    tag.SetNoOfChannels(codec_info.channels);
+  }
 
   if (!tag.GetTitle().empty())
     tag.SetLoaded(true);
@@ -165,4 +232,23 @@ bool CMusicInfoTagLoaderFFmpeg::Load(const std::string& strFileName, CMusicInfoT
   av_free(ioctx);
 
   return true;
+}
+
+void CMusicInfoTagLoaderFFmpeg::AddRole(const std::vector<std::string>& data,
+                                        const std::vector<std::string>& separators,
+                                        MUSIC_INFO::CMusicInfoTag& musictag)
+{
+  if (!data.empty())
+  {
+    for (size_t i = 0; i + 1 < data.size(); i += 2)
+    {
+      std::vector<std::string> roles = StringUtils::Split(data[i], separators);
+      for (auto& role : roles)
+      {
+        StringUtils::Trim(role);
+        StringUtils::ToCapitalize(role);
+        musictag.AddArtistRole(role, StringUtils::Split(data[i + 1], separators));
+      }
+    }
+  }
 }

@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<node order="35" type="filter" visible="Library.HasContent(MusicConcerts)">
+    <label>21486</label>
+    <content>songs</content>
+    <order direction="ascending">album</order>
+     <rule field="filename" operator="endswith">
+        <value>mkv</value>
+        <value>mp4</value>
+    </rule>
+    <group>albums</group>
+</node>
