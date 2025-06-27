@@ -326,7 +326,10 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         int BitRate = tag->GetBitRate();
         if (BitRate > 0)
         {
-          value = std::to_string(BitRate);
+          if (BitRate > 100000)
+            value = StringUtils::Format("{:.0f}", static_cast<double>(BitRate) / 1000.0);
+          else
+            value = std::to_string(BitRate);
           return true;
         }
         break;
@@ -351,6 +354,21 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
         }
         break;
       }
+      case LISTITEM_MUSIC_BITSPERSAMPLE:
+      {
+        int bitsPerSample = tag->GetBitsPerSample();
+        if (bitsPerSample > 0)
+        {
+          value = std::to_string(bitsPerSample);
+          return true;
+        }
+        break;
+      }
+      case LISTITEM_MUSIC_CODEC:
+      case MUSICPLAYER_CODEC:
+        value = tag->GetCodec();
+        return true;
+
       case LISTITEM_ALBUMSTATUS:
         value = tag->GetAlbumReleaseStatus();
         return true;
@@ -492,9 +510,8 @@ bool CMusicGUIInfo::GetLabel(std::string& value, const CFileItem *item, int cont
       }
       break;
     }
-    case MUSICPLAYER_CODEC:
-      value = m_audioInfo.codecName;
-      return true;
+    default:
+      break;
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
