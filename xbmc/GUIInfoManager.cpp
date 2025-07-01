@@ -844,7 +844,7 @@ constexpr std::array<InfoMap, 7> integer_bools = {{
 ///   }
 // clang-format off
 
-constexpr std::array<InfoMap, 59> player_labels = {{
+constexpr std::array<InfoMap, 60> player_labels = {{
     {"hasmedia",              PLAYER_HAS_MEDIA},
     {"hasaudio",              PLAYER_HAS_AUDIO},
     {"hasvideo",              PLAYER_HAS_VIDEO},
@@ -4210,9 +4210,9 @@ constexpr std::array<InfoMap, 85> videoplayer = {{
     {"episodepart",           VIDEOPLAYER_EPISODEPART},
     {"mediaproviders",        VIDEOPLAYER_MEDIAPROVIDERS},
     {"titleextrainfo",        VIDEOPLAYER_TITLE_EXTRAINFO},
-    {"chapterlength",    VIDEOPLAYER_CHAPTERLENGTH},
-    {"chapterelapsed",   PLAYER_CHAPTER_ELAPSED},
-    {"ismusicvideo",     VIDEOPLAYER_IS_MUSIC_VIDEO},
+    {"chapterlength",         VIDEOPLAYER_CHAPTERLENGTH},
+    {"chapterelapsed",        PLAYER_CHAPTER_ELAPSED},
+    {"ismusicvideo",          VIDEOPLAYER_IS_MUSIC_VIDEO},
 }};
 
 // clang-format on
@@ -11248,8 +11248,6 @@ int CGUIInfoManager::TranslateListItem(const Property& cat, const Property& prop
   {
     for (const auto& listitem_label : listitem_labels) // these ones don't have or need an id
     {
-      if (nullptr == listitem_label.str)
-        continue;
       if (prop.Name() == listitem_label.str)
       {
         ret = listitem_label.val;
