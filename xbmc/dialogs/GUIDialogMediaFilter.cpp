@@ -107,7 +107,6 @@ static const CGUIDialogMediaFilter::Filter filterList[] = {
   {     "artists",      Field::DISBANDED, 21896,  SettingType::String,   "edit",  "string", OPERATOR_CONTAINS },
   {     "artists",           Field::DIED, 21897,  SettingType::String,   "edit",  "string", OPERATOR_CONTAINS },
 
-
   {     "albums",       Field::ALBUM,           556,    SettingType::String,  "edit",   "string",   OPERATOR_CONTAINS },
 //  {   "albums",     Field::ARTIST,          557,    SettingType::List,    "list",   "string",   OPERATOR_EQUALS },
   {     "albums",       Field::DISC_TITLE,      38076,  SettingType::String,  "edit",   "string",   OPERATOR_CONTAINS },
