@@ -1373,13 +1373,8 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
     mp4 = mp4File->tag();
     bitsPerSample = mp4File->audioProperties()->bitsPerSample();
     // taglib only recognizes two codecs for mp4 files although mp4 is a container and could contain
-    // any audio codec.  If taglib fails to recognize it, use FFmpeg to detect the codec
-    if (mp4File->audioProperties()->codec() != 0)
-      codec = (mp4File->audioProperties()->codec() == 1)
-                  ? CodecToString(MusicCodecType::CODEC_TYPE_AAC)
-                  : CodecToString(MusicCodecType::CODEC_TYPE_ALAC);
-    else
-      haveFFmpegInfo = CMusicCodecInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
+    // any audio codec. So use FFmpeg to detect the codec
+    haveFFmpegInfo = CMusicCodecInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
   }
   else if (mpegFile)
   {
