@@ -11,6 +11,7 @@
 #include "FileItem.h"
 #include "ServiceBroker.h"
 #include "URL.h"
+#include "music/tags/MusicInfoTag.h"
 #include "settings/Settings.h"
 #include "settings/SettingsComponent.h"
 #include "utils/RegExp.h"
@@ -110,7 +111,7 @@ void CPlayerSelectionRule::GetPlayers(const CFileItem& item, std::vector<std::st
 {
   CLog::Log(LOGDEBUG, "CPlayerSelectionRule::GetPlayers: considering rule: {}", m_name);
 
-  if (m_bStreamDetails && !item.HasVideoInfoTag())
+  if (m_bStreamDetails && (!item.HasVideoInfoTag() && !item.HasMusicInfoTag()))
     return;
   if (m_tAudio >= 0 && (m_tAudio > 0) != item.IsAudio())
     return;
@@ -134,7 +135,7 @@ void CPlayerSelectionRule::GetPlayers(const CFileItem& item, std::vector<std::st
 
   CRegExp regExp(false, CRegExp::autoUtf8);
 
-  if (m_bStreamDetails)
+  if (m_bStreamDetails && item.HasVideoInfoTag())
   {
     if (!item.GetVideoInfoTag()->HasStreamDetails())
     {
@@ -165,6 +166,16 @@ void CPlayerSelectionRule::GetPlayers(const CFileItem& item, std::vector<std::st
 
     if (CompileRegExp(m_videoAspect, regExp) &&
         !MatchesRegExp(CStreamDetails::VideoAspectToAspectDescription(streamDetails.GetVideoAspect()),  regExp))
+      return;
+  }
+  else if (m_bStreamDetails && item.HasMusicInfoTag())
+  {
+    if (CompileRegExp(m_audioChannels, regExp) &&
+        !MatchesRegExp(std::to_string(item.GetMusicInfoTag()->GetNoOfChannels()), regExp))
+      return;
+
+    if (CompileRegExp(m_audioCodec, regExp) &&
+        !MatchesRegExp(item.GetMusicInfoTag()->GetCodec(), regExp))
       return;
   }
 
