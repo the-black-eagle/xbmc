@@ -109,8 +109,9 @@ static const CGUIDialogMediaFilter::Filter filterList[] = {
   { "artists",      FieldDisbanded,   21896,    SettingType::String,  "edit",   "string",   OPERATOR_CONTAINS },
   { "artists",      FieldDied,        21897,    SettingType::String,  "edit",   "string",   OPERATOR_CONTAINS },
 
-  { "albums",       FieldAlbum,         556,    SettingType::String,  "edit",   "string",   OPERATOR_CONTAINS },
-//  { "albums",       FieldArtist,        557,    SettingType::List,    "list",   "string",   OPERATOR_EQUALS },
+
+    { "albums",       FieldAlbum,         556,    SettingType::String,  "edit",   "string",   OPERATOR_CONTAINS },
+//  { "albums",       FieldArtist,        557,    SettingType::List,    "list",   "string",   CDatabaseQueryRule::OPERATOR_EQUALS },
   { "albums",       FieldDiscTitle,     38076,  SettingType::String,  "edit",   "string",   OPERATOR_CONTAINS },
   { "albums",       FieldAlbumArtist,   566,    SettingType::List,    "list",   "string",   OPERATOR_EQUALS },
   { "albums",       FieldSource,      39030,    SettingType::List,    "list",   "string",   OPERATOR_EQUALS },
@@ -123,6 +124,7 @@ static const CGUIDialogMediaFilter::Filter filterList[] = {
   { "albums",       FieldCompilation,   204,    SettingType::Boolean, "toggle", "",         OPERATOR_FALSE },
   { "albums",       FieldIsBoxset,      38074,  SettingType::Boolean, "toggle", "",         OPERATOR_FALSE },
   { "albums",       FieldOrigYear,      38078,  SettingType::String,  "edit",   "string",   OPERATOR_CONTAINS },
+  { "albums",       FieldIsMusicConcert,21486,  SettingType::Boolean, "toggle", "",         OPERATOR_FALSE},
 
   { "songs",        FieldTitle,         556,    SettingType::String,  "edit",   "string",   OPERATOR_CONTAINS },
   { "songs",        FieldAlbum,         558,    SettingType::List,    "list",   "string",   OPERATOR_EQUALS },

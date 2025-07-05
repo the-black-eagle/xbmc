@@ -152,6 +152,9 @@ enum Field
   FieldUserPreference,
   FieldHasVideoVersions,
   FieldHasVideoExtras,
+  FieldAlbumCodec,
+  FieldBitsPerSample,
+  FieldIsMusicConcert,
   FieldMax
 };
 

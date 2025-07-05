@@ -57,6 +57,29 @@
 #include <taglib/wavpackfile.h>
 #include <taglib/xiphcomment.h>
 #include <taglib/xmfile.h>
+#include <taglib/mp4tag.h>
+
+#include <taglib/textidentificationframe.h>
+#include <taglib/uniquefileidentifierframe.h>
+#include <taglib/popularimeterframe.h>
+#include <taglib/commentsframe.h>
+#include <taglib/unsynchronizedlyricsframe.h>
+#include <taglib/attachedpictureframe.h>
+
+#include <taglib/tstring.h>
+#include <taglib/tpropertymap.h>
+
+#include "TagLibVFSStream.h"
+#include "MusicInfoTag.h"
+#include "MusicCodecInfoFFmpeg.h"
+#include "ReplayGain.h"
+#include "utils/RegExp.h"
+#include "utils/URIUtils.h"
+#include "utils/log.h"
+#include "utils/StringUtils.h"
+#include "ServiceBroker.h"
+#include "settings/AdvancedSettings.h"
+#include "settings/SettingsComponent.h"
 
 #if TAGLIB_MAJOR_VERSION <= 1 && TAGLIB_MINOR_VERSION < 11
 #include "utils/Base64.h"
@@ -1317,54 +1340,150 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   Ogg::XiphComment *xiph = nullptr;
   Tag *genericTag = nullptr;
 
-  if (apeFile)
-    ape = apeFile->APETag(false);
-  else if (asfFile)
-    asf = asfFile->tag();
-  else if (flacFile)
-  {
-    xiph = flacFile->xiphComment(false);
-    id3v2 = flacFile->ID3v2Tag(false);
-  }
-  else if (mp4File)
-    mp4 = mp4File->tag();
-  else if (mpegFile)
-  {
-    id3v1 = mpegFile->ID3v1Tag(false);
-    id3v2 = mpegFile->ID3v2Tag(false);
-    ape = mpegFile->APETag(false);
-  }
-  else if (oggFlacFile)
-    xiph = oggFlacFile->tag();
-  else if (oggVorbisFile)
-    xiph = oggVorbisFile->tag();
-  else if (oggOpusFile)
-    xiph = oggOpusFile->tag();
-  else if (ttaFile)
-    id3v2 = ttaFile->ID3v2Tag(false);
-  else if (aiffFile)
-    id3v2 = aiffFile->tag();
-  else if (wavFile)
-    id3v2 = wavFile->ID3v2Tag();
-  else if (wvFile)
-    ape = wvFile->APETag(false);
-  else if (mpcFile)
-    ape = mpcFile->APETag(false);
-  else    // This is a catch all to get generic information for other files types (s3m, xm, it, mod, etc)
-    genericTag = file->tag();
+  // bitspersample is file specific and not always available through file->audioProperties(). EG,
+  // mp3 files do not have bitspersample as this is determined by the player whilst decoding so grab
+  // it separately for those files that do contain it.
 
-  if (file->audioProperties())
+  try
   {
-#if (TAGLIB_MAJOR_VERSION >= 2)
-    tag.SetDuration(file->audioProperties()->lengthInSeconds());
-#else
-    tag.SetDuration(file->audioProperties()->length());
-#endif
-    tag.SetBitRate(file->audioProperties()->bitrate());
-    tag.SetNoOfChannels(file->audioProperties()->channels());
-    tag.SetSampleRate(file->audioProperties()->sampleRate());
+    unsigned int bitsPerSample = 0;
+    int mpegLayer = 0;
+    musicCodecInfo codec_info;
+    std::string codec;
+    bool haveFFmpegInfo = false;
+  
+    if (apeFile)
+    {
+      ape = apeFile->APETag(false);
+      if (apeFile->audioProperties())
+        bitsPerSample = apeFile->audioProperties()->bitsPerSample();
+      codec = CodecToString(MusicCodecType::CODEC_TYPE_APE);
+    }
+    else if (asfFile)
+    {
+      asf = asfFile->tag();
+      if (asfFile->audioProperties())
+        bitsPerSample = asfFile->audioProperties()->bitsPerSample();
+      codec = asfFile->audioProperties()->codecName().to8Bit(true);
+    }
+    else if (flacFile)
+    {
+      xiph = flacFile->xiphComment(false);
+      if (flacFile->audioProperties())
+        bitsPerSample = flacFile->audioProperties()->bitsPerSample();
+      id3v2 = flacFile->ID3v2Tag(false);
+      codec = CodecToString(MusicCodecType::CODEC_TYPE_FLAC);
+    }
+    else if (mp4File)
+    {
+      mp4 = mp4File->tag();
+      if (mp4File->audioProperties())
+      {
+        bitsPerSample = mp4File->audioProperties()->bitsPerSample();
+      //taglib only recognizes two codecs for mp4 files although mp4 is a container and could contain
+      //any audio codec.  If taglib fails to recognize it, use FFmpeg to detect the codec
+        if (mp4File->audioProperties()->codec() != 0)
+          codec = (mp4File->audioProperties()->codec() == 1)
+                    ? CodecToString(MusicCodecType::CODEC_TYPE_AAC)
+                    : CodecToString(MusicCodecType::CODEC_TYPE_ALAC);
+        else
+          haveFFmpegInfo = CMusicCodecInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
+      }
+    }
+    else if (mpegFile)
+    {
+      id3v1 = mpegFile->ID3v1Tag(false);
+      id3v2 = mpegFile->ID3v2Tag(false);
+      ape = mpegFile->APETag(false);
+      if (mpegFile->audioProperties())
+      {
+        mpegLayer = mpegFile->audioProperties()->layer();
+        codec = CodecToString(MusicCodecType::CODEC_TYPE_MPEG) + std::to_string(mpegLayer);
+      }
+    }
+    else if (oggFlacFile)
+    {
+      xiph = oggFlacFile->tag();
+      if (oggFlacFile->audioProperties())
+        bitsPerSample = oggFlacFile->audioProperties()->bitsPerSample();
+      codec = CodecToString(MusicCodecType::CODEC_TYPE_FLAC);
+    }
+    else if (oggVorbisFile)
+    {
+      xiph = oggVorbisFile->tag();
+      codec = CodecToString(MusicCodecType::CODEC_TYPE_VORBIS);
+    }
+    else if (oggOpusFile)
+    {
+      xiph = oggOpusFile->tag();
+      codec = CodecToString(MusicCodecType::CODEC_TYPE_OPUS);
+    }
+    else if (ttaFile)
+    {
+      id3v2 = ttaFile->ID3v2Tag(false);
+      if (ttaFile->audioProperties())
+        bitsPerSample = ttaFile->audioProperties()->bitsPerSample();
+      codec = CodecToString(MusicCodecType::CODEC_TYPE_TTA);
+    }
+    else if (aiffFile)
+    {
+      id3v2 = aiffFile->tag();
+      if (aiffFile->audioProperties())
+      {
+        bitsPerSample = aiffFile->audioProperties()->bitsPerSample();
+        codec = aiffFile->audioProperties()->compressionName().to8Bit(true);
+      }
+    }
+    else if (wavFile)
+    {
+      id3v2 = wavFile->ID3v2Tag();
+      // taglib doesn't detect the correct codec if the wav file wraps eg DTS as the file will have a
+      // dummy header indicating PCM. Therefore use FFmpeg for wav files so detection doesn't rely on
+      // the header info
+      haveFFmpegInfo = CMusicCodecInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
+    }
+    else if (wvFile)
+    {
+      ape = wvFile->APETag(false);
+      if (wvFile->audioProperties())
+        bitsPerSample = wvFile->audioProperties()->bitsPerSample();
+      codec = CodecToString(MusicCodecType::CODEC_TYPE_WAVPACK);
+    }
+    else if (mpcFile)
+      ape = mpcFile->APETag(false);
+    else    // This is a catch all to get generic information for other files types (s3m, xm, it, mod, etc)
+      genericTag = file->tag();
+  
+    if (file->audioProperties())
+    {
+      tag.SetDuration(file->audioProperties()->length());
+      tag.SetBitRate(file->audioProperties()->bitrate());
+      tag.SetNoOfChannels(file->audioProperties()->channels());
+      tag.SetSampleRate(file->audioProperties()->sampleRate());
+    }
+  
+    if(bitsPerSample)
+      tag.SetBitsPerSample(bitsPerSample);
+    else if (!mpegFile) // skip mp3 files as no bitspersample available but check other filetypes as
+                        // taglib returns the wrong bitrate for at least vorbis files (determined
+                        // locally using taglib data, mediainfo and ffprobe for comparisons)
+      haveFFmpegInfo = CMusicCodecInfoFFmpeg::GetMusicCodecInfo(strFileName, codec_info);
+    if (!codec.empty())
+      tag.SetCodec(codec);
+  
+    if (haveFFmpegInfo) // use data from FFmpeg if taglib data missing or not accurate
+    {
+      tag.SetBitRate(codec_info.bitRate);
+      tag.SetSampleRate(codec_info.sampleRate);
+      tag.SetBitsPerSample(codec_info.bitsPerSample);
+      tag.SetCodec(codec_info.codecName);
+      tag.SetNoOfChannels(codec_info.channels);
+    }
   }
-
+  catch (const std::exception& ex)
+  {
+    CLog::Log(LOGERROR, "Taglib exception: {}", ex.what());
+  }
   if (asf)
     ParseTag(asf, art, tag);
   if (id3v1)
@@ -1392,4 +1511,31 @@ bool CTagLoaderTagLib::Load(const std::string& strFileName, CMusicInfoTag& tag, 
   delete stream;
 
   return true;
+}
+
+std::string CodecToString(const MusicCodecType& codecType)
+{
+  switch(codecType)
+  {
+    case MusicCodecType::CODEC_TYPE_AAC:
+      return "aac";
+    case MusicCodecType::CODEC_TYPE_ALAC:
+      return "alac";
+    case MusicCodecType::CODEC_TYPE_APE:
+      return "ape";
+    case MusicCodecType::CODEC_TYPE_FLAC:
+      return "flac";
+    case MusicCodecType::CODEC_TYPE_MPEG:
+      return "mp"; // layer is added to the return value to make mp2/mp3
+    case MusicCodecType::CODEC_TYPE_OPUS:
+      return "opus";
+    case MusicCodecType::CODEC_TYPE_TTA:
+      return "tta";
+    case MusicCodecType::CODEC_TYPE_VORBIS:
+      return "vorbis";
+    case MusicCodecType::CODEC_TYPE_WAVPACK:
+      return "wavpack";
+    default:
+      return "";
+  }
 }

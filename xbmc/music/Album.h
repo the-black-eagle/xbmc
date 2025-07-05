@@ -179,6 +179,11 @@ public:
   std::string strLastScraped;
   bool bScrapedMBID = false;
   bool bArtistSongMerge = false;
+  std::string strCodec;
+  int iChannels = 0;
+  int iBitrate = 0;
+  int iSampleRate = 0;
+  int iBitsPerSample = 0;
   int iAlbumDuration = 0;
 };
 
