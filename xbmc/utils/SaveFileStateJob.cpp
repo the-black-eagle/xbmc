@@ -291,7 +291,6 @@ void CSaveFileState::DoWork(CFileItem& item,
         else
           musicdatabase.SetResumeBookmarkForAudioBook(
             item, item.GetMusicInfoTag()->GetTrackAndDiscNumber());
->
         musicdatabase.Close();
       }
     }
