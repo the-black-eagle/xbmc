@@ -81,7 +81,9 @@ constexpr uint32_t PLAYER_EDITLIST                   = 69;
 constexpr uint32_t PLAYER_CUTS                       = 70;
 constexpr uint32_t PLAYER_SCENE_MARKERS              = 71;
 constexpr uint32_t PLAYER_HAS_SCENE_MARKERS          = 72;
-// unused id 73 to 80
+constexpr uint32_t PLAYER_CHAPTER_ELAPSED            = 73;
+constexpr uint32_t PLAYER_CHAPTERLENGTH              = 74;
+// unused id 75 to 80
 
 // Keep player infolabels that work with offset and position together
 constexpr uint32_t PLAYER_PATH                       = 81;
@@ -295,6 +297,8 @@ constexpr uint32_t VIDEOPLAYER_UNIQUEID              = 294;
 constexpr uint32_t VIDEOPLAYER_AUDIOSTREAMCOUNT      = 295;
 constexpr uint32_t VIDEOPLAYER_VIDEOVERSION_NAME     = 296;
 constexpr uint32_t VIDEOPLAYER_VIDEOSTREAMCOUNT      = 297;
+constexpr uint32_t VIDEOPLAYER_CHAPTERLENGTH         = 298;
+
 
 // Videoplayer infobools
 constexpr uint32_t VIDEOPLAYER_HASSUBTITLES          = 300;
@@ -309,6 +313,7 @@ constexpr uint32_t VIDEOPLAYER_HAS_INFO              = 308;
 constexpr uint32_t VIDEOPLAYER_HASTELETEXT           = 309;
 constexpr uint32_t VIDEOPLAYER_IS_STEREOSCOPIC       = 310;
 constexpr uint32_t VIDEOPLAYER_HAS_VIDEOVERSIONS     = 311;
+constexpr uint32_t VIDEOPLAYER_IS_MUSIC_VIDEO        = 312;
 
 // PVR infolabels
 constexpr uint32_t VIDEOPLAYER_TITLE_EXTRAINFO       = 312;
@@ -499,7 +504,8 @@ constexpr uint32_t LIBRARY_HAS_COMPILATIONS          = 727;
 constexpr uint32_t LIBRARY_IS_SCANNING               = 728;
 constexpr uint32_t LIBRARY_IS_SCANNING_VIDEO         = 729;
 constexpr uint32_t LIBRARY_IS_SCANNING_MUSIC         = 730;
-// unused id 731 to 734
+constexpr uint32_t LIBRARY_HAS_MUSIC_CONCERTS        = 731;
+// unused id 732 to 734
 constexpr uint32_t LIBRARY_HAS_ROLE                  = 735;
 constexpr uint32_t LIBRARY_HAS_BOXSETS               = 736;
 constexpr uint32_t LIBRARY_HAS_NODE                  = 737;
@@ -1029,6 +1035,8 @@ constexpr uint32_t LISTITEM_EPISODEPART              = LISTITEM_START + 223;
 constexpr uint32_t LISTITEM_MEDIAPROVIDERS           = LISTITEM_START + 224;
 constexpr uint32_t LISTITEM_TITLE_EXTRAINFO          = LISTITEM_START + 225;
 constexpr uint32_t LISTITEM_DECODED_FILENAME_AND_PATH  = LISTITEM_START + 226;
+constexpr uint32_t LISTITEM_MUSIC_BITSPERSAMPLE      = LISTITEM_START + 227;
+constexpr uint32_t LISTITEM_MUSIC_CODEC              = LISTITEM_START + 228;
 
 constexpr int      LISTITEM_END                      = LISTITEM_START + 2500;
 
