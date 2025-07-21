@@ -69,6 +69,8 @@ private:
   std::string GetDuration(TIME_FORMAT format) const;
   std::string GetCurrentSeekTime(TIME_FORMAT format) const;
   std::string GetSeekTime(TIME_FORMAT format) const;
+  int GetChapterLength(int chap) const;
+  int GetChapterElapsedTime(int chap) const;
 
   std::string GetContentRanges(int iInfo) const;
   std::vector<std::pair<float, float>> GetEditList(const CDataCacheCore& data,

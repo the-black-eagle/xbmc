@@ -157,6 +157,27 @@ bool CPlayerGUIInfo::InitCurrentItem(CFileItem *item)
   return false;
 }
 
+int CPlayerGUIInfo::GetChapterLength(int chapterIdx) const
+{
+  int chapStart = m_appPlayer->GetChapterPos(chapterIdx);
+  int chapEnd;
+  if (chapterIdx >= m_appPlayer->GetChapterCount())
+    chapEnd = GetTotalPlayTime();
+  else
+    chapEnd = m_appPlayer->GetChapterPos(chapterIdx + 1);
+  return chapEnd - chapStart;
+}
+
+int CPlayerGUIInfo::GetChapterElapsedTime(int chapterIdx) const
+{
+  int now = GetPlayTime();
+  int chapStart = m_appPlayer->GetChapterPos(chapterIdx);
+  int elapsed = now -chapStart;
+  if (elapsed < 0)
+    elapsed = 0;
+  return elapsed;
+}
+
 bool CPlayerGUIInfo::GetLabel(std::string& value, const CFileItem *item, int contextWindow, const CGUIInfo &info, std::string *fallback) const
 {
   switch (info.m_info)
@@ -199,6 +220,12 @@ bool CPlayerGUIInfo::GetLabel(std::string& value, const CFileItem *item, int con
       return true;
     case PLAYER_CHAPTERNAME:
       m_appPlayer->GetChapterName(value);
+      return true;
+    case PLAYER_CHAPTERLENGTH:
+      value = StringUtils::SecondsToTimeString(GetChapterLength(m_appPlayer->GetChapter()));
+      return true;
+    case PLAYER_CHAPTER_ELAPSED:
+      value = StringUtils::SecondsToTimeString(GetChapterElapsedTime(m_appPlayer->GetChapter()));
       return true;
     case PLAYER_PATH:
     case PLAYER_FILENAME:

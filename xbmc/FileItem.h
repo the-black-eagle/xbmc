@@ -200,6 +200,8 @@ public:
    \return true if item is audiobook, false otherwise.
    */
   bool IsAudioBook() const;
+  bool IsMatroskaAudio() const;
+  bool IsMatroskaVideo() const;
 
   bool IsGame() const;
   bool IsCUESheet() const;

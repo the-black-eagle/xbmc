@@ -202,7 +202,8 @@ void CMusicDatabase::CreateTables()
               " userrating INTEGER NOT NULL DEFAULT 0, "
               " comment text, mood text, iBPM INTEGER NOT NULL DEFAULT 0, "
               " iBitRate INTEGER NOT NULL DEFAULT 0, "
-              " iSampleRate INTEGER NOT NULL DEFAULT 0, iChannels INTEGER NOT NULL DEFAULT 0, "
+              " iSampleRate INTEGER NOT NULL DEFAULT 0, iBitsPerSample INTEGER NOT NULL DEFAULT 0, "
+              " strCodec TEXT, iChannels INTEGER NOT NULL DEFAULT 0, "
               " strVideoURL TEXT, "
               " strReplayGain text, "
               " dateAdded TEXT, dateNew TEXT, dateModified TEXT)");
@@ -452,6 +453,8 @@ void CMusicDatabase::CreateViews()
               "        iBPM, "
               "        iBitRate, "
               "        iSampleRate, "
+              "        iBitsPerSample, "
+              "        strCodec, "
               "        iChannels, "
               "        song.strVideoURL as strVideoURL, "
               "        album.iAlbumDuration AS iAlbumDuration, "
@@ -498,6 +501,16 @@ void CMusicDatabase::CreateViews()
               "iDiscTotal, "
               "(SELECT MAX(song.lastplayed) FROM song "
               "WHERE song.idAlbum = album.idAlbum) AS lastplayed, "
+              "(SELECT song.strCodec FROM song WHERE song.idAlbum = album.idAlbum LIMIT 1)"
+              " AS strCodec, "
+              "(SELECT song.iChannels FROM song WHERE song.idAlbum = album.idAlbum LIMIT 1)"
+              " as iChannels, "
+              "(SELECT ROUND(AVG(song.iBitrate)) FROM song WHERE song.idAlbum = album.idAlbum"
+              " LIMIT 1) AS iBitrate , "
+              "(SELECT song.iSampleRate FROM song WHERE song.idAlbum = album.idAlbum LIMIT 1)"
+              " AS iSampleRate, "
+              "(SELECT song.iBitsPerSample FROM song WHERE song.idAlbum = album.idAlbum LIMIT 1)"
+              " AS iBitsPerSample, "
               "iAlbumDuration "
               "FROM album");
 
@@ -771,6 +784,7 @@ bool CMusicDatabase::AddAlbum(CAlbum& album, int idSource)
                            song->userrating, //
                            song->votes, //
                            song->iBPM, song->iBitRate, song->iSampleRate, song->iChannels, //
+                           song->iBitsPerSample, song->strCodec, //
                            song->songVideoURL, //
                            song->replayGain);
 
@@ -1022,6 +1036,8 @@ int CMusicDatabase::AddSong(const int idSong,
                             int iBitRate,
                             int iSampleRate,
                             int iChannels,
+                            int iBitsPerSample,
+                            const std::string& strCodec,
                             const std::string& songVideoURL,
                             const ReplayGain& replayGain)
 {
@@ -1081,7 +1097,7 @@ int CMusicDatabase::AddSong(const int idSong,
                "idSong, dateNew, idAlbum, idPath, strArtistDisp, "
                "strTitle, iTrack, iDuration, "
                "strReleaseDate, strOrigReleaseDate, iBPM, "
-               "iBitrate, iSampleRate, iChannels, "
+               "iBitrate, iSampleRate, iChannels, iBitsPerSample, strCodec, "
                "strDiscSubtitle, strFileName, dateAdded,  "
                "strMusicBrainzTrackID, strArtistSort, "
                "iTimesPlayed, iStartOffset, iEndOffset, "
@@ -1094,11 +1110,12 @@ int CMusicDatabase::AddSong(const int idSong,
         //Reuse song Id and original date when the Id added
         strSQL += PrepareSQL("VALUES (%i, '%s', ", idSong, dtDateNew.GetAsDBDateTime().c_str());
 
-      strSQL +=
-          PrepareSQL("%i, %i, '%s', '%s', %i, %i, '%s', '%s', %i, %i, %i, %i,'%s', '%s', '%s' ",
-                     idAlbum, idPath, artistDisp.c_str(), strTitle.c_str(), iTrack, iDuration,
-                     strRelease.c_str(), strOriginal.c_str(), iBPM, iBitRate, iSampleRate,
-                     iChannels, strDiscSubtitle.c_str(), strFileName.c_str(), strDateMedia.c_str());
+      strSQL += PrepareSQL(
+          "%i, %i, '%s', '%s', %i, %i, '%s', '%s', %i, %i, %i, %i, %i, '%s', '%s', '%s', '%s' ",
+          idAlbum, idPath, artistDisp.c_str(), strTitle.c_str(), iTrack, iDuration,
+          strRelease.c_str(), strOriginal.c_str(), iBPM, iBitRate, iSampleRate, iChannels,
+          iBitsPerSample, strCodec.c_str(), strDiscSubtitle.c_str(), strFileName.c_str(),
+          strDateMedia.c_str());
 
       if (strMusicBrainzTrackID.empty())
         strSQL += PrepareSQL(",NULL");
@@ -1150,7 +1167,7 @@ int CMusicDatabase::AddSong(const int idSong,
                  dtLastPlayed, //
                  rating, userrating, votes, //
                  replayGain, //
-                 iBPM, iBitRate, iSampleRate, iChannels, songVideoURL);
+                 iBPM, iBitRate, iSampleRate, iChannels, iBitsPerSample, strCodec, songVideoURL);
     }
     if (!strThumb.empty())
       SetArtForItem(idNew, MediaTypeSong, "thumb", strThumb);
@@ -1243,7 +1260,7 @@ bool CMusicDatabase::UpdateSong(CSong& song, bool bArtists /*= true*/, bool bArt
                           song.rating, song.userrating, song.votes, //
                           song.replayGain, //
                           song.iBPM, song.iBitRate, song.iSampleRate, song.iChannels, //
-                          song.songVideoURL);
+                          song.iBitsPerSample, song.strCodec, song.songVideoURL);
   if (result < 0)
     return false;
 
@@ -1303,6 +1320,8 @@ int CMusicDatabase::UpdateSong(int idSong,
                                int iBitRate,
                                int iSampleRate,
                                int iChannels,
+                               int iBitsPerSample,
+                               const std::string& strCodec,
                                const std::string& songVideoURL)
 {
   if (idSong < 0)
@@ -1325,7 +1344,8 @@ int CMusicDatabase::UpdateSong(int idSong,
       " strTitle = '%s', iTrack = %i, iDuration = %i, "
       "strReleaseDate = '%s', strOrigReleaseDate = '%s', strDiscSubtitle = '%s', "
       "strFileName = '%s', iBPM = %i, iBitrate = %i, iSampleRate = %i, iChannels = %i, "
-      "dateAdded = '%s', strVideoURL = '%s'",
+
+      "iBitsPerSample = %i, strCodec = '%s', strVideoURL = '%s', dateAdded = '%s'",
       idPath, artistDisp.c_str(),
       StringUtils::Join(
           genres,
@@ -1333,7 +1353,8 @@ int CMusicDatabase::UpdateSong(int idSong,
           .c_str(),
       strTitle.c_str(), iTrack, iDuration, strRelease.c_str(), strOriginal.c_str(),
       strDiscSubtitle.c_str(), strFileName.c_str(), iBPM, iBitRate, iSampleRate, iChannels,
-      strDateMedia.c_str(), songVideoURL.c_str());
+      iBitsPerSample, strCodec.c_str(), songVideoURL.c_str(),
+      strDateMedia.c_str());
   if (strMusicBrainzTrackID.empty())
     strSQL += PrepareSQL(", strMusicBrainzTrackID = NULL");
   else
@@ -3117,6 +3138,8 @@ CSong CMusicDatabase::GetSongFromDataset(const dbiplus::sql_record* const record
   song.iBitRate = record->at(offset + song_iBitRate).get_asInt();
   song.iSampleRate = record->at(offset + song_iSampleRate).get_asInt();
   song.iChannels = record->at(offset + song_iChannels).get_asInt();
+  song.iBitsPerSample = record->at(offset + song_iBitsPerSample).get_asInt();
+  song.strCodec = record->at(offset + song_strCodec).get_asString();
   song.songVideoURL = record->at(offset + song_songVideoURL).get_asString();
   return song;
 }
@@ -3175,6 +3198,8 @@ void CMusicDatabase::GetFileItemFromDataset(const dbiplus::sql_record* const rec
   item->GetMusicInfoTag()->SetBitRate(record->at(song_iBitRate).get_asInt());
   item->GetMusicInfoTag()->SetSampleRate(record->at(song_iSampleRate).get_asInt());
   item->GetMusicInfoTag()->SetNoOfChannels(record->at(song_iChannels).get_asInt());
+  item->GetMusicInfoTag()->SetBitsPerSample(record->at(song_iBitsPerSample).get_asInt());
+  item->GetMusicInfoTag()->SetCodec(record->at(song_strCodec).get_asString());
   // Replay gain data (needed for songs from cuesheets, both separate .cue files and embedded metadata)
   ReplayGain replaygain;
   replaygain.Set(record->at(song_strReplayGain).get_asString());
@@ -3281,6 +3306,11 @@ CAlbum CMusicDatabase::GetAlbumFromDataset(const dbiplus::sql_record* const reco
   album.SetDateNew(record->at(offset + album_dateNew).get_asString());
   album.SetDateUpdated(record->at(offset + album_dateModified).get_asString());
   album.SetLastPlayed(record->at(offset + album_dtLastPlayed).get_asString());
+  album.strCodec = record->at(offset + album_strCodec).get_asString();
+  album.iChannels = record->at(offset + album_iChannels).get_asInt();
+  album.iBitrate = record->at(offset + album_iBitrate).get_asInt();
+  album.iSampleRate = record->at(offset + album_iSampleRate).get_asInt();
+  album.iBitsPerSample = record->at(offset + album_iBitsPerSample).get_asInt();
   album.iAlbumDuration = record->at(offset + album_iAlbumDuration).get_asInt();
   return album;
 }
@@ -5888,6 +5918,9 @@ bool CMusicDatabase::GetAlbumsByWhere(
         // Set icon now to avoid slow per item processing in FillInDefaultIcon later
         pItem->SetProperty("icon_never_overlay", true);
         pItem->SetArt("icon", "DefaultAlbumCover.png");
+
+        pItem->GetMusicInfoTag()->SetURL(GetPathForAlbum(record->at(album_idAlbum).get_asInt()));
+
         items.Add(pItem);
       }
       catch (...)
@@ -9421,6 +9454,12 @@ void CMusicDatabase::UpdateTables(int version)
   if (version < 83)
     m_pDS->exec("ALTER TABLE song ADD strVideoURL TEXT");
 
+  if (version < 84) // add iBitsPerSample and strCodec to song table
+  {
+    m_pDS->exec("ALTER TABLE song ADD iBitsPerSample INTEGER NOT NULL DEFAULT 0");
+    m_pDS->exec("ALTER TABLE song ADD strCodec TEXT");
+  }
+
   // Set the version of tag scanning required.
   // Not every schema change requires the tags to be rescanned, set to the highest schema version
   // that needs this. Forced rescanning (of music files that have not changed since they were
@@ -9429,10 +9468,10 @@ void CMusicDatabase::UpdateTables(int version)
   // The original db version when the tags were scanned, and the minimal db version needed are
   // later used to determine if a forced rescan should be prompted
 
-  // The last schema change needing forced rescanning was 73.
-  // This is because Kodi can now read and process extra tags involved in the creation of box sets
+  // The last schema change needing forced rescanning was 84.
+  // This is because Kodi can now read and process extra info for codec information etc
 
-  SetMusicNeedsTagScan(73);
+  SetMusicNeedsTagScan(84);
 
   // After all updates, store the original db version.
   // This indicates the version of tag processing that was used to populate db
@@ -9441,7 +9480,7 @@ void CMusicDatabase::UpdateTables(int version)
 
 int CMusicDatabase::GetSchemaVersion() const
 {
-  return 83;
+  return 84;
 }
 
 int CMusicDatabase::GetMusicNeedsTagScan()
@@ -12847,7 +12886,7 @@ void CMusicDatabase::SetPropertiesForFileItem(CFileItem& item)
   if (idAlbum > -1)
   {
     CAlbum album;
-    if (GetAlbum(idAlbum, album, false))
+    if (GetAlbum(idAlbum, album, true))
       SetPropertiesFromAlbum(item, album);
   }
 }
@@ -13239,7 +13278,14 @@ int CMusicDatabase::GetOrderFilter(const std::string& type,
     if (StringUtils::EndsWith(name, "strArtists") || StringUtils::EndsWith(name, "strArtist"))
     {
       if (StringUtils::EndsWith(name, "strArtists"))
-        sortSQL = SortnameBuildSQL("artistsortname", sorting.sortAttributes, name, "strArtistSort");
+      {
+        if (StringUtils::StartsWith(name, "albumview"))
+          sortSQL = SortnameBuildSQL("artistsortname", sorting.sortAttributes, name,
+                                     "albumview.strArtistSort");
+        else
+          sortSQL =
+              SortnameBuildSQL("artistsortname", sorting.sortAttributes, name, "strArtistSort");
+      }
       else
         sortSQL = SortnameBuildSQL("artistsortname", sorting.sortAttributes, name, "strSortName");
       if (!sortSQL.empty())
@@ -13599,7 +13645,7 @@ bool CMusicDatabase::GetFilter(CDbUrl& musicUrl, Filter& filter, SortDescription
       songArtistSub.AppendJoin("JOIN artist ON artist.idArtist = song_artist.idArtist");
       songArtistSub.AppendWhere(PrepareSQL("artist.strArtist like '%s'", artistname.c_str()));
 
-      albumArtistSub.AppendJoin("JOIN artist ON artist.idArtist = song_artist.idArtist");
+      albumArtistSub.AppendJoin("JOIN artist ON artist.idArtist = album_artist.idArtist");
       albumArtistSub.AppendWhere(PrepareSQL("artist.strArtist like '%s'", artistname.c_str()));
     }
     if (idRole > 0)
@@ -13949,4 +13995,63 @@ bool CMusicDatabase::GetResumeBookmarkForAudioBook(const CFileItem& item, int& b
 
   bookmark = m_pDS->fv(0).get_asInt();
   return true;
+}
+
+void CMusicDatabase::GetMusicDetails(CFileItemList& items, std::string& reqField)
+{
+  try
+  {
+    if (nullptr == m_pDB)
+      return;
+    if (nullptr == m_pDS)
+      return;
+    std::string strSQL = StringUtils::Format(
+        "SELECT DISTINCT {} FROM song WHERE {} IS NOT NULL AND {} <> ''", reqField,
+        reqField, reqField);
+    if (reqField == "iBitsPerSample")
+      {
+        std::string strSQLExtra = StringUtils::Format(" AND {} <> 0", reqField);
+        strSQL += strSQLExtra;
+      }
+    CLog::Log(LOGDEBUG, LOGDATABASE, "CMusicDatabase::GetMusicDetails: Query {}", strSQL);
+    if (!m_pDS->query(strSQL.c_str()))
+      return;
+    while (!m_pDS->eof())
+    {
+      std::shared_ptr<CFileItem> pItem = std::make_shared<CFileItem>(m_pDS->fv(0).get_asString());
+      items.Add(pItem);
+      m_pDS->next();
+    }
+    m_pDS->close();
+    return;
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "{} failed", __FUNCTION__);
+  }
+
+  return;
+}
+
+std::string CMusicDatabase::GetPathForAlbum(int idAlbum)
+{
+  std::string albumPath;
+  try
+  { // use 2nd data set as we are likely called in a loop using 1st set
+    m_pDS2->open();
+    std::string strSQL = PrepareSQL(
+        "select  album.strAlbum, path.strPath from album join song on album.idAlbum = "
+        "song.idAlbum join path on song.idPath = path.idPath where album.idAlbum = %i limit 1",
+        idAlbum);
+    if (!m_pDS2->query(strSQL) || m_pDS2->num_rows() == 0)
+      return albumPath;
+    albumPath = m_pDS2->fv(1).get_asString();
+    m_pDS2->close();
+    return albumPath;
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "{} failed", __FUNCTION__);
+  }
+  return "";
 }

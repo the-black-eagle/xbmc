@@ -1015,7 +1015,17 @@ bool CFileItem::IsDeleted() const
 
 bool CFileItem::IsAudioBook() const
 {
-  return IsType(".m4b") || IsType(".mka");
+  return IsType(".m4b");
+}
+
+bool CFileItem::IsMatroskaAudio() const
+{
+  return IsType(".mka|.mp4");
+}
+
+bool CFileItem::IsMatroskaVideo() const
+{
+  return IsType(".mkv");
 }
 
 bool CFileItem::IsGame() const
@@ -1116,14 +1126,11 @@ bool CFileItem::IsFileFolder(EFileFolderType types) const
 
   if(types & always_type)
   {
+
     if(IsSmartPlayList()
-    || (IsPlayList() && CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_playlistAsFolders)
-    || IsAPK()
-    || IsZIP()
-    || IsRAR()
-    || IsRSS()
-    || IsAudioBook()
-    || IsType(".ogg|.oga|.xbt")
+    || (IsPlayList() && CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_playlistAsFolders) ||
+        IsAPK() || IsZIP() || IsRAR() || IsRSS() || IsAudioBook() || IsMatroskaAudio() ||
+         IsMatroskaVideo() || IsType(".ogg|.oga|.xbt")
 #if defined(TARGET_ANDROID)
     || IsType(".apk")
 #endif
@@ -2159,7 +2166,7 @@ bool CFileItem::LoadTracksFromCueDocument(CFileItemList& scannedItems)
     CSong& song = *it;
     if (song.strFileName == GetPath())
     {
-      if (tag.Loaded())
+      if (tag.Loaded() || !tag.GetCodec().empty()) // If we have read codec info, we want to use it
       {
         if (song.strAlbum.empty() && !tag.GetAlbum().empty())
           song.strAlbum = tag.GetAlbum();
@@ -2176,6 +2183,16 @@ bool CFileItem::LoadTracksFromCueDocument(CFileItemList& scannedItems)
           song.iTrack |= (tag.GetDiscNumber() << 16); // see CMusicInfoTag::GetDiscNumber()
         if (!tag.GetCueSheet().empty())
           song.strCueSheet = tag.GetCueSheet();
+        if (!tag.GetCodec().empty())
+          song.strCodec = tag.GetCodec();
+        if (tag.GetSampleRate() != 0)
+          song.iSampleRate = tag.GetSampleRate();
+        if (tag.GetBitsPerSample() != 0)
+          song.iBitsPerSample = tag.GetBitsPerSample();
+        if (tag.GetBitRate() != 0)
+          song.iBitRate = tag.GetBitRate();
+        if (tag.GetNoOfChannels() != 0)
+          song.iChannels = tag.GetNoOfChannels();
 
         if (tag.GetYear())
           song.strReleaseDate = tag.GetReleaseDate();

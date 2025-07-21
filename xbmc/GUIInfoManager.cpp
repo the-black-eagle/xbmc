@@ -924,7 +924,9 @@ const infomap player_labels[] = {{"hasmedia", PLAYER_HAS_MEDIA},
                                  {"cuts", PLAYER_CUTS},
                                  {"scenemarkers", PLAYER_SCENE_MARKERS},
                                  {"hasscenemarkers", PLAYER_HAS_SCENE_MARKERS},
-                                 {"chapters", PLAYER_CHAPTERS}};
+                                 {"chapters", PLAYER_CHAPTERS},
+                                 {"chapterlength",PLAYER_CHAPTERLENGTH},
+                                 {"chapterelapsed",PLAYER_CHAPTER_ELAPSED}};
 
 /// \page modules__infolabels_boolean_conditions
 ///   \table_row3{   <b>`Player.Art(type)`</b>,
@@ -4024,7 +4026,10 @@ const infomap videoplayer[] =    {{ "title",            VIDEOPLAYER_TITLE },
                                   { "hdrtype",          VIDEOPLAYER_HDR_TYPE },
                                   { "art",              VIDEOPLAYER_ART},
                                   { "videoversionname", VIDEOPLAYER_VIDEOVERSION_NAME},
-                                  { "hasvideoversions", VIDEOPLAYER_HAS_VIDEOVERSIONS}
+                                  { "hasvideoversions", VIDEOPLAYER_HAS_VIDEOVERSIONS},
+                                  { "chapterlength",    VIDEOPLAYER_CHAPTERLENGTH},
+                                  { "chapterelapsed",   PLAYER_CHAPTER_ELAPSED},
+                                  { "ismusicvideo",     VIDEOPLAYER_IS_MUSIC_VIDEO}
 };
 // clang-format on
 
@@ -6973,6 +6978,29 @@ const infomap container_str[]  = {{ "property",         CONTAINER_PROPERTY },
 ///     <p><hr>
 ///     @skinning_v21 **[New Infolabel]** \link ListItem_HasVideoExtras `ListItem.HasVideoExtras`\endlink
 ///   }
+///   \table_row3{   <b>`ListItem.HdrType`</b>,
+///                  \anchor ListItem_HdrType
+///                  _string_,
+///     @return String containing the name of the detected HDR type or empty if not HDR. See \ref StreamHdrType for the list of possible values.
+///     <p><hr>
+///     @skinning_v20 **[New Infolabel]** \link ListItem_HdrType `ListItem.HdrType`\endlink
+///   }
+///   \table_row3{   <b>`ListItem.MusicBitsPerSample`</b>,
+///                  \anchor ListItem_MusicBitsPerSample
+///                  _string_,
+///     @return The bits per sample of a song or empty string if not valid.
+///     <p><hr>
+///     @skinning_v21 **[New Infolabel]** \link ListItem_MusicBitsPerSample `ListItem.MusicBitsPerSample`\endlink
+///     <p>
+///   }
+///   \table_row3{   <b>`ListItem.MusicCodec`</b>,
+///                  \anchor ListItem_MusicCodec
+///                  _string_,
+///     @return The codec of a song or empty string if unknown.
+///     <p><hr>
+///     @skinning_v21 **[New Infolabel]** \link ListItem_MusicCodec `ListItem.MusicCodec`\endlink
+///     <p>
+///   }
 /// \table_end
 ///
 /// -----------------------------------------------------------------------------
@@ -7194,6 +7222,8 @@ const infomap listitem_labels[]= {{ "thumb",            LISTITEM_THUMB },
                                   { "isvideoextra",     LISTITEM_ISVIDEOEXTRA },
                                   { "videoversionname", LISTITEM_VIDEOVERSION_NAME },
                                   { "hasvideoextras",   LISTITEM_HASVIDEOEXTRAS },
+                                  { "musicbitspersample", LISTITEM_MUSIC_BITSPERSAMPLE },
+                                  { "musiccodec",       LISTITEM_MUSIC_CODEC },
 };
 // clang-format on
 
