@@ -2166,7 +2166,7 @@ bool CFileItem::LoadTracksFromCueDocument(CFileItemList& scannedItems)
     CSong& song = *it;
     if (song.strFileName == GetPath())
     {
-      if (tag.Loaded())
+      if (tag.Loaded() || !tag.GetCodec().empty()) // If we have read codec info, we want to use it
       {
         if (song.strAlbum.empty() && !tag.GetAlbum().empty())
           song.strAlbum = tag.GetAlbum();
@@ -2183,6 +2183,16 @@ bool CFileItem::LoadTracksFromCueDocument(CFileItemList& scannedItems)
           song.iTrack |= (tag.GetDiscNumber() << 16); // see CMusicInfoTag::GetDiscNumber()
         if (!tag.GetCueSheet().empty())
           song.strCueSheet = tag.GetCueSheet();
+        if (!tag.GetCodec().empty())
+          song.strCodec = tag.GetCodec();
+        if (tag.GetSampleRate() != 0)
+          song.iSampleRate = tag.GetSampleRate();
+        if (tag.GetBitsPerSample() != 0)
+          song.iBitsPerSample = tag.GetBitsPerSample();
+        if (tag.GetBitRate() != 0)
+          song.iBitRate = tag.GetBitRate();
+        if (tag.GetNoOfChannels() != 0)
+          song.iChannels = tag.GetNoOfChannels();
 
         if (tag.GetYear())
           song.strReleaseDate = tag.GetReleaseDate();
