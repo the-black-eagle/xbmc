@@ -8,11 +8,15 @@
 #include "TagLibVFSStream.h"
 
 #include "filesystem/File.h"
+#include "utils/log.h"
 
 #include <limits>
 
 #include <taglib/taglib.h>
 #include <taglib/tiostream.h>
+
+#define TAGLIB_LOG(...) CLog::Log(LOGDEBUG, "TagLibVFS: " __VA_ARGS__)
+#define TAGLIB_LOG_ERR(...) CLog::Log(LOGERROR, "TagLibVFS: " __VA_ARGS__)
 
 using namespace XFILE;
 using namespace TagLib;
@@ -24,16 +28,31 @@ using namespace MUSIC_INFO;
  */
 TagLibVFSStream::TagLibVFSStream(const std::string& strFileName, bool readOnly)
 {
+  TAGLIB_LOG("Opening file: {}", strFileName);
   m_bIsOpen = true;
   if (readOnly)
   {
     if (!m_file.Open(strFileName))
+    {
+      TAGLIB_LOG_ERR("Failed to open for reading: {}", strFileName);
       m_bIsOpen = false;
+    }
+    else
+    {
+      TAGLIB_LOG("Opened file for reading: {}", strFileName);
+    }
   }
   else
   {
     if (!m_file.OpenForWrite(strFileName))
+    {
+      TAGLIB_LOG_ERR("Failed to open for writing: {}", strFileName);
       m_bIsOpen = false;
+    }
+    else
+    {
+      TAGLIB_LOG("Opened file for writing: {}", strFileName);
+    }
   }
   m_strFileName = strFileName;
   m_bIsReadOnly = readOnly || !m_bIsOpen;
@@ -369,15 +388,37 @@ long TagLibVFSStream::tell() const
  */
 #if (TAGLIB_MAJOR_VERSION >= 2)
 TagLib::offset_t TagLibVFSStream::length()
-{
-  return static_cast<TagLib::offset_t>(m_file.GetLength());
-}
 #else
 long TagLibVFSStream::length()
-{
-  return static_cast<long>(m_file.GetLength());
-}
 #endif
+{
+  int64_t len = m_file.GetLength();
+  TAGLIB_LOG("GetLength() = {} for {}", static_cast<long long>(len), m_strFileName);
+
+  if (len == 0)
+  {
+    // Attempt to compute length manually
+    int64_t current = m_file.GetPosition();
+    bool seekOk = m_file.Seek(0, SEEK_END);
+    int64_t end = m_file.GetPosition();
+    m_file.Seek(current, SEEK_SET);
+
+    TAGLIB_LOG("Seek workaround for zero length: seekOk={}, end={}", seekOk, static_cast<long long>(end));
+
+#if (TAGLIB_MAJOR_VERSION >= 2)
+    return static_cast<TagLib::offset_t>(end);
+#else
+    return static_cast<long>(end);
+#endif
+  }
+
+#if (TAGLIB_MAJOR_VERSION >= 2)
+  return static_cast<TagLib::offset_t>(len);
+#else
+  return static_cast<long>(len);
+#endif
+}
+
 
 /*!
  * Truncates the file to a \a length.
