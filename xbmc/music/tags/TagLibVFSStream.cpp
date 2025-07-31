@@ -307,6 +307,16 @@ void TagLibVFSStream::seek(TagLib::offset_t offset, Position p)
 void TagLibVFSStream::seek(long offset, Position p)
 #endif
 {
+#if defined(__ANDROID__) && defined(__ARM_ARCH_7A__)
+  // Workaround for ABI mismatch on Android ARMv7
+  // TagLib compiled without _FILE_OFFSET_BITS=64, Kodi compiled with it
+  TagLib::offset_t safe_offset = static_cast<int32_t>(offset);
+  CLog::Log(LOGINFO, "seek() Android ARMv7 - original: 0x{:016x}, safe: {}",
+            static_cast<uint64_t>(offset), static_cast<int64_t>(safe_offset));
+  TagLib::offset_t working_offset = safe_offset;
+#else
+  TagLib::offset_t working_offset = offset;
+#endif
   const long fileLen = length();
   if (m_bIsReadOnly && fileLen > 0)
   {
@@ -326,12 +336,12 @@ void TagLibVFSStream::seek(long offset, Position p)
     // situation, force seek to last valid position so VFS move I/O pointer.
     if (startPos >= 0)
     {
-      if (offset < 0 && startPos + offset < 0)
+      if (working_offset < 0 && startPos + working_offset < 0)
       {
         m_file.Seek(0, SEEK_SET);
         return;
       }
-      if (offset > 0 && startPos + offset > fileLen)
+      if (working_offset > 0 && startPos + working_offset > fileLen)
       {
         m_file.Seek(fileLen, SEEK_SET);
         return;
@@ -342,13 +352,13 @@ void TagLibVFSStream::seek(long offset, Position p)
   switch(p)
   {
     case Beginning:
-      m_file.Seek(offset, SEEK_SET);
+      m_file.Seek(working_offset, SEEK_SET);
       break;
     case Current:
-      m_file.Seek(offset, SEEK_CUR);
+      m_file.Seek(working_offset, SEEK_CUR);
       break;
     case End:
-      m_file.Seek(offset, SEEK_END);
+      m_file.Seek(working_offset, SEEK_END);
       break;
   }
 }
