@@ -275,14 +275,20 @@ macro(BUILD_DEP_TARGET)
     else()
       # Enable a module to append to build flags
       if(${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_C_FLAGS)
-        list(APPEND CMAKE_ARGS "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} ${${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_C_FLAGS}")
+        set(_module_c_flags "${CMAKE_C_FLAGS} ${${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_C_FLAGS}")
+        list(APPEND CMAKE_ARGS "-DCMAKE_C_FLAGS=${_module_c_flags}")
       endif()
+
       if(${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_CXX_FLAGS)
-        list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} ${${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_CXX_FLAGS}")
+        set(_module_cxx_flags "${CMAKE_CXX_FLAGS} ${${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_CXX_FLAGS}")
+        list(APPEND CMAKE_ARGS "-DCMAKE_CXX_FLAGS=${_module_cxx_flags}")
       endif()
+
       if(${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_EXE_LINKER_FLAGS)
-        list(APPEND CMAKE_ARGS "-DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS} ${${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_EXE_LINKER_FLAGS}")
+        set(_module_ld_flags "${CMAKE_EXE_LINKER_FLAGS} ${${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_EXE_LINKER_FLAGS}")
+        list(APPEND CMAKE_ARGS "-DCMAKE_EXE_LINKER_FLAGS=${_module_ld_flags}")
       endif()
+
     endif()
 
     if(DEFINED ${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_INSTALL_LIBDIR)
