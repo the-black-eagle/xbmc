@@ -33,6 +33,10 @@ if(NOT TARGET ${APP_NAME_LC}::${CMAKE_FIND_PACKAGE_NAME})
       endif()
     endif()
   
+    if(CORE_SYSTEM_NAME STREQUAL android)
+      set(${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_CXX_FLAGS -D_FILE_OFFSET_BITS=64)
+    endif()
+    
     # Debug postfix only used for windows
     if(WIN32 OR WINDOWS_STORE)
       set(${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_DEBUG_POSTFIX "d")
