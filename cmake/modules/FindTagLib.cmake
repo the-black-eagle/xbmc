@@ -33,7 +33,7 @@ if(NOT TARGET ${APP_NAME_LC}::${CMAKE_FIND_PACKAGE_NAME})
       endif()
     endif()
   
-    if(CORE_SYSTEM_NAME STREQUAL android)
+    if((CORE_SYSTEM_NAME STREQUAL android) OR (TARGET_PLATFORM STREQUAL webos))
       set(${${CMAKE_FIND_PACKAGE_NAME}_MODULE}_CXX_FLAGS -D_FILE_OFFSET_BITS=64)
     endif()
     
