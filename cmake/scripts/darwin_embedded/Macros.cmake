@@ -50,7 +50,9 @@ function(core_link_library lib wraplib)
   # We can't simply pass the linker flags to the args section of the custom command
   # because cmake will add quotes around it (and the linker will fail due to those).
   # We need to do this handstand first ...
-  string(REPLACE " " ";" CUSTOM_COMMAND_ARGS_LDFLAGS ${CMAKE_SHARED_LINKER_FLAGS})
+  # We also need to quote CMAKE_SHARED_LINKER_FLAGS in case its empty or unset as the
+  # replace will fail, seeing only three params instead of 4
+  string(REPLACE " " ";" CUSTOM_COMMAND_ARGS_LDFLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
 
   add_custom_command(OUTPUT ${wraplib}-${ARCH}${extension}
                      COMMAND ${CMAKE_COMMAND} -E make_directory ${dir}
