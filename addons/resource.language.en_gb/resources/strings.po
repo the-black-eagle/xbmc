@@ -15284,7 +15284,13 @@ msgctxt "#21491"
 msgid "Music concerts"
 msgstr ""
 
-#empty strings from id 21492 to 21601
+#. Boolean value to include/exclude audiobooks in the filter or smartplaylist
+#: xbmc/dialogs/GUIDialogMediaFilter.cpp
+#: xbmc/playlist/SmartPlayList.cpp
+msgctxt "#21492"
+msgid "Audiobook"
+msgstr ""
+#empty strings from id 21493 to 21601
 
 #: xbmc/Util.cpp
 msgctxt "#21602"
