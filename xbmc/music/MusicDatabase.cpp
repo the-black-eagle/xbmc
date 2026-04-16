@@ -5942,6 +5942,10 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string& baseDir,
     if (!extFilter.fields.empty() && extFilter.fields.compare("*") != 0)
       strFields = "albumview.*, " + extFilter.fields;
     strSQL = "SELECT " + strFields + " FROM albumview " + strSQLExtra;
+    // use audiobnook release type if we are searching for books
+    if (strSQL.find("audiobook") != std::string::npos)
+      StringUtils::Replace(strSQL, "albumview.strReleaseType = 'album'",
+                           "albumview.strReleaseType = 'audiobook'");
 
     // run query
     CLog::LogF(LOGDEBUG, "query: {}", strSQL);

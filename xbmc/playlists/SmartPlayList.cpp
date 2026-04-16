@@ -57,6 +57,7 @@ struct TranslateField
 
 // clang-format off
 <<<<<<< HEAD
+<<<<<<< HEAD
 static const auto fields = std::array{
   TranslateField{ "none",              Field::NONE,                       TEXT_FIELD,     nullptr,                              false, 231 },
   TranslateField{ "filename",          Field::FILENAME,                   TEXT_FIELD,     nullptr,                              false, 561 },
@@ -148,7 +149,6 @@ static const auto fields = std::array{
   TranslateField{ "albumcodec",        Field::ALBUM_CODEC,                TEXT_FIELD,     nullptr,                              true,  21446 },
   TranslateField{ "bitspersample",     Field::BITS_PER_SAMPLE,            TEXT_FIELD,     nullptr,                              true,  612 },
   TranslateField{ "ismusicconcert",    Field::IS_MUSIC_CONCERT,           BOOLEAN_FIELD,  nullptr,                              false, 21486},
-
 };
 // clang-format on
 
@@ -407,7 +407,11 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
 >>>>>>> 5f852b1f2d ([MUSIC] Extend smartplaylists to use codec/samplerate etc for albums not just songs)
 =======
     fields.push_back(FieldIsMusicConcert);
+<<<<<<< HEAD
 >>>>>>> c44ce2adf6 (Add Music Concerts xml node, allow filtering of music concerts and add to smartplaylists)
+=======
+    fields.push_back(FieldIsAudiobook);
+>>>>>>> dbec29bc06 ([MUSIC][AUDIOBOOKS] Add boolean field to include/exclude audiobooks in smart playlists etc)
   }
   else if (type == "artists")
   {
@@ -785,6 +789,9 @@ std::string CSmartPlaylistRule::GetBooleanQuery(const std::string &negate, const
     if (m_field == FieldIsMusicConcert)
       return negate + "idAlbum IN (SELECT DISTINCT idAlbum FROM song WHERE LOWER(song.strFileName) "
                       "LIKE '%.mkv' OR LOWER(song.strFileName) LIKE '%.mp4')";
+    if (m_field == FieldIsAudiobook)
+      return negate + "idAlbum IN (SELECT DISTINCT idAlbum FROM album WHERE strReleaseType "
+      "LIKE '%audiobook%')";
   }
   return "";
 }
