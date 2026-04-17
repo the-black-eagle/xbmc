@@ -181,7 +181,7 @@ int CPlayerGUIInfo::GetChapterElapsedTime(int chapterIdx) const
 }
 
 bool CPlayerGUIInfo::GetLabel(std::string& value, const CFileItem *item, int contextWindow, const CGUIInfo &info, std::string *fallback) const
-
+{
   switch (info.GetInfo())
   {
     ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -774,33 +774,6 @@ bool CMusicDatabase::AddAlbum(CAlbum& album, int idSource)
 
     bool finished = false; // Ensure loop runs at least once to add real songs not just virtual!
     int index = 0;
-    song->idSong = AddSong(song->idSong, //
-                           song->dateNew, //
-                           song->idAlbum, //
-                           song->strTitle, //
-                           song->strMusicBrainzTrackID, //
-                           song->strFileName, //
-                           song->strComment, //
-                           song->strMood, //
-                           song->strThumb, //
-                           song->GetArtistString(), //
-                           song->GetArtistSort(), //
-                           song->genre, //
-                           song->iTrack, //
-                           song->iDuration, //
-                           song->strReleaseDate, //
-                           song->strOrigReleaseDate, //
-                           song->strDiscSubtitle, //
-                           song->iTimesPlayed, //
-                           song->iStartOffset, song->iEndOffset, //
-                           song->lastPlayed, //
-                           song->rating, //
-                           song->userrating, //
-                           song->votes, //
-                           song->iBPM, song->iBitRate, song->iSampleRate, song->iChannels, //
-                           song->iBitsPerSample, song->strCodec, //
-                           song->songVideoURL, //
-                           song->replayGain);
 
     while (!finished)
     {
@@ -850,6 +823,8 @@ bool CMusicDatabase::AddAlbum(CAlbum& album, int idSource)
                              song->userrating, //
                              song->votes, //
                              song->iBPM, song->iBitRate, song->iSampleRate, song->iChannels, //
+                             song->iBitsPerSample,
+                             song->strCodec,
                              song->songVideoURL, //
                              song->replayGain);
 
@@ -5942,10 +5917,6 @@ bool CMusicDatabase::GetAlbumsByWhere(const std::string& baseDir,
     if (!extFilter.fields.empty() && extFilter.fields.compare("*") != 0)
       strFields = "albumview.*, " + extFilter.fields;
     strSQL = "SELECT " + strFields + " FROM albumview " + strSQLExtra;
-    // use audiobnook release type if we are searching for books
-    if (strSQL.find("audiobook") != std::string::npos)
-      StringUtils::Replace(strSQL, "albumview.strReleaseType = 'album'",
-                           "albumview.strReleaseType = 'audiobook'");
 
     // run query
     CLog::LogF(LOGDEBUG, "query: {}", strSQL);

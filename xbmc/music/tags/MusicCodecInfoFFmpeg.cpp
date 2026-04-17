@@ -110,25 +110,25 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
         {
           switch (par_profile)
           {
-            case FF_PROFILE_DTS_HD_MA_X:
+            case AV_PROFILE_DTS_HD_MA_X:
               codec_name = "dtshd_ma_x";
               break;
-            case FF_PROFILE_DTS_HD_MA_X_IMAX:
+            case AV_PROFILE_DTS_HD_MA_X_IMAX:
               codec_name = "dtshd_ma_x_imax";
               break;
-            case FF_PROFILE_DTS_ES:
+            case AV_PROFILE_DTS_ES:
               codec_name = "dts_es";
               break;
-            case FF_PROFILE_DTS_96_24:
+            case AV_PROFILE_DTS_96_24:
               codec_name = "dts_96_24";
               break;
-            case FF_PROFILE_DTS_HD_HRA:
+            case AV_PROFILE_DTS_HD_HRA:
               codec_name = "dtshd_hra";
               break;
-            case FF_PROFILE_DTS_EXPRESS:
+            case AV_PROFILE_DTS_EXPRESS:
               codec_name = "dts_express";
               break;
-            case FF_PROFILE_DTS_HD_MA:
+            case AV_PROFILE_DTS_HD_MA:
               codec_name = "dtshd_ma";
               break;
             default:
@@ -136,10 +136,10 @@ bool CMusicCodecInfoFFmpeg::GetMusicCodecInfo(const std::string& strFileName,
               break;
           }
         }
-        if (st->codecpar->codec_id == AV_CODEC_ID_EAC3 && par_profile == FF_PROFILE_EAC3_DDP_ATMOS)
+        if (st->codecpar->codec_id == AV_CODEC_ID_EAC3 && par_profile == AV_PROFILE_EAC3_DDP_ATMOS)
           codec_name = "eac3_ddp_atmos";
 
-        if (st->codecpar->codec_id == AV_CODEC_ID_TRUEHD && par_profile == FF_PROFILE_TRUEHD_ATMOS)
+        if (st->codecpar->codec_id == AV_CODEC_ID_TRUEHD && par_profile == AV_PROFILE_TRUEHD_ATMOS)
           codec_name = "truehd_atmos";
         codec_info.codecName = codec_name;
         codec_info.bitRate = static_cast<int>(st->codecpar->bit_rate / 1000);
