@@ -10,6 +10,7 @@
 #include "MusicInfoTagLoaderFFmpeg.h"
 #include "cores/FFmpeg.h"
 #include "filesystem/File.h"
+#include "ServiceBroker.h"
 #include "music/MusicEmbeddedCoverLoaderFFmpeg.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/SettingsComponent.h"

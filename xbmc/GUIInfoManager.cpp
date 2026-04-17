@@ -4317,7 +4317,6 @@ constexpr std::array<InfoMap, 46> musicplayer = {{
 /// -----------------------------------------------------------------------------
 // clang-format off
 constexpr std::array<InfoMap, 88> videoplayer = {{
-
     {"title",                 VIDEOPLAYER_TITLE},
     {"genre",                 VIDEOPLAYER_GENRE},
     {"country",               VIDEOPLAYER_COUNTRY},
@@ -4406,9 +4405,9 @@ constexpr std::array<InfoMap, 88> videoplayer = {{
     {"mediaproviders",        VIDEOPLAYER_MEDIAPROVIDERS},
     {"titleextrainfo",        VIDEOPLAYER_TITLE_EXTRAINFO},
     {"hdrdetail",             VIDEOPLAYER_HDR_DETAIL},
-    { "chapterlength",    VIDEOPLAYER_CHAPTERLENGTH},
-    { "chapterelapsed",   PLAYER_CHAPTER_ELAPSED},
-    { "ismusicvideo",     VIDEOPLAYER_IS_MUSIC_VIDEO},
+    { "chapterlength",        VIDEOPLAYER_CHAPTERLENGTH},
+    { "chapterelapsed",       PLAYER_CHAPTER_ELAPSED},
+    { "ismusicvideo",         VIDEOPLAYER_IS_MUSIC_VIDEO},
 }};
 
 // clang-format on
@@ -7762,7 +7761,7 @@ constexpr std::array<InfoMap, 3> container_str = {{
 /// -----------------------------------------------------------------------------
 // clang-format off
 
-constexpr std::array<InfoMap, 229> listitem_labels = {{ 
+constexpr std::array<InfoMap, 231> listitem_labels = {{ 
                                   {"thumb",            LISTITEM_THUMB },
                                   { "icon",             LISTITEM_ICON },
                                   { "actualicon",       LISTITEM_ACTUAL_ICON },

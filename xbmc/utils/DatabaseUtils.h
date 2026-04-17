@@ -156,6 +156,7 @@ enum class Field
   ALBUM_CODEC,
   BITS_PER_SAMPLE,
   IS_MUSIC_CONCERT,
+  IS_AUDIOBOOK,
   MAX
 };
 
