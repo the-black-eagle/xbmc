@@ -56,7 +56,6 @@ public:
   // Convenience: owning std::string version for APIs requiring null-terminated strings (e.g. c_str()).
   std::string ToStdString() const { return std::string{ToString()}; }
   static std::string ToStdString(Content type) { return std::string{ToString(type)}; }
-
   // Comparisons (defaulted generates all 6 operators: ==, !=, <, <=, >, >=)
   constexpr auto operator<=>(const AudioType&) const noexcept = default;
 

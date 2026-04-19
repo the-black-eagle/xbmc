@@ -427,6 +427,16 @@ void CAlbum::SetLastPlayed(const std::string& strLastPlayed)
   lastPlayed.SetFromDBDateTime(strLastPlayed);
 }
 
+std::string CAlbum::ReleaseTypeToString(AudioType releaseType)
+{
+  return releaseType.ToString();
+}
+
+AudioType CAlbum::ReleaseTypeFromString(const std::string& strReleaseType)
+{
+  return AudioType::FromString(strReleaseType).value_or(AudioType::Content::Album);
+}
+
 bool CAlbum::operator<(const CAlbum &a) const
 {
   if (strMusicBrainzAlbumID.empty() && a.strMusicBrainzAlbumID.empty())
@@ -567,7 +577,8 @@ bool CAlbum::Load(const TiXmlElement *album, bool append, bool prioritise)
   if (XMLUtils::GetString(album, "releasetype", strReleaseType))
     SetReleaseType(strReleaseType);
   else
-    releaseType = AudioType::Type::Album;
+    releaseType = AudioType::Content::Album;
+
   return true;
 }
 

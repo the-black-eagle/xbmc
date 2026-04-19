@@ -92,6 +92,7 @@ public:
   const std::string& GetSongVideoURL() const;
   const EmbeddedArtInfo &GetCoverArtInfo() const;
   const ReplayGain& GetReplayGain() const;
+  const AudioType& GetAlbumReleaseType() const;
   const std::vector<ChapterDetails>& GetChapterMarks() const;
   AudioType::Type GetAlbumReleaseType() const;
 

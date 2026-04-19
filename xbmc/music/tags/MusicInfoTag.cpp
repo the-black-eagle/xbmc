@@ -1155,7 +1155,7 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar << m_listeners;
     ar << m_coverArt;
     ar << m_cuesheet;
-    ar << static_cast<int>(m_albumReleaseType);
+    ar << static_cast<int>(m_albumReleaseType.GetContent());
     ar << m_iBPM;
     ar << m_samplerate;
     ar << m_bitrate;

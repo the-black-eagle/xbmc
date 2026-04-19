@@ -42,6 +42,7 @@
 #include "music/MusicFileItemClassify.h"
 #include "music/MusicLibraryQueue.h"
 #include "music/MusicThumbLoader.h"
+#include "music/MusicType.h"
 #include "music/MusicUtils.h"
 #include "music/tags/MusicInfoTag.h"
 #include "music/tags/MusicInfoTagLoaderFactory.h"
@@ -703,6 +704,9 @@ void CMusicInfoScanner::FileItemsToAlbums(
       if (it == albums.end())
       {
         CAlbum album(*items[i]);
+        if ((StringUtils::EndsWithNoCase(song.strFileName, "mkv")) or
+            (StringUtils::EndsWithNoCase(song.strFileName, "mp4")))
+          album.releaseType = AudioType::Content::Concert;
         album.songs.push_back(song);
         albums.push_back(album);
       }
@@ -908,6 +912,8 @@ void CMusicInfoScanner::FileItemsToAlbums(
         album.strReleaseDate = k->strReleaseDate,
         album.strLabel = k->strRecordLabel;
         album.strType = k->strAlbumType;
+        if ((StringUtils::EndsWithNoCase(k->strFileName, "mkv")) or (StringUtils::EndsWithNoCase(k->strFileName, "mp4")))
+          album.releaseType = AudioType::Content::Concert;
         album.songs.push_back(*k);
       }
       albums.push_back(album);

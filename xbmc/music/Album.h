@@ -26,12 +26,6 @@ class TiXmlElement;
 class TiXmlNode;
 class CFileItem;
 
-enum class ReleaseType
-{
-  Album = 0,
-  Single
-};
-
 class CAlbum
 {
 public:
@@ -116,6 +110,9 @@ public:
   void SetDateUpdated(const std::string& strDateUpdated);
   void SetDateNew(const std::string& strDateNew);
   void SetLastPlayed(const std::string& strLastPlayed);
+
+  static std::string ReleaseTypeToString(AudioType releaseType);
+  static AudioType ReleaseTypeFromString(const std::string& strReleaseType);
 
   /*! \brief Set album artist credits using the arrays of tag values.
    If strArtistSort (as from ALBUMARTISTSORT tag) is already set then individual
