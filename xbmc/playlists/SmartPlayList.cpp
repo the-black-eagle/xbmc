@@ -6,14 +6,14 @@
  *  See LICENSES/README.md for more information.
  */
 
-#include "SmartPlayList.h"
-
 #include "ServiceBroker.h"
+#include "SmartPlayList.h"
 #include "Util.h"
 #include "XBDateTime.h"
 #include "dbwrappers/Database.h"
 #include "filesystem/File.h"
 #include "filesystem/SmartPlaylistDirectory.h"
+#include "music/MusicType.h"
 #include "resources/LocalizeStrings.h"
 #include "resources/ResourcesComponent.h"
 #include "settings/Settings.h"
@@ -144,6 +144,10 @@ static const auto fields = std::array{
   TranslateField{ "hasversions",       Field::HAS_VIDEO_VERSIONS,         BOOLEAN_FIELD,  nullptr,                              false, 20475 },
   TranslateField{ "hasextras",         Field::HAS_VIDEO_EXTRAS,           BOOLEAN_FIELD,  nullptr,                              false, 20476 },
   TranslateField{ "hdrdetail",         Field::HDR_DETAIL,                 TEXTIN_FIELD,   nullptr,                              false, 20478 },
+  TranslateField{ "albumcodec",        Field::ALBUM_CODEC,                TEXT_FIELD,     nullptr,                              true,  21446 },
+  TranslateField{ "bitspersample",     Field::BITS_PER_SAMPLE,            TEXT_FIELD,     nullptr,                              true,  612 },
+  TranslateField{ "ismusicconcert",    Field::IS_MUSIC_CONCERT,           BOOLEAN_FIELD,  nullptr,                              false, 21486},
+  TranslateField{ "isaudiobook",       Field::IS_AUDIOBOOK,               BOOLEAN_FIELD,  nullptr,                              false, 21487},
 };
 // clang-format on
 
@@ -178,7 +182,7 @@ constexpr std::string_view RULE_VALUE_SEPARATOR = " / ";
 
 CSmartPlaylistRule::CSmartPlaylistRule() = default;
 
-int CSmartPlaylistRule::TranslateField(const char *field) const
+int CSmartPlaylistRule::TranslateField(const char* field) const
 {
   const auto it = std::ranges::find_if(fields, [field](const auto& f)
                                        { return StringUtils::EqualsNoCase(field, f.string); });
@@ -192,7 +196,7 @@ std::string CSmartPlaylistRule::TranslateField(int field) const
   return it == fields.end() ? "none" : std::string(it->string);
 }
 
-SortBy CSmartPlaylistRule::TranslateOrder(const char *order)
+SortBy CSmartPlaylistRule::TranslateOrder(const char* order)
 {
   return SortUtils::SortMethodFromString(order);
 }
@@ -206,7 +210,7 @@ std::string CSmartPlaylistRule::TranslateOrder(SortBy order)
   return sortOrder;
 }
 
-Field CSmartPlaylistRule::TranslateGroup(const char *group)
+Field CSmartPlaylistRule::TranslateGroup(const char* group)
 {
   const auto it = std::ranges::find_if(groups, [group](const auto& g)
                                        { return StringUtils::EqualsNoCase(group, g.name); });
@@ -267,7 +271,7 @@ bool CSmartPlaylistRule::Validate(const std::string& input, void* data)
                              { return validator(s, data); });
 }
 
-bool CSmartPlaylistRule::ValidateRating(const std::string &input, void *data)
+bool CSmartPlaylistRule::ValidateRating(const std::string& input, void* data)
 {
   char* end = nullptr;
   std::string strRating = input;
@@ -277,7 +281,7 @@ bool CSmartPlaylistRule::ValidateRating(const std::string &input, void *data)
   return (end == nullptr || *end == '\0') && rating >= 0.0 && rating <= 10.0;
 }
 
-bool CSmartPlaylistRule::ValidateMyRating(const std::string &input, void *data)
+bool CSmartPlaylistRule::ValidateMyRating(const std::string& input, void* data)
 {
   std::string strRating = input;
   StringUtils::Trim(strRating);
@@ -302,7 +306,7 @@ bool CSmartPlaylistRule::ValidateDate(const std::string& input, void* data)
   return dt.SetFromRFC3339FullDate(input);
 }
 
-std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
+std::vector<Field> CSmartPlaylistRule::GetFields(const std::string& type)
 {
   std::vector<Field> fields;
   bool isVideo = false;
@@ -322,7 +326,7 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
         Field::ARTIST, Field::ALBUM_ARTIST, Field::TITLE, Field::YEAR,
     };
     if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
-      CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
+            CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
       fields.push_back(Field::ORIG_YEAR);
     fields.insert(fields.end(), {
                                     Field::TIME,
@@ -342,6 +346,7 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
                                     Field::DATE_ADDED,
                                     Field::DATE_MODIFIED,
                                     Field::DATE_NEW,
+                                    Field::IS_AUDIOBOOK,
                                 });
   }
   else if (type == "albums")
@@ -354,7 +359,7 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
         Field::YEAR,
     };
     if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
-        CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
+            CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
       fields.push_back(Field::ORIG_YEAR);
     fields.insert(fields.end(), {
                                     Field::ALBUM_DURATION,
@@ -374,6 +379,9 @@ std::vector<Field> CSmartPlaylistRule::GetFields(const std::string &type)
                                     Field::DATE_ADDED,
                                     Field::DATE_MODIFIED,
                                     Field::DATE_NEW,
+                                    Field::IS_AUDIOBOOK,
+                                    Field::IS_MUSIC_CONCERT,
+
                                 });
   }
   else if (type == "artists")
@@ -514,7 +522,7 @@ std::vector<SortBy> CSmartPlaylistRule::GetOrders(const std::string& type)
         SortBy::NONE, SortBy::GENRE, SortBy::ALBUM, SortBy::ARTIST, SortBy::TITLE, SortBy::YEAR,
     };
     if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
-      CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
+            CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
       orders.push_back(SortBy::ORIG_DATE);
     orders.insert(orders.end(), {
                                     SortBy::TIME,
@@ -537,7 +545,7 @@ std::vector<SortBy> CSmartPlaylistRule::GetOrders(const std::string& type)
         SortBy::YEAR,
     };
     if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
-        CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
+            CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
       orders.push_back(SortBy::ORIG_DATE);
     orders.insert(orders.end(), {
                                     SortBy::ALBUM_TYPE,
@@ -608,7 +616,7 @@ std::vector<SortBy> CSmartPlaylistRule::GetOrders(const std::string& type)
   return orders;
 }
 
-std::vector<Field> CSmartPlaylistRule::GetGroups(const std::string &type)
+std::vector<Field> CSmartPlaylistRule::GetGroups(const std::string& type)
 {
   std::vector<Field> groups;
   if (type == "artists")
@@ -625,7 +633,7 @@ std::vector<Field> CSmartPlaylistRule::GetGroups(const std::string &type)
         Field::YEAR,
     };
     if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
-        CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
+            CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
       groups.push_back(Field::ORIG_YEAR);
   }
   if (type == "movies")
@@ -672,7 +680,7 @@ std::string CSmartPlaylistRule::GetLocalizedRule() const
                              GetLocalizedOperator(m_operator), GetParameter());
 }
 
-std::string CSmartPlaylistRule::GetVideoResolutionQuery(const std::string &parameter) const
+std::string CSmartPlaylistRule::GetVideoResolutionQuery(const std::string& parameter) const
 {
   std::string retVal(" IN (SELECT DISTINCT idFile FROM streamdetails WHERE iVideoWidth ");
   int iRes = static_cast<int>(std::strtol(parameter.c_str(), nullptr, 10));
@@ -683,10 +691,26 @@ std::string CSmartPlaylistRule::GetVideoResolutionQuery(const std::string &param
     min = 1921;
     max = INT_MAX;
   }
-  else if (iRes >= 1080) { min = 1281; max = 1920; }
-  else if (iRes >= 720) { min =  961; max = 1280; }
-  else if (iRes >= 540) { min =  721; max =  960; }
-  else                  { min =    0; max =  720; }
+  else if (iRes >= 1080)
+  {
+    min = 1281;
+    max = 1920;
+  }
+  else if (iRes >= 720)
+  {
+    min = 961;
+    max = 1280;
+  }
+  else if (iRes >= 540)
+  {
+    min = 721;
+    max = 960;
+  }
+  else
+  {
+    min = 0;
+    max = 720;
+  }
 
   switch (m_operator)
   {
@@ -710,12 +734,14 @@ std::string CSmartPlaylistRule::GetVideoResolutionQuery(const std::string &param
   return retVal;
 }
 
-std::string CSmartPlaylistRule::GetBooleanQuery(const std::string &negate, const std::string &strType) const
+std::string CSmartPlaylistRule::GetBooleanQuery(const std::string& negate,
+                                                const std::string& strType) const
 {
   if (strType == "movies")
   {
     if (m_field == static_cast<int>(Field::IN_PROGRESS))
-      return "movie_view.idFile " + negate + " IN (SELECT DISTINCT idFile FROM bookmark WHERE type = 1)";
+      return "movie_view.idFile " + negate +
+             " IN (SELECT DISTINCT idFile FROM bookmark WHERE type = 1)";
     else if (m_field == static_cast<int>(Field::TRAILER))
       return negate + GetField(m_field, strType) + "!= ''";
     else if (m_field == static_cast<int>(Field::HAS_VIDEO_VERSIONS) ||
@@ -725,14 +751,16 @@ std::string CSmartPlaylistRule::GetBooleanQuery(const std::string &negate, const
   else if (strType == "episodes")
   {
     if (m_field == static_cast<int>(Field::IN_PROGRESS))
-      return "episode_view.idFile " + negate + " IN (SELECT DISTINCT idFile FROM bookmark WHERE type = 1)";
+      return "episode_view.idFile " + negate +
+             " IN (SELECT DISTINCT idFile FROM bookmark WHERE type = 1)";
   }
   else if (strType == "tvshows")
   {
     if (m_field == static_cast<int>(Field::IN_PROGRESS))
       return negate +
              " ("
-             "(tvshow_view.watchedcount > 0 AND tvshow_view.watchedcount < tvshow_view.totalCount) "
+             "(tvshow_view.watchedcount > 0 AND tvshow_view.watchedcount < "
+             "tvshow_view.totalCount) "
              "OR "
              "(tvshow_view.watchedcount = 0 AND EXISTS "
              "(SELECT 1 FROM episode_view WHERE episode_view.idShow = " +
@@ -749,6 +777,17 @@ std::string CSmartPlaylistRule::GetBooleanQuery(const std::string &negate, const
       return negate + GetField(m_field, strType);
     if (m_field == static_cast<int>(Field::IS_BOXSET))
       return negate + "albumview.bBoxedSet = 1";
+    if (m_field == static_cast<int>(Field::IS_MUSIC_CONCERT))
+    {
+      std::string SQL;
+      SQL = StringUtils::Format("albumview.strReleaseType like '{}'",
+                       AudioType::ToString(AudioType::Content::Concert).c_str());
+      return negate + SQL;
+    }
+    if (m_field == static_cast<int>(Field::IS_AUDIOBOOK))
+      return negate +
+             StringUtils::Format("albumview.strReleaseType like '{}'",
+                                 AudioType::ToString(AudioType::Content::AudioBook).c_str());
   }
   return "";
 }
@@ -767,7 +806,10 @@ CDatabaseQueryRule::SearchOperator CSmartPlaylistRule::GetOperator(const std::st
   return op;
 }
 
-std::string CSmartPlaylistRule::FormatParameter(const std::string &operatorString, const std::string &param, const CDatabase &db, const std::string &strType) const
+std::string CSmartPlaylistRule::FormatParameter(const std::string& operatorString,
+                                                const std::string& param,
+                                                const CDatabase& db,
+                                                const std::string& strType) const
 {
   // special-casing
   if (m_field == static_cast<int>(Field::TIME) ||
@@ -779,7 +821,11 @@ std::string CSmartPlaylistRule::FormatParameter(const std::string &operatorStrin
   return CDatabaseQueryRule::FormatParameter(operatorString, param, db, strType);
 }
 
-std::string CSmartPlaylistRule::FormatLinkQuery(const char *field, const char *table, const MediaType& mediaType, const std::string& mediaField, const std::string& parameter)
+std::string CSmartPlaylistRule::FormatLinkQuery(const char* field,
+                                                const char* table,
+                                                const MediaType& mediaType,
+                                                const std::string& mediaField,
+                                                const std::string& parameter)
 {
   // NOTE: no need for a PrepareSQL here, as the parameter has already been formatted
   return StringUtils::Format(
@@ -833,8 +879,11 @@ std::string FormatNullableNumber(const std::string& field,
 }
 } // namespace
 
-std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, const std::string &oper, const std::string &param,
-                                                 const CDatabase &db, const std::string &strType) const
+std::string CSmartPlaylistRule::FormatWhereClause(const std::string& negate,
+                                                  const std::string& oper,
+                                                  const std::string& param,
+                                                  const CDatabase& db,
+                                                  const std::string& strType) const
 {
   std::string parameter = FormatParameter(oper, param, db, strType);
 
@@ -853,17 +902,23 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
               GetField(static_cast<int>(Field::ID), strType) +
               " AND song_artist.idArtist = artist.idArtist AND artist.strArtist" + parameter + ")";
     else if (m_field == static_cast<int>(Field::ALBUM_ARTIST))
-      query = negate + " EXISTS (SELECT 1 FROM album_artist, artist WHERE album_artist.idAlbum = " + table + ".idAlbum AND album_artist.idArtist = artist.idArtist AND artist.strArtist" + parameter + ")";
+      query = negate +
+              " EXISTS (SELECT 1 FROM album_artist, artist WHERE album_artist.idAlbum = " + table +
+              ".idAlbum AND album_artist.idArtist = artist.idArtist AND artist.strArtist" +
+              parameter + ")";
     else if (m_field == static_cast<int>(Field::LAST_PLAYED))
       query = FormatNullableDate(GetField(m_field, strType), m_operator, parameter);
     else if (m_field == static_cast<int>(Field::SOURCE))
-      query = negate + " EXISTS (SELECT 1 FROM album_source, source WHERE album_source.idAlbum = " + table + ".idAlbum AND album_source.idSource = source.idSource AND source.strName" + parameter + ")";
+      query = negate +
+              " EXISTS (SELECT 1 FROM album_source, source WHERE album_source.idAlbum = " + table +
+              ".idAlbum AND album_source.idSource = source.idSource AND source.strName" +
+              parameter + ")";
     else if (m_field == static_cast<int>(Field::YEAR) ||
              m_field == static_cast<int>(Field::ORIG_YEAR))
     {
       std::string field;
       if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(
-        CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
+              CSettings::SETTING_MUSICLIBRARY_USEORIGINALDATE))
         field = GetField(static_cast<int>(Field::ORIG_YEAR), strType);
       else
         field = GetField(m_field, strType);
@@ -904,8 +959,21 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
               " AND album_source.idSource = source.idSource AND source.strName" + parameter + ")";
     else if (m_field == static_cast<int>(Field::DISC_TITLE))
       query = negate + " EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " +
+              " EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " +
               GetField(static_cast<int>(Field::ID), strType) + " AND song.strDiscSubtitle" +
               parameter + ")";
+    else if (m_field == static_cast<int>(Field ::ALBUM_CODEC))
+      query = negate + " EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " +
+              GetField(static_cast<int>(Field::ALBUM_CODEC), strType) + " AND song.strCodec " +
+              parameter + ")";
+    else if (m_field == static_cast<int>(Field::BITS_PER_SAMPLE))
+      query = negate + " EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " +
+              GetField(static_cast<int>(Field::BITS_PER_SAMPLE), strType) +
+              " AND song.iBitsPerSample " + parameter + ")";
+    else if (m_field == static_cast<int>(Field::NUMBER_OF_CHANNELS))
+      query = negate + "EXISTS (SELECT 1 FROM song WHERE song.idAlbum = " +
+              GetField(static_cast<int>(Field::NUMBER_OF_CHANNELS), strType) +
+              " AND song.iChannels " + parameter + ")";
     else if (m_field == static_cast<int>(Field::YEAR) ||
              m_field == static_cast<int>(Field::ORIG_YEAR))
     {
@@ -949,7 +1017,9 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
     }
     else if (m_field == static_cast<int>(Field::PATH))
     {
-      query = negate + " (EXISTS (SELECT DISTINCT song_artist.idArtist FROM song_artist JOIN song ON song.idSong = song_artist.idSong JOIN path ON song.idpath = path.idpath ";
+      query = negate +
+              " (EXISTS (SELECT DISTINCT song_artist.idArtist FROM song_artist JOIN song ON "
+              "song.idSong = song_artist.idSong JOIN path ON song.idpath = path.idpath ";
       query += "WHERE song_artist.idArtist = " + GetField(static_cast<int>(Field::ID), strType) +
                " AND path.strPath" + parameter + "))";
     }
@@ -1060,9 +1130,11 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
     table = "episode_view";
 
     if (m_field == static_cast<int>(Field::GENRE))
-      query = negate + FormatLinkQuery("genre", "genre", MediaTypeTvShow, (table + ".idShow").c_str(), parameter);
+      query = negate + FormatLinkQuery("genre", "genre", MediaTypeTvShow,
+                                       (table + ".idShow").c_str(), parameter);
     else if (m_field == static_cast<int>(Field::TAG))
-      query = negate + FormatLinkQuery("tag", "tag", MediaTypeTvShow, (table + ".idShow").c_str(), parameter);
+      query = negate + FormatLinkQuery("tag", "tag", MediaTypeTvShow, (table + ".idShow").c_str(),
+                                       parameter);
     else if (m_field == static_cast<int>(Field::DIRECTOR))
       query = negate + FormatLinkQuery("director", "actor", MediaTypeEpisode,
                                        GetField(static_cast<int>(Field::ID), strType), parameter);
@@ -1076,30 +1148,48 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
              m_field == static_cast<int>(Field::DATE_ADDED))
       query = FormatNullableDate(GetField(m_field, strType), m_operator, parameter);
     else if (m_field == static_cast<int>(Field::STUDIO))
-      query = negate + FormatLinkQuery("studio", "studio", MediaTypeTvShow, (table + ".idShow").c_str(), parameter);
+      query = negate + FormatLinkQuery("studio", "studio", MediaTypeTvShow,
+                                       (table + ".idShow").c_str(), parameter);
     else if (m_field == static_cast<int>(Field::MPAA))
-      query = negate + " (" + GetField(m_field, strType) +  parameter + ")";
+      query = negate + " (" + GetField(m_field, strType) + parameter + ")";
   }
   if (m_field == static_cast<int>(Field::VIDEO_RESOLUTION))
     query = table + ".idFile" + negate + GetVideoResolutionQuery(param);
   else if (m_field == static_cast<int>(Field::AUDIO_CHANNELS))
-    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table + ".idFile AND iAudioChannels " + parameter + ")";
+    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table +
+            ".idFile AND iAudioChannels " + parameter + ")";
   else if (m_field == static_cast<int>(Field::VIDEO_CODEC))
-    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table + ".idFile AND strVideoCodec " + parameter + ")";
+    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table +
+            ".idFile AND strVideoCodec " + parameter + ")";
   else if (m_field == static_cast<int>(Field::AUDIO_CODEC))
-    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table + ".idFile AND strAudioCodec " + parameter + ")";
+    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table +
+            ".idFile AND strAudioCodec " + parameter + ")";
   else if (m_field == static_cast<int>(Field::AUDIO_LANGUAGE))
-    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table + ".idFile AND strAudioLanguage " + parameter + ")";
+    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table +
+            ".idFile AND strAudioLanguage " + parameter + ")";
   else if (m_field == static_cast<int>(Field::SUBTITLE_LANGUAGE))
-    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table + ".idFile AND strSubtitleLanguage " + parameter + ")";
+    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table +
+            ".idFile AND strSubtitleLanguage " + parameter + ")";
   else if (m_field == static_cast<int>(Field::VIDEO_ASPECT_RATIO))
-    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table + ".idFile AND fVideoAspect " + parameter + ")";
+    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table +
+            ".idFile AND fVideoAspect " + parameter + ")";
   else if (m_field == static_cast<int>(Field::AUDIO_COUNT))
-    query = db.PrepareSQL(negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table + ".idFile AND streamdetails.iStreamtype = %i GROUP BY streamdetails.idFile HAVING COUNT(streamdetails.iStreamType) " + parameter + ")",CStreamDetail::AUDIO);
+    query = db.PrepareSQL(
+        negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table +
+            ".idFile AND streamdetails.iStreamtype = %i GROUP BY streamdetails.idFile HAVING "
+            "COUNT(streamdetails.iStreamType) " +
+            parameter + ")",
+        CStreamDetail::AUDIO);
   else if (m_field == static_cast<int>(Field::SUBTITLE_COUNT))
-    query = db.PrepareSQL(negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table + ".idFile AND streamdetails.iStreamType = %i GROUP BY streamdetails.idFile HAVING COUNT(streamdetails.iStreamType) " + parameter + ")",CStreamDetail::SUBTITLE);
+    query = db.PrepareSQL(
+        negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table +
+            ".idFile AND streamdetails.iStreamType = %i GROUP BY streamdetails.idFile HAVING "
+            "COUNT(streamdetails.iStreamType) " +
+            parameter + ")",
+        CStreamDetail::SUBTITLE);
   else if (m_field == static_cast<int>(Field::HDR_TYPE))
-    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table + ".idFile AND strHdrType " + parameter + ")";
+    query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table +
+            ".idFile AND strHdrType " + parameter + ")";
   else if (m_field == static_cast<int>(Field::HDR_DETAIL))
     query = negate + " EXISTS (SELECT 1 FROM streamdetails WHERE streamdetails.idFile = " + table +
             ".idFile AND strHdrDetail " + parameter + ")";
@@ -1115,7 +1205,7 @@ std::string CSmartPlaylistRule::FormatWhereClause(const std::string &negate, con
   return query;
 }
 
-std::string CSmartPlaylistRule::GetField(int field, const std::string &type) const
+std::string CSmartPlaylistRule::GetField(int field, const std::string& type) const
 {
   if (field >= static_cast<int>(Field::UNKNOWN) && field < static_cast<int>(Field::MAX))
     return DatabaseUtils::GetField(static_cast<Field>(field), CMediaTypes::FromString(type),
@@ -1136,7 +1226,8 @@ std::string CSmartPlaylistRuleCombination::GetWhereClause(
   {
     if (it != combinations.cbegin())
       rule += GetType() == CDatabaseQueryRuleCombination::Type::COMBINATION_AND ? " AND " : " OR ";
-    std::shared_ptr<CSmartPlaylistRuleCombination> combo = std::static_pointer_cast<CSmartPlaylistRuleCombination>(*it);
+    std::shared_ptr<CSmartPlaylistRuleCombination> combo =
+        std::static_pointer_cast<CSmartPlaylistRuleCombination>(*it);
     if (combo)
       rule += "(" + combo->GetWhereClause(db, strType, referencedPlaylists) + ")";
   }
@@ -1165,7 +1256,9 @@ std::string CSmartPlaylistRuleCombination::GetWhereClause(
         {
           std::string playlistQuery;
           // only playlists of same type will be part of the query
-          if (playlist.GetType() == strType || (playlist.GetType() == "mixed" && (strType == "songs" || strType == "musicvideos")) || playlist.GetType().empty())
+          if (playlist.GetType() == strType ||
+              (playlist.GetType() == "mixed" && (strType == "songs" || strType == "musicvideos")) ||
+              playlist.GetType().empty())
           {
             playlist.SetType(strType);
             playlistQuery = playlist.GetWhereClause(db, referencedPlaylists);
@@ -1193,7 +1286,8 @@ std::string CSmartPlaylistRuleCombination::GetWhereClause(
   return rule;
 }
 
-void CSmartPlaylistRuleCombination::GetVirtualFolders(const std::string& strType, std::vector<std::string> &virtualFolders) const
+void CSmartPlaylistRuleCombination::GetVirtualFolders(
+    const std::string& strType, std::vector<std::string>& virtualFolders) const
 {
   for (const auto& combination : GetCombinations())
   {
@@ -1234,7 +1328,7 @@ CSmartPlaylist::CSmartPlaylist()
   Reset();
 }
 
-bool CSmartPlaylist::OpenAndReadName(const CURL &url)
+bool CSmartPlaylist::OpenAndReadName(const CURL& url)
 {
   if (readNameFromPath(url) == nullptr)
     return false;
@@ -1242,12 +1336,12 @@ bool CSmartPlaylist::OpenAndReadName(const CURL &url)
   return !m_playlistName.empty();
 }
 
-const TiXmlNode* CSmartPlaylist::readName(const TiXmlNode *root)
+const TiXmlNode* CSmartPlaylist::readName(const TiXmlNode* root)
 {
   if (root == nullptr)
     return nullptr;
 
-  const TiXmlElement *rootElem = root->ToElement();
+  const TiXmlElement* rootElem = root->ToElement();
   if (rootElem == nullptr)
     return nullptr;
 
@@ -1273,7 +1367,7 @@ const TiXmlNode* CSmartPlaylist::readName(const TiXmlNode *root)
   return root;
 }
 
-const TiXmlNode* CSmartPlaylist::readNameFromPath(const CURL &url)
+const TiXmlNode* CSmartPlaylist::readNameFromPath(const CURL& url)
 {
   CFileStream file;
   if (!file.Open(url))
@@ -1285,7 +1379,7 @@ const TiXmlNode* CSmartPlaylist::readNameFromPath(const CURL &url)
   m_xmlDoc.Clear();
   file >> m_xmlDoc;
 
-  const TiXmlNode *root = readName(m_xmlDoc.RootElement());
+  const TiXmlNode* root = readName(m_xmlDoc.RootElement());
   if (m_playlistName.empty())
   {
     m_playlistName = CUtil::GetTitleFromPath(url.Get());
@@ -1296,7 +1390,7 @@ const TiXmlNode* CSmartPlaylist::readNameFromPath(const CURL &url)
   return root;
 }
 
-const TiXmlNode* CSmartPlaylist::readNameFromXml(const std::string &xml)
+const TiXmlNode* CSmartPlaylist::readNameFromXml(const std::string& xml)
 {
   if (xml.empty())
   {
@@ -1312,12 +1406,12 @@ const TiXmlNode* CSmartPlaylist::readNameFromXml(const std::string &xml)
     return nullptr;
   }
 
-  const TiXmlNode *root = readName(m_xmlDoc.RootElement());
+  const TiXmlNode* root = readName(m_xmlDoc.RootElement());
 
   return root;
 }
 
-bool CSmartPlaylist::load(const TiXmlNode *root)
+bool CSmartPlaylist::load(const TiXmlNode* root)
 {
   if (root == nullptr)
     return false;
@@ -1325,18 +1419,18 @@ bool CSmartPlaylist::load(const TiXmlNode *root)
   return LoadFromXML(root);
 }
 
-bool CSmartPlaylist::Load(const CURL &url)
+bool CSmartPlaylist::Load(const CURL& url)
 {
   return load(readNameFromPath(url));
 }
 
-bool CSmartPlaylist::Load(const std::string &path)
+bool CSmartPlaylist::Load(const std::string& path)
 {
   const CURL pathToUrl(path);
   return load(readNameFromPath(pathToUrl));
 }
 
-bool CSmartPlaylist::Load(const CVariant &obj)
+bool CSmartPlaylist::Load(const CVariant& obj)
 {
   if (!obj.isObject())
     return false;
@@ -1366,20 +1460,22 @@ bool CSmartPlaylist::Load(const CVariant &obj)
   }
 
   // now any limits
-  if (obj.isMember("limit") && (obj["limit"].isInteger() || obj["limit"].isUnsignedInteger()) && obj["limit"].asUnsignedInteger() > 0)
+  if (obj.isMember("limit") && (obj["limit"].isInteger() || obj["limit"].isUnsignedInteger()) &&
+      obj["limit"].asUnsignedInteger() > 0)
     m_limit = (unsigned int)obj["limit"].asUnsignedInteger();
 
   // and order
   if (obj.isMember("order") && obj["order"].isMember("method") && obj["order"]["method"].isString())
   {
-    const CVariant &order = obj["order"];
+    const CVariant& order = obj["order"];
     if (order.isMember("direction") && order["direction"].isString())
       m_orderDirection = StringUtils::EqualsNoCase(order["direction"].asString(), "ascending")
                              ? SortOrder::ASCENDING
                              : SortOrder::DESCENDING;
 
     if (order.isMember("ignorefolders") && obj["ignorefolders"].isBoolean())
-      m_orderAttributes = obj["ignorefolders"].asBoolean() ? SortAttributeIgnoreFolders : SortAttributeNone;
+      m_orderAttributes =
+          obj["ignorefolders"].asBoolean() ? SortAttributeIgnoreFolders : SortAttributeNone;
 
     m_orderField = CSmartPlaylistRule::TranslateOrder(obj["order"]["method"].asString().c_str());
   }
@@ -1387,12 +1483,12 @@ bool CSmartPlaylist::Load(const CVariant &obj)
   return true;
 }
 
-bool CSmartPlaylist::LoadFromXml(const std::string &xml)
+bool CSmartPlaylist::LoadFromXml(const std::string& xml)
 {
   return load(readNameFromXml(xml));
 }
 
-bool CSmartPlaylist::LoadFromXML(const TiXmlNode *root, const std::string &encoding)
+bool CSmartPlaylist::LoadFromXML(const TiXmlNode* root, const std::string& encoding)
 {
   if (!root)
     return false;
@@ -1404,7 +1500,7 @@ bool CSmartPlaylist::LoadFromXML(const TiXmlNode *root, const std::string &encod
                                   : CDatabaseQueryRuleCombination::Type::COMBINATION_OR);
 
   // now the rules
-  const TiXmlNode *ruleNode = root->FirstChild("rule");
+  const TiXmlNode* ruleNode = root->FirstChild("rule");
   while (ruleNode)
   {
     const auto rule{std::make_shared<CSmartPlaylistRule>()};
@@ -1414,7 +1510,7 @@ bool CSmartPlaylist::LoadFromXML(const TiXmlNode *root, const std::string &encod
     ruleNode = ruleNode->NextSibling("rule");
   }
 
-  const TiXmlElement *groupElement = root->FirstChildElement("group");
+  const TiXmlElement* groupElement = root->FirstChildElement("group");
   if (groupElement != nullptr && groupElement->FirstChild() != nullptr)
   {
     m_group = groupElement->FirstChild()->ValueStr();
@@ -1428,24 +1524,26 @@ bool CSmartPlaylist::LoadFromXML(const TiXmlNode *root, const std::string &encod
 
   // and order
   // format is <order direction="ascending">field</order>
-  const TiXmlElement *order = root->FirstChildElement("order");
+  const TiXmlElement* order = root->FirstChildElement("order");
   if (order && order->FirstChild())
   {
-    const char *direction = order->Attribute("direction");
+    const char* direction = order->Attribute("direction");
     if (direction)
       m_orderDirection = StringUtils::EqualsNoCase(direction, "ascending") ? SortOrder::ASCENDING
                                                                            : SortOrder::DESCENDING;
 
-    const char *ignorefolders = order->Attribute("ignorefolders");
+    const char* ignorefolders = order->Attribute("ignorefolders");
     if (ignorefolders != nullptr)
-      m_orderAttributes = StringUtils::EqualsNoCase(ignorefolders, "true") ? SortAttributeIgnoreFolders : SortAttributeNone;
+      m_orderAttributes = StringUtils::EqualsNoCase(ignorefolders, "true")
+                              ? SortAttributeIgnoreFolders
+                              : SortAttributeNone;
 
     m_orderField = CSmartPlaylistRule::TranslateOrder(order->FirstChild()->Value());
   }
   return true;
 }
 
-bool CSmartPlaylist::LoadFromJson(const std::string &json)
+bool CSmartPlaylist::LoadFromJson(const std::string& json)
 {
   if (json.empty())
     return false;
@@ -1457,15 +1555,15 @@ bool CSmartPlaylist::LoadFromJson(const std::string &json)
   return Load(obj);
 }
 
-bool CSmartPlaylist::Save(const std::string &path) const
+bool CSmartPlaylist::Save(const std::string& path) const
 {
   CXBMCTinyXML doc;
   TiXmlDeclaration decl("1.0", "UTF-8", "yes");
   doc.InsertEndChild(decl);
 
   TiXmlElement xmlRootElement("smartplaylist");
-  xmlRootElement.SetAttribute("type",m_playlistType.c_str());
-  TiXmlNode *pRoot = doc.InsertEndChild(xmlRootElement);
+  xmlRootElement.SetAttribute("type", m_playlistType.c_str());
+  TiXmlNode* pRoot = doc.InsertEndChild(xmlRootElement);
   if (!pRoot)
     return false;
 
@@ -1511,7 +1609,7 @@ bool CSmartPlaylist::Save(const std::string &path) const
   return doc.SaveFile(path);
 }
 
-bool CSmartPlaylist::Save(CVariant &obj, bool full /* = true */) const
+bool CSmartPlaylist::Save(CVariant& obj, bool full /* = true */) const
 {
   if (obj.type() == CVariant::VariantTypeConstNull)
     return false;
@@ -1549,7 +1647,7 @@ bool CSmartPlaylist::Save(CVariant &obj, bool full /* = true */) const
   return true;
 }
 
-bool CSmartPlaylist::SaveAsJson(std::string &json, bool full /* = true */) const
+bool CSmartPlaylist::SaveAsJson(std::string& json, bool full /* = true */) const
 {
   CVariant xsp(CVariant::VariantTypeObject);
   if (!Save(xsp, full))
@@ -1570,12 +1668,12 @@ void CSmartPlaylist::Reset()
   m_groupMixed = false;
 }
 
-void CSmartPlaylist::SetName(const std::string &name)
+void CSmartPlaylist::SetName(const std::string& name)
 {
   m_playlistName = name;
 }
 
-void CSmartPlaylist::SetType(const std::string &type)
+void CSmartPlaylist::SetType(const std::string& type)
 {
   m_playlistType = type;
 }
@@ -1590,16 +1688,15 @@ bool CSmartPlaylist::IsMusicType() const
   return IsMusicType(m_playlistType);
 }
 
-bool CSmartPlaylist::IsVideoType(const std::string &type)
+bool CSmartPlaylist::IsVideoType(const std::string& type)
 {
-  return type == "movies" || type == "tvshows" || type == "episodes" ||
-         type == "musicvideos" || type == "mixed";
+  return type == "movies" || type == "tvshows" || type == "episodes" || type == "musicvideos" ||
+         type == "mixed";
 }
 
-bool CSmartPlaylist::IsMusicType(const std::string &type)
+bool CSmartPlaylist::IsMusicType(const std::string& type)
 {
-  return type == "artists" || type == "albums" ||
-         type == "songs" || type == "mixed";
+  return type == "artists" || type == "albums" || type == "songs" || type == "mixed";
 }
 
 std::string CSmartPlaylist::GetWhereClause(
@@ -1608,7 +1705,7 @@ std::string CSmartPlaylist::GetWhereClause(
   return m_ruleCombination.GetWhereClause(db, GetType(), referencedPlaylists);
 }
 
-void CSmartPlaylist::GetVirtualFolders(std::vector<std::string> &virtualFolders) const
+void CSmartPlaylist::GetVirtualFolders(std::vector<std::string>& virtualFolders) const
 {
   m_ruleCombination.GetVirtualFolders(GetType(), virtualFolders);
 }
@@ -1623,7 +1720,8 @@ std::string CSmartPlaylist::GetSaveLocation() const
   return "video";
 }
 
-void CSmartPlaylist::GetAvailableFields(const std::string &type, std::vector<std::string> &fieldList)
+void CSmartPlaylist::GetAvailableFields(const std::string& type,
+                                        std::vector<std::string>& fieldList)
 {
   const std::vector<Field> typeFields = CSmartPlaylistRule::GetFields(type);
   for (const auto& field : typeFields)
@@ -1644,27 +1742,26 @@ bool CSmartPlaylist::IsEmpty(bool ignoreSortAndLimit /* = true */) const
   return empty;
 }
 
-bool CSmartPlaylist::CheckTypeCompatibility(const std::string &typeLeft, const std::string &typeRight)
+bool CSmartPlaylist::CheckTypeCompatibility(const std::string& typeLeft,
+                                            const std::string& typeRight)
 {
   if (typeLeft == typeRight)
     return true;
 
-  if (typeLeft == "mixed" &&
-     (typeRight == "songs" || typeRight == "musicvideos"))
+  if (typeLeft == "mixed" && (typeRight == "songs" || typeRight == "musicvideos"))
     return true;
 
-  if (typeRight == "mixed" &&
-     (typeLeft == "songs" || typeLeft == "musicvideos"))
+  if (typeRight == "mixed" && (typeLeft == "songs" || typeLeft == "musicvideos"))
     return true;
 
   return false;
 }
 
-CDatabaseQueryRule *CSmartPlaylist::CreateRule() const
+CDatabaseQueryRule* CSmartPlaylist::CreateRule() const
 {
   return new CSmartPlaylistRule();
 }
-CDatabaseQueryRuleCombination *CSmartPlaylist::CreateCombination() const
+CDatabaseQueryRuleCombination* CSmartPlaylist::CreateCombination() const
 {
   return new CSmartPlaylistRuleCombination();
 }

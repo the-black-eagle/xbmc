@@ -11,6 +11,7 @@
 #include "ReplayGain.h"
 #include "XBDateTime.h"
 #include "music/Album.h"
+#include "music/MusicType.h"
 #include "music/Song.h"
 #include "utils/IArchivable.h"
 #include "utils/ISerializable.h"
@@ -83,13 +84,15 @@ public:
   int GetBitRate() const;
   int GetNoOfChannels() const;
   int GetSampleRate() const;
+  int GetBitsPerSample() const;
+  const std::string& GetCodec() const;
   const std::string& GetAlbumReleaseStatus() const;
   const std::string& GetStationName() const;
   const std::string& GetStationArt() const;
   const std::string& GetSongVideoURL() const;
   const EmbeddedArtInfo &GetCoverArtInfo() const;
   const ReplayGain& GetReplayGain() const;
-  ReleaseType GetAlbumReleaseType() const;
+  const AudioType& GetAlbumReleaseType() const;
   const std::vector<ChapterDetails>& GetChapterMarks() const;
 
   void SetURL(std::string_view strURL);
@@ -149,7 +152,7 @@ public:
   void SetBoxset(bool boxset);
   void SetCoverArtInfo(size_t size, const std::string &mimeType);
   void SetReplayGain(const ReplayGain& aGain);
-  void SetAlbumReleaseType(ReleaseType releaseType);
+  void SetAlbumReleaseType(AudioType releaseType);
   void SetType(MediaType_view mediaType);
   void SetDiscSubtitle(std::string_view strDiscSubtitle);
   void SetTotalDiscs(int iDiscTotal);
@@ -162,6 +165,8 @@ public:
   void SetStationArt(std::string_view strStationArt);
   void SetSongVideoURL(std::string_view songVideoURL); // link to video of song
   void SetChapterMarks(const std::vector<ChapterDetails>& chapters);
+  void SetBitsPerSample(int bitspersample);
+  void SetCodec(const std::string& strCodec);
 
   /*! \brief Append a unique artist to the artist list
    Checks if we have this artist already added, and if not adds it to the songs artist list.
@@ -254,11 +259,13 @@ private:
   int m_iDiscTotal;
   bool m_bBoxset;
   int m_iBPM;
-  ReleaseType m_albumReleaseType;
+  AudioType m_albumReleaseType;
   std::string m_strReleaseStatus;
   int m_samplerate;
   int m_channels;
   int m_bitrate;
+  int m_bitsPerSample;
+  std::string m_codec;
   std::string m_stationName;
   std::string m_stationArt; // Used to fetch thumb URL for Shoutcasts
   std::string m_songVideoURL; // link to a video for a song

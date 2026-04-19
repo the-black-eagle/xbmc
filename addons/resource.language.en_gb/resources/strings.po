@@ -15167,7 +15167,26 @@ msgctxt "#21485"
 msgid "Supported file extensions and media types"
 msgstr ""
 
-#empty strings from id 21486 to 21601
+#: xbmc/dialogs/GUIDialogMediaFilter.cpp
+#: xbmc/playlist/SmartPlayList.cpp
+msgctxt "#21486"
+msgid "Music concerts"
+msgstr ""
+
+#. Boolean value to include/exclude audiobooks in the filter or smartplaylist
+#: xbmc/dialogs/GUIDialogMediaFilter.cpp
+#: xbmc/playlist/SmartPlayList.cpp
+msgctxt "#21487"
+msgid "Audiobook"
+msgstr ""
+
+#. Plural of #21487 - for display on screen in the associated node name
+#: system/library/music/audiobook.xml
+msgctxt "#21488"
+msgid "Audiobooks"
+msgstr ""
+
+#empty strings from id 21489 to 21601
 
 #: xbmc/Util.cpp
 msgctxt "#21602"

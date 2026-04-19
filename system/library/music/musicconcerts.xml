@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<node order="38" type="filter" visible="Library.HasContent(MusicConcerts)">
+    <label>21486</label>
+    <content>albums</content>
+    <rule field="ismusicconcert" operator="true" />
+</node>

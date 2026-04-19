@@ -270,7 +270,7 @@ const ReplayGain& CMusicInfoTag::GetReplayGain() const
   return m_replayGain;
 }
 
-ReleaseType CMusicInfoTag::GetAlbumReleaseType() const
+const AudioType& CMusicInfoTag::GetAlbumReleaseType() const
 {
   return m_albumReleaseType;
 }
@@ -293,6 +293,16 @@ int CMusicInfoTag::GetSampleRate() const
 int CMusicInfoTag::GetNoOfChannels() const
 {
   return m_channels;
+}
+
+int CMusicInfoTag::GetBitsPerSample() const
+{
+  return m_bitsPerSample;
+}
+
+const std::string& CMusicInfoTag::GetCodec() const
+{
+  return m_codec;
 }
 
 const std::string& CMusicInfoTag::GetReleaseDate() const
@@ -548,6 +558,16 @@ void CMusicInfoTag::SetComment(std::string_view comment)
   m_strComment = comment;
 }
 
+void CMusicInfoTag::SetBitsPerSample(int bitspersample)
+{
+  m_bitsPerSample = bitspersample;
+}
+
+void CMusicInfoTag::SetCodec(const std::string& codec)
+{
+  m_codec = codec;
+}
+
 void CMusicInfoTag::SetMood(std::string_view mood)
 {
   m_strMood = mood;
@@ -761,7 +781,7 @@ void CMusicInfoTag::SetReplayGain(const ReplayGain& aGain)
   m_replayGain = aGain;
 }
 
-void CMusicInfoTag::SetAlbumReleaseType(ReleaseType releaseType)
+void CMusicInfoTag::SetAlbumReleaseType(AudioType releaseType)
 {
   m_albumReleaseType = releaseType;
 }
@@ -848,6 +868,11 @@ void CMusicInfoTag::SetAlbum(const CAlbum& album)
   SetDatabaseId(album.idAlbum, MediaTypeAlbum);
   SetLastPlayed(album.lastPlayed);
   SetTotalDiscs(album.iTotalDiscs);
+  SetCodec(album.strCodec);
+  SetBitRate(album.iBitrate);
+  SetNoOfChannels(album.iChannels);
+  SetSampleRate(album.iSampleRate);
+  SetBitsPerSample(album.iBitsPerSample);
   SetDuration(album.iAlbumDuration);
 
   SetLoaded();
@@ -901,8 +926,9 @@ void CMusicInfoTag::SetSong(const CSong& song)
   SetBitRate(song.iBitRate);
   SetSampleRate(song.iSampleRate);
   SetNoOfChannels(song.iChannels);
+  SetBitsPerSample(song.iBitsPerSample);
+  SetCodec(song.strCodec);
   SetSongVideoURL(song.songVideoURL);
-
   if (song.replayGain.Get(ReplayGain::TRACK).Valid())
     m_replayGain.Set(ReplayGain::TRACK, song.replayGain.Get(ReplayGain::TRACK));
   if (song.replayGain.Get(ReplayGain::ALBUM).Valid())
@@ -977,9 +1003,9 @@ void CMusicInfoTag::Serialize(CVariant& value) const
   value["compilationartist"] = m_bCompilation;
   value["compilation"] = m_bCompilation;
   if (m_type.compare(MediaTypeAlbum) == 0)
-    value["releasetype"] = CAlbum::ReleaseTypeToString(m_albumReleaseType);
+    value["releasetype"] = m_albumReleaseType.ToString();
   else if (m_type.compare(MediaTypeSong) == 0)
-    value["albumreleasetype"] = CAlbum::ReleaseTypeToString(m_albumReleaseType);
+    value["albumreleasetype"] = m_albumReleaseType.ToString();
   value["isboxset"] = m_bBoxset;
   value["totaldiscs"] = m_iDiscTotal;
   value["disctitle"] = m_strDiscSubtitle;
@@ -990,8 +1016,9 @@ void CMusicInfoTag::Serialize(CVariant& value) const
   value["bitrate"] = m_bitrate;
   value["samplerate"] = m_samplerate;
   value["channels"] = m_channels;
-  value["songvideourl"] = m_songVideoURL;
-}
+  value["bitspersample"] = m_bitsPerSample;
+  value["codec"] = m_codec;
+  value["songvideourl"] = m_songVideoURL;}
 
 void CMusicInfoTag::ToSortable(SortItem& sortable, Field field) const
 {
@@ -1128,11 +1155,13 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar << m_listeners;
     ar << m_coverArt;
     ar << m_cuesheet;
-    ar << static_cast<int>(m_albumReleaseType);
+    ar << static_cast<int>(m_albumReleaseType.GetContent());
     ar << m_iBPM;
     ar << m_samplerate;
     ar << m_bitrate;
     ar << m_channels;
+    ar << m_bitsPerSample;
+    ar << m_codec;
     ar << m_songVideoURL;
   }
   else
@@ -1196,11 +1225,13 @@ void CMusicInfoTag::Archive(CArchive& ar)
 
     int albumReleaseType;
     ar >> albumReleaseType;
-    m_albumReleaseType = static_cast<ReleaseType>(albumReleaseType);
+    m_albumReleaseType = static_cast<AudioType::Content>(albumReleaseType);
     ar >> m_iBPM;
     ar >> m_samplerate;
     ar >> m_bitrate;
     ar >> m_channels;
+    ar >> m_bitsPerSample;
+    ar >> m_codec;
     ar >> m_songVideoURL;
   }
 }
@@ -1245,7 +1276,7 @@ void CMusicInfoTag::Clear()
   m_iAlbumId = -1;
   m_coverArt.Clear();
   m_replayGain = ReplayGain();
-  m_albumReleaseType = ReleaseType::Album;
+  m_albumReleaseType = AudioType::Content::Album;
   m_listeners = 0;
   m_Rating = 0;
   m_Userrating = 0;
@@ -1255,6 +1286,8 @@ void CMusicInfoTag::Clear()
   m_samplerate = 0;
   m_bitrate = 0;
   m_channels = 0;
+  m_bitsPerSample = 0;
+  m_codec.clear();
   m_stationName.clear();
   m_stationArt.clear();
   m_songVideoURL.clear();

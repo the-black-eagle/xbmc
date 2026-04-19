@@ -403,6 +403,21 @@
 				<itemgap>9</itemgap>
 				<width>1900</width>
 				<usecontrolcoords>true</usecontrolcoords>
+				<control type="group">
+					<width>115</width>
+					<visible>!String.IsEmpty(ListItem.MusicCodec)</visible>
+					<control type="label">
+						<width>110</width>
+						<height>60</height>
+						<align>center</align>
+						<aligny>center</aligny>
+						<label>$INFO[$PARAM[infolabel_prefix]ListItem.MusicCodec]</label>
+						<font>font_flag</font>
+					</control>
+					<include content="MediaFlag">
+						<param name="texture" value="flags/flag.png" />
+					</include>
+				</control>
 				<include content="MediaFlag">
 					<param name="flag_visible" value="VideoPlayer.IsStereoscopic" />
 					<param name="flag_label" value="3D" />
@@ -517,6 +532,82 @@
 					<param name="flag_visible" value="!String.IsEmpty(MusicPlayer.BMP)" />
 					<param name="flag_label" value="$INFO[MusicPlayer.BMP, ,bpm]" />
 				</include>
+				<control type="group">
+					<visible>!String.IsEmpty(ListItem.Samplerate)</visible>
+					<width>115</width>
+					<control type="label">
+						<width>110</width>
+						<height>60</height>
+						<align>center</align>
+						<aligny>center</aligny>
+						<label>$INFO[ListItem.Samplerate, ,kHz]</label>
+						<font>font_flag</font>
+					</control>
+					<include content="MediaFlag">
+						<param name="texture" value="flags/flag.png" />
+					</include>
+				</control>
+				<control type="group">
+					<visible>!String.IsEmpty(ListItem.BitRate)</visible>
+					<width>115</width>
+					<control type="label">
+						<width>110</width>
+						<height>60</height>
+						<align>center</align>
+						<aligny>center</aligny>
+						<label>$INFO[ListItem.BitRate, ,kbps]</label>
+						<font>font_flag</font>
+					</control>
+					<include content="MediaFlag">
+						<param name="texture" value="flags/flag.png" />
+					</include>
+				</control>
+				<control type="group">
+					<visible>!String.IsEmpty(ListItem.MusicBitsPerSample)</visible>
+					<width>115</width>
+					<control type="label">
+						<width>110</width>
+						<height>60</height>
+						<align>center</align>
+						<aligny>center</aligny>
+						<label>$INFO[ListItem.MusicBitsPerSample, ,bit]</label>
+						<font>font_flag</font>
+					</control>
+					<include content="MediaFlag">
+						<param name="texture" value="flags/flag.png" />
+					</include>
+				</control>
+				<control type="group">
+					<visible>!String.IsEmpty(ListItem.BPM)</visible>
+					<width>115</width>
+					<control type="label">
+						<width>110</width>
+						<height>60</height>
+						<align>center</align>
+						<aligny>center</aligny>
+						<label>$INFO[ListItem.BPM, ,bpm]</label>
+						<font>font_flag</font>
+					</control>
+					<include content="MediaFlag">
+						<param name="texture" value="flags/flag.png" />
+					</include>
+				</control>
+				<control type="group">
+					<width>115</width>
+					<visible>!String.IsEmpty($PARAM[infolabel_prefix]ListItem.Duration)</visible>
+					<visible>Container.Content(albums) + ![Window.IsVisible(songinformation) | Window.IsVisible(musicinformation)]</visible>
+					<control type="label">
+						<width>110</width>
+						<height>60</height>
+						<align>center</align>
+						<aligny>center</aligny>
+						<label>$INFO[$PARAM[infolabel_prefix]ListItem.Duration]</label>
+						<font>font_flag</font>
+					</control>
+					<include content="MediaFlag">
+						<param name="texture" value="flags/flag.png" />
+					</include>
+				</control>
 			</control>
 		</definition>
 	</include>
