@@ -15180,7 +15180,13 @@ msgctxt "#21487"
 msgid "Audiobook"
 msgstr ""
 
-#empty strings from id 21488 to 21601
+#. Plural of #21487 - for display on screen in the associated node name
+#: system/library/music/audiobook.xml
+msgctxt "21488"
+msgid "Audiobooks"
+msgstr ""
+
+#empty strings from id 21489 to 21601
 
 #: xbmc/Util.cpp
 msgctxt "#21602"

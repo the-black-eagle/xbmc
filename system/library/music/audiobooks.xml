@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<node order="38" type="filter" visible="Library.HasContent(AudioBooks)">
+    <label>21488</label>
+    <content>albums</content>
+    <order direction="ascending">album</order>
+     <rule field="isaudiobook" operator="true" />
+</node>
