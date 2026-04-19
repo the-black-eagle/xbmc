@@ -14,6 +14,7 @@
 */
 
 #include "Artist.h"
+#include "MusicType.h"
 #include "Song.h"
 #include "XBDateTime.h"
 #include "utils/Artwork.h"
@@ -24,12 +25,6 @@
 class TiXmlElement;
 class TiXmlNode;
 class CFileItem;
-
-enum class ReleaseType
-{
-  Album = 0,
-  Single
-};
 
 class CAlbum
 {
@@ -73,7 +68,8 @@ public:
     lastPlayed.Reset();
     iTotalDiscs = -1;
     songs.clear();
-    releaseType = ReleaseType::Album;
+    releaseType = AudioType::Content::Album;
+    //releaseType = ReleaseType::Album;
     strLastScraped.clear();
     bScrapedMBID = false;
     bArtistSongMerge = false;
@@ -115,8 +111,8 @@ public:
   void SetDateNew(const std::string& strDateNew);
   void SetLastPlayed(const std::string& strLastPlayed);
 
-  static std::string ReleaseTypeToString(ReleaseType releaseType);
-  static ReleaseType ReleaseTypeFromString(const std::string& strReleaseType);
+  static std::string ReleaseTypeToString(AudioType releaseType);
+  static AudioType ReleaseTypeFromString(const std::string& strReleaseType);
 
   /*! \brief Set album artist credits using the arrays of tag values.
    If strArtistSort (as from ALBUMARTISTSORT tag) is already set then individual
@@ -176,7 +172,7 @@ public:
   CDateTime lastPlayed;
   int iTotalDiscs = -1;
   std::vector<CSong> songs; ///< Local songs
-  ReleaseType releaseType = ReleaseType::Album;
+  AudioType releaseType = AudioType::Content::Album;
   std::string strLastScraped;
   bool bScrapedMBID = false;
   bool bArtistSongMerge = false;

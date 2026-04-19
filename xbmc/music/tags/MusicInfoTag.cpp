@@ -270,7 +270,7 @@ const ReplayGain& CMusicInfoTag::GetReplayGain() const
   return m_replayGain;
 }
 
-ReleaseType CMusicInfoTag::GetAlbumReleaseType() const
+const AudioType& CMusicInfoTag::GetAlbumReleaseType() const
 {
   return m_albumReleaseType;
 }
@@ -781,7 +781,7 @@ void CMusicInfoTag::SetReplayGain(const ReplayGain& aGain)
   m_replayGain = aGain;
 }
 
-void CMusicInfoTag::SetAlbumReleaseType(ReleaseType releaseType)
+void CMusicInfoTag::SetAlbumReleaseType(AudioType releaseType)
 {
   m_albumReleaseType = releaseType;
 }
@@ -1003,9 +1003,9 @@ void CMusicInfoTag::Serialize(CVariant& value) const
   value["compilationartist"] = m_bCompilation;
   value["compilation"] = m_bCompilation;
   if (m_type.compare(MediaTypeAlbum) == 0)
-    value["releasetype"] = CAlbum::ReleaseTypeToString(m_albumReleaseType);
+    value["releasetype"] = m_albumReleaseType.ToString();
   else if (m_type.compare(MediaTypeSong) == 0)
-    value["albumreleasetype"] = CAlbum::ReleaseTypeToString(m_albumReleaseType);
+    value["albumreleasetype"] = m_albumReleaseType.ToString();
   value["isboxset"] = m_bBoxset;
   value["totaldiscs"] = m_iDiscTotal;
   value["disctitle"] = m_strDiscSubtitle;
@@ -1155,7 +1155,7 @@ void CMusicInfoTag::Archive(CArchive& ar)
     ar << m_listeners;
     ar << m_coverArt;
     ar << m_cuesheet;
-    ar << static_cast<int>(m_albumReleaseType);
+    ar << static_cast<int>(m_albumReleaseType.GetContent());
     ar << m_iBPM;
     ar << m_samplerate;
     ar << m_bitrate;
@@ -1225,7 +1225,7 @@ void CMusicInfoTag::Archive(CArchive& ar)
 
     int albumReleaseType;
     ar >> albumReleaseType;
-    m_albumReleaseType = static_cast<ReleaseType>(albumReleaseType);
+    m_albumReleaseType = static_cast<AudioType::Content>(albumReleaseType);
     ar >> m_iBPM;
     ar >> m_samplerate;
     ar >> m_bitrate;
@@ -1276,7 +1276,7 @@ void CMusicInfoTag::Clear()
   m_iAlbumId = -1;
   m_coverArt.Clear();
   m_replayGain = ReplayGain();
-  m_albumReleaseType = ReleaseType::Album;
+  m_albumReleaseType = AudioType::Content::Album;
   m_listeners = 0;
   m_Rating = 0;
   m_Userrating = 0;

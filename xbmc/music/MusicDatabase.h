@@ -13,6 +13,7 @@
 \brief
 */
 
+#include "MusicType.h"
 #include "addons/Scraper.h"
 #include "dbwrappers/Database.h"
 #include "settings/LibExportSettings.h"
@@ -306,7 +307,7 @@ public:
                const std::string& strType,
                const std::string& strReleaseStatus,
                bool bCompilation,
-               ReleaseType releaseType);
+               AudioType releaseType);
 
   /*! \brief retrieve an album, optionally with all songs.
    \param idAlbum the database id of the album.
@@ -337,7 +338,7 @@ public:
                   const std::string& strOrigReleaseDate,
                   bool bBoxedSet,
                   bool bCompilation,
-                  ReleaseType releaseType,
+                  AudioType releaseType,
                   bool bScrapedMBID);
   bool ClearAlbumLastScrapedTime(int idAlbum);
   bool HasAlbumBeenScraped(int idAlbum) const;
@@ -549,6 +550,8 @@ public:
   int GetArtistCountForRole(int role) const;
   int GetArtistCountForRole(const std::string& strRole) const;
   int GetConcertsCount();
+  int GetAudioBookCount();
+  bool IsItemConcert(const CFileItem& item) const;
 
   /*! \brief Increment the playcount of an item
    Increments the playcount and updates the last played date

@@ -25,6 +25,7 @@ set(HEADERS Album.h
             MusicInfoLoader.h
             MusicLibraryQueue.h
             MusicThumbLoader.h
+            MusicType.h
             MusicUtils.h
             Song.h)
 
