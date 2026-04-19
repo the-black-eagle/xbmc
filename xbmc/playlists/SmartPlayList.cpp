@@ -13,6 +13,7 @@
 #include "dbwrappers/Database.h"
 #include "filesystem/File.h"
 #include "filesystem/SmartPlaylistDirectory.h"
+#include "music/MusicType.h"
 #include "resources/LocalizeStrings.h"
 #include "resources/ResourcesComponent.h"
 #include "settings/Settings.h"
@@ -777,11 +778,16 @@ std::string CSmartPlaylistRule::GetBooleanQuery(const std::string& negate,
     if (m_field == static_cast<int>(Field::IS_BOXSET))
       return negate + "albumview.bBoxedSet = 1";
     if (m_field == static_cast<int>(Field::IS_MUSIC_CONCERT))
-      return negate + "idAlbum IN (SELECT DISTINCT idAlbum FROM song WHERE LOWER(song.strFileName) "
-                      "LIKE '%.mkv' OR LOWER(song.strFileName) LIKE '%.mp4')";
+    {
+      std::string SQL;
+      SQL = StringUtils::Format("albumview.strReleaseType like '{}'",
+                       AudioType::ToString(AudioType::Content::Concert).c_str());
+      return negate + SQL;
+    }
     if (m_field == static_cast<int>(Field::IS_AUDIOBOOK))
-      return negate + "idAlbum IN (SELECT DISTINCT idAlbum FROM album WHERE album.strType "
-                      "LIKE '%audiobook%')";
+      return negate +
+             StringUtils::Format("albumview.strReleaseType like '{}'",
+                                 AudioType::ToString(AudioType::Content::AudioBook).c_str());
   }
   return "";
 }
