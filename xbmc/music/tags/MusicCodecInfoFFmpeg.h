@@ -12,7 +12,7 @@
 
 #include <string>
 
-typedef struct musicCodecInfo
+struct musicCodecInfo
 {
 public:
   int bitsPerSample = 0;

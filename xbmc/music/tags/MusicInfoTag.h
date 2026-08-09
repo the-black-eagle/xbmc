@@ -92,10 +92,8 @@ public:
   const std::string& GetSongVideoURL() const;
   const EmbeddedArtInfo &GetCoverArtInfo() const;
   const ReplayGain& GetReplayGain() const;
-  const AudioType& GetAlbumReleaseType() const;
-  const std::vector<ChapterDetails>& GetChapterMarks() const;
   AudioType::Type GetAlbumReleaseType() const;
-
+  const std::vector<ChapterDetails>& GetChapterMarks() const;
   void SetURL(std::string_view strURL);
   void SetTitle(const std::string& strTitle);
   void SetArtist(const std::string& strArtist);

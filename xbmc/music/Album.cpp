@@ -397,16 +397,6 @@ const std::vector<int> CAlbum::GetArtistIDArray() const
   return artistids;
 }
 
-std::string CAlbum::GetReleaseType() const
-{
-  return AudioType::ToString(releaseType);
-}
-
-void CAlbum::SetReleaseType(const std::string& strReleaseType)
-{
-  releaseType = AudioType::FromString(strReleaseType);
-}
-
 void CAlbum::SetDateAdded(const std::string& strDateAdded)
 {
   dateAdded.SetFromDBDateTime(strDateAdded);
@@ -427,14 +417,14 @@ void CAlbum::SetLastPlayed(const std::string& strLastPlayed)
   lastPlayed.SetFromDBDateTime(strLastPlayed);
 }
 
-std::string CAlbum::ReleaseTypeToString(AudioType releaseType)
+std::string CAlbum::GetReleaseType() const
 {
-  return releaseType.ToString();
+  return AudioType::ToString(releaseType);
 }
 
-AudioType CAlbum::ReleaseTypeFromString(const std::string& strReleaseType)
+void CAlbum::SetReleaseType(const std::string& strReleaseType)
 {
-  return AudioType::FromString(strReleaseType).value_or(AudioType::Content::Album);
+  releaseType = AudioType::FromString(strReleaseType);
 }
 
 bool CAlbum::operator<(const CAlbum &a) const
@@ -577,8 +567,7 @@ bool CAlbum::Load(const TiXmlElement *album, bool append, bool prioritise)
   if (XMLUtils::GetString(album, "releasetype", strReleaseType))
     SetReleaseType(strReleaseType);
   else
-    releaseType = AudioType::Content::Album;
-
+    releaseType = AudioType::Type::Album;
   return true;
 }
 

@@ -13,7 +13,6 @@
 \brief
 */
 
-#include "MusicType.h"
 #include "addons/Scraper.h"
 #include "dbwrappers/Database.h"
 #include "music/AudioType.h"

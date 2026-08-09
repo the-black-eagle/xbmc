@@ -123,7 +123,7 @@ static const CGUIDialogMediaFilter::Filter filterList[] = {
   {     "albums",       Field::COMPILATION,     204,    SettingType::Boolean, "toggle", "",         OPERATOR_FALSE },
   {     "albums",       Field::IS_BOXSET,       38074,  SettingType::Boolean, "toggle", "",         OPERATOR_FALSE },
   {     "albums",       Field::ORIG_YEAR,       38078,  SettingType::String,  "edit",   "string",   OPERATOR_CONTAINS },
-  {     "albums",       Field::IS_MUSIC_CONCERT,21486,  SettingType::Boolean, "toggle", "",         OPERATOR_FALSE},
+  {     "albums",       Field::IS_MUSIC_CONCERT,21491,  SettingType::Boolean, "toggle", "",         OPERATOR_FALSE},
 
   {       "songs",          Field::TITLE,   556,  SettingType::String,   "edit",  "string", OPERATOR_CONTAINS },
   {       "songs",          Field::ALBUM,   558,    SettingType::List,   "list",  "string",   OPERATOR_EQUALS },

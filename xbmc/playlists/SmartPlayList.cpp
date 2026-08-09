@@ -13,7 +13,7 @@
 #include "dbwrappers/Database.h"
 #include "filesystem/File.h"
 #include "filesystem/SmartPlaylistDirectory.h"
-#include "music/MusicType.h"
+#include "music/AudioType.h"
 #include "resources/LocalizeStrings.h"
 #include "resources/ResourcesComponent.h"
 #include "settings/MediaSettings.h"
@@ -147,8 +147,8 @@ static const auto fields = std::array{
   TranslateField{ "hdrdetail",         Field::HDR_DETAIL,                 TEXTIN_FIELD,   nullptr,                              false, 20478 },
   TranslateField{ "albumcodec",        Field::ALBUM_CODEC,                TEXT_FIELD,     nullptr,                              true,  21446 },
   TranslateField{ "bitspersample",     Field::BITS_PER_SAMPLE,            TEXT_FIELD,     nullptr,                              true,  612 },
-  TranslateField{ "ismusicconcert",    Field::IS_MUSIC_CONCERT,           BOOLEAN_FIELD,  nullptr,                              false, 21486},
-  TranslateField{ "isaudiobook",       Field::IS_AUDIOBOOK,               BOOLEAN_FIELD,  nullptr,                              false, 21487},
+  TranslateField{ "ismusicconcert",    Field::IS_MUSIC_CONCERT,           BOOLEAN_FIELD,  nullptr,                              false, 21491},
+  TranslateField{ "isaudiobook",       Field::IS_AUDIOBOOK,               BOOLEAN_FIELD,  nullptr,                              false, 21492},
 };
 // clang-format on
 
@@ -784,13 +784,13 @@ std::string CSmartPlaylistRule::GetBooleanQuery(const std::string& negate,
     {
       std::string SQL;
       SQL = StringUtils::Format("albumview.strReleaseType like '{}'",
-                       AudioType::ToString(AudioType::Content::Concert).c_str());
+                       AudioType::ToString(AudioType::Type::Concert).c_str());
       return negate + SQL;
     }
     if (m_field == static_cast<int>(Field::IS_AUDIOBOOK))
       return negate +
              StringUtils::Format("albumview.strReleaseType like '{}'",
-                                 AudioType::ToString(AudioType::Content::AudioBook).c_str());
+                                 AudioType::ToString(AudioType::Type::AudioBook).c_str());
   }
   return "";
 }
