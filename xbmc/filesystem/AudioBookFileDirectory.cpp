@@ -17,18 +17,13 @@
 #include "filesystem/File.h"
 #include "imagefiles/ImageFileURL.h"
 #include "music/MusicEmbeddedCoverLoaderFFmpeg.h"
-<<<<<<< HEAD
 #include "music/tags/MusicCodecInfoFFmpeg.h"
 #include "music/tags/MusicInfoTag.h"
 #include "music/tags/MusicInfoTagLoaderMatroska.h"
-=======
-#include "music/tags/MusicInfoTag.h"
->>>>>>> 497cbabf57 ([MUSIC] Fix up some stuff that sneaked in during rebase)
 #include "resources/LocalizeStrings.h"
 #include "resources/ResourcesComponent.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/SettingsComponent.h"
-#include "utils/Mp4ChplReader.h"
 #include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
 #include "utils/log.h"
@@ -97,8 +92,8 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
   // Some tags are relevant to the whole album - these are read first
   CMusicInfoTag albumtag;
 
-  AVDictionaryEntry* tag=nullptr;
-  while ((tag = av_dict_get(m_fctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+  AVDictionaryEntry* tag = nullptr;
+  if (isAudioBook)
   {
     while ((tag = av_dict_get(m_fctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
     {
@@ -111,185 +106,33 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
       else if (StringUtils::CompareNoCase(tag->key, "description") == 0)
         desc = tag->value;
     }
-    else
-    {
-      std::string key = StringUtils::ToUpper(tag->key);
-
-      /* The matroska Tag and chapter editor from https://www.videohelp.com/software/chapterEditor
-         prefaces level 50 tags with the target type (album/concert/episde/movie/etc). That needs
-         removing for the tag processing to work correctly. MKVToolnix & mp3tag correctly target
-         level 50 and do not preface the tag with the target type. We're only interested in albums
-         at this level (50) so strip off the preface if it exists.
-      */
-      if (StringUtils::StartsWith(key, "ALBUM/"))
-        key.erase(0, 6);
-      // track is matroska's discnumber when at level 50 (these tags) as set by mp3tag
-      // part_number is the matroska spec key
-      if (key == "TRACK" || key == "PART_NUMBER")
-        albumtag.SetDiscNumber(std::stoi(tag->value));
-      else if (key == "SUBTITLE" || key == "SETSUBTITLE")
-        albumtag.SetDiscSubtitle(tag->value);
-      else if (key == "TITLE")
-        albumtag.SetAlbum(tag->value);
-      else if (key == "ALBUM")
-        albumtag.SetAlbum(tag->value);
-      else if (key == "ARTIST")
-        albumtag.SetArtist(tag->value);
-      else if (key == "ARTISTSORT" || key == "ARTIST SORT")
-        albumtag.SetArtistSort(
-            StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
-      else if (key == "ALBUMARTIST" || key == "ALBUM ARTIST" || key == "ALBUM_ARTIST")
-        albumtag.SetAlbumArtist(
-            StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
-      else if (key == "ALBUMARTSTS" || key == "ALBUM ARTISTS")
-        albumtag.SetAlbumArtist(StringUtils::Split(tag->value, separators));
-      else if (key == "ALBUMARTISTSORT" || key == "ALBUM ARTIST SORT" || key == "SORT_ALBUM_ARTIST")
-        albumtag.SetAlbumArtistSort(
-            StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
-      else if (key == "MUSICBRAINZ_ARTISTID")
-        albumtag.SetMusicBrainzArtistID(StringUtils::Split(tag->value, separators));
-      else if (key == "MUSICBRAINZ_ALBUMARTISTID" || key == "MUSICBRAINZ ALBUM ARTIST ID")
-        albumtag.SetMusicBrainzAlbumArtistID(StringUtils::Split(tag->value, separators));
-      else if (key == "MUSICBRAINZ_ALBUMARTIST")
-        albumtag.SetAlbumArtist(tag->value);
-      else if (key == "MUSICBRAINZ_ALBUMID" || key == "MUSICBRAINZ ALBUM ID")
-        albumtag.SetMusicBrainzAlbumID(tag->value);
-      else if (key == "MUSICBRAINZ_RELEASEGROUPID" || key == "MUSICBRAINZ RELEASE GROUP ID")
-        albumtag.SetMusicBrainzReleaseGroupID(tag->value);
-      else if (key == "COMPOSERSORT" || key == "COMPOSER SORT")
-        albumtag.SetComposerSort(
-            StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
-      else if (key == "MUSICBRAINZ_ARTISTID")
-        albumtag.SetMusicBrainzArtistID(StringUtils::Split(tag->value, separators));
-      else if (key == "MUSICBRAINZ_ALBUMARTISTID" || key == "MUSICBRAINZ ALBUM ARTIST ID")
-        albumtag.SetMusicBrainzAlbumArtistID(StringUtils::Split(tag->value, separators));
-      else if (key == "MUSICBRAINZ_ALBUMARTIST")
-        albumtag.SetAlbumArtist(tag->value);
-      else if (key == "MUSICBRAINZ_ALBUMID" || key == "MUSICBRAINZ ALBUM ID")
-        albumtag.SetMusicBrainzAlbumID(tag->value);
-      else if (key == "MUSICBRAINZ_RELEASEGROUPID" || key == "MUSICBRAINZ RELEASE GROUP ID")
-        albumtag.SetMusicBrainzReleaseGroupID(tag->value);
-      else if (key == "MUSICBRAINZ_ALBUMSTATUS")
-        albumtag.SetAlbumReleaseStatus(tag->value);
-      else if (key == "MUSICBRAINZ_ALBUMTYPE")
-        albumtag.SetMusicBrainzReleaseType(tag->value);
-      else if (key == "COMPILATION")
-        albumtag.SetCompilation(true);
-      else if (key == "PUBLISHER")
-        albumtag.SetRecordLabel(tag->value);
-      // mp3tag info shows year but the value is stored in date_recorded
-      // equates to TDRC in id3v2.4 ISO 8601 yyyy-mm-dd or part thereof
-      else if (key == "YEAR" || key == "DATE_RELEASED") // proper matroska tag is date_released
-        albumtag.SetReleaseDate(tag->value);
-      // ISO 8601 as above. Equates to TDOR in id3v2.4 (set by mp3tag)
-      else if (key == "ORIGYEAR" || key == "DATE_RECORDED")
-        albumtag.SetOriginalDate(tag->value);
-      else if (key == "MOOD")
-        albumtag.SetMood( StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
-      // genre could be comma delimited or not. Temporarily add the comma just in case.  true trims
-      // any whitespace around the genre(s)
-      else if (key == "GENRE")
-      {
-        separators.emplace_back(",");
-        albumtag.SetGenre(StringUtils::Split(tag->value, separators), true);
-        separators.pop_back();
-      }
-      // comma separated list of role, person
-      else if (key == "INVOLVEDPEOPLE" || key == "ACTOR")
-      {
-        tagdata = StringUtils::Split(tag->value, ",");
-        AddCommaDelimitedString(tagdata, separators, albumtag);
-      }
-      else if (key == "SUBTITLE" || key == "SETSUBTITLE")
-        albumtag.SetDiscSubtitle(tag->value);
-      else if (key == "REMIXED_BY")
-        albumtag.AddArtistRole("Remixer", tag->value);
-      else if (key == "MIXED_BY" || key == "MIXER")
-        albumtag.AddArtistRole("Mixer", tag->value);
-      else if (key == "COMMENT")
-        albumtag.SetComment(tag->value);
-    }
   }
 
-  AVStream* st = nullptr;
-  std::string codec_name = "unknown";
-  int streamIndex = -1;
-  // Look for the default audio stream first
-  for (unsigned int i = 0; i < m_fctx->nb_streams; ++i)
+  std::map<std::string, std::string> fileTags;
+  std::map<unsigned long long, std::map<std::string, std::string>> chapterTags;
+  std::vector<std::tuple<unsigned long long, std::string, double, double, unsigned long long>>
+      chapterOrder;
+
+  if (!isAudioBook)
   {
-    if (m_fctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
-    {
-      if (m_fctx->streams[i]->disposition & AV_DISPOSITION_DEFAULT)
-      {
-        streamIndex = i;
-        break; // Found a default audio stream, however, more than 1 stream can be set as default !!
-      }
-    }
+    CMusicInfoTagLoaderMatroska::GetMatroskaMusicTags(url.Get(), fileTags, chapterTags,
+                                                      chapterOrder);
+    /*!
+     * initially just get the (file) Album level tags to be use in subsequent tracks
+     * (chapters) processed below to create Kodi music Songs
+    */
+    for (const auto& t : fileTags)
+      CMusicInfoTagLoaderMatroska::ParseTag(t.first, t.second, separators, musicsep, albumtag);
   }
-
-  // If no default stream was found, look for the first audio stream as usually highest quality 1st
-  if (streamIndex == -1)
-  {
-    for (unsigned int i = 0; i < m_fctx->nb_streams; ++i)
-    {
-      if (m_fctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
-      {
-        streamIndex = i;
-        break; // Found the first audio stream
-      }
-    }
-  }
-  if (streamIndex > -1)
-  {
-    st = m_fctx->streams[streamIndex];
-
-    albumtag.SetBitsPerSample(st->codecpar->bits_per_coded_sample);
-    albumtag.SetSampleRate(st->codecpar->sample_rate);
-    albumtag.SetBitRate(st->codecpar->bit_rate);
-    albumtag.SetNoOfChannels(st->codecpar->ch_layout.nb_channels);
-    codec_name = avcodec_get_name(st->codecpar->codec_id);
-    int par_profile = st->codecpar->profile;
-    if (st->codecpar->codec_id == AV_CODEC_ID_DTS)
-    {
-      switch (par_profile)
-      {
-        case AV_PROFILE_DTS_HD_MA_X:
-          codec_name = "dtshd_ma_x";
-          break;
-        case AV_PROFILE_DTS_HD_MA_X_IMAX:
-          codec_name = "dtshd_ma_x_imax";
-          break;
-        case AV_PROFILE_DTS_ES:
-          codec_name = "dts_es";
-          break;
-        case AV_PROFILE_DTS_96_24:
-          codec_name = "dts_96_24";
-          break;
-        case AV_PROFILE_DTS_HD_HRA:
-          codec_name = "dtshd_hra";
-          break;
-        case AV_PROFILE_DTS_EXPRESS:
-          codec_name = "dts_express";
-          break;
-        case AV_PROFILE_DTS_HD_MA:
-          codec_name = "dtshd_ma";
-          break;
-        default:
-          codec_name = "dca";
-          break;
-      }
-    }
-    if (st->codecpar->codec_id == AV_CODEC_ID_EAC3 && par_profile == AV_PROFILE_EAC3_DDP_ATMOS)
-      codec_name = "eac3_ddp_atmos";
-
-    if (st->codecpar->codec_id == AV_CODEC_ID_TRUEHD && par_profile == AV_PROFILE_TRUEHD_ATMOS)
-      codec_name = "truehd_atmos";
-  }
-  albumtag.SetCodec(codec_name);
 
   std::string thumb;
-
-  if (m_fctx->nb_chapters > 1)
+  thumb = IMAGE_FILES::URLFromFile(url.Get(), "music");
+  /*! Look for any embedded cover art
+  * This can be dropped when taglib 2.3.1 is released with the embedded cover art performance
+  * fix for Matroska files and we can just use TagLib to read the embedded cover art for Matroska
+  * files. Until then, we need to use FFmpeg to read the embedded cover art for Matroska files.
+  */
+  CMusicEmbeddedCoverLoaderFFmpeg::GetEmbeddedCover(m_fctx, albumtag);
 
   // now get the AudioCodec -------------------------------------
   bool haveFFmpegInfo = false;
@@ -309,22 +152,14 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
   }
 
   float chapter_size = 0;
-
   bool chapter_error = false;
-
-  thumb = IMAGE_FILES::URLFromFile(url.Get(), "music");
-  // Look for any embedded cover art
-  CMusicEmbeddedCoverLoaderFFmpeg::GetEmbeddedCover(m_fctx, albumtag);
-
-  float chapter_size = 0;
-
-  bool chapter_error = false;
-  for (size_t i=0;i<m_fctx->nb_chapters;++i)
+  for (unsigned int i = 0; m_fctx->chapters && i < m_fctx->nb_chapters; ++i)
   {
-    if (m_fctx->chapters[i]->start < 0) // negative start time, ignore it
+    if (!m_fctx->chapters[i] || m_fctx->chapters[i]->start < 0) // null or negative start time
       continue;
-    chapter_size = m_fctx->chapters[i]->end * av_q2d(m_fctx->chapters[i]->time_base);
-    if (chapter_size < 1 && chapter_size > 0) // Chapter must have positive time of more than 1 sec
+    chapter_size = (m_fctx->chapters[i]->end - m_fctx->chapters[i]->start) *
+                   av_q2d(m_fctx->chapters[i]->time_base);
+    if (chapter_size < 1) // Chapter must have positive time of more than 1 sec
     {
       CLog::Log(LOGWARNING,
                 "CAudioBookFileDirectory: Tiny chapter of size {}s detected when scanning {} Most "
@@ -333,7 +168,8 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
       chapter_error = true;
       continue;
     }
-    tag=nullptr;
+
+    tag = nullptr;
     std::string chaptitle = StringUtils::Format(
         CServiceBroker::GetResourcesComponent().GetLocalizeStrings().Get(25010), i + 1);
     std::string chapauthor;
@@ -353,243 +189,52 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
         else if (StringUtils::CompareNoCase(tag->key, "album") == 0)
           chapalbum = tag->value;
       }
-    }
-  
-    ChplChapterResult neroChapterResult{chplNone};
-    std::vector<ChplChapter> nero;
+      item->GetMusicInfoTag()->SetTitle(chaptitle);
+      item->GetMusicInfoTag()->SetAlbum(chapalbum.empty() ? album.empty() ? title : album
+                                                          : chapalbum);
+      item->GetMusicInfoTag()->SetArtist(chapauthor.empty() ? author : chapauthor);
+      if (!desc.empty())
+        item->GetMusicInfoTag()->SetComment(desc);
 
-    if (m_fctx->nb_chapters > 1)
-    {
-
-      if (isAudioBook)
-      {
-        neroChapterResult = CChplChapterReader::ScanNeroChapters(url, nero);
-        if (neroChapterResult.IsError())
-        {
-          CLog::Log(LOGERROR,
-                    "AudioBookFileDirectory: Error scanning for Nero style chapters in file {}. The "
-                    "error returned was {}",
-                    url.GetRedacted(), *neroChapterResult.errorMessage);
-        }
-        else if (neroChapterResult.IsNone())
-        { // can't get here without some form of chapter so must be QT style chapters (chap atom)
-          CLog::Log(
-              LOGDEBUG,
-              "AudioBookFileDirectory: Scanned for nero style chapters but didn't find any in {}, "
-              "using QT chapters",
-              url.GetRedacted());
-        }
-      }
-    const size_t ns = nero.size();
-
-    float chapter_size = 0;
-
-    bool chapter_error = false;
-
-    thumb = IMAGE_FILES::URLFromFile(url.Get(), "music");
-    // Look for any embedded cover art
-    CMusicEmbeddedCoverLoaderFFmpeg::GetEmbeddedCover(m_fctx, albumtag);
-
-    for (size_t i = 0; i < m_fctx->nb_chapters; ++i)
-    {
-      if (m_fctx->chapters[i]->start < 0) // negative start time, ignore it
-        continue;
-      chapter_size = m_fctx->chapters[i]->end * av_q2d(m_fctx->chapters[i]->time_base);
-      if (chapter_size < 1 &&
-          chapter_size > 0) // Chapter must have positive time of more than 1 sec
-      {
-        CLog::Log(
-            LOGWARNING,
-            "CAudioBookFileDirectory: Tiny chapter of size {}s detected when scanning {} Most "
-            "likely this file needs the chapters correcting",
-            chapter_size, url.GetRedacted());
-        chapter_error = true;
-        continue;
-      }
-      tag = nullptr;
-      std::string chaptitle = StringUtils::Format(
-          CServiceBroker::GetResourcesComponent().GetLocalizeStrings().Get(25010), i + 1);
-      std::string chapauthor;
-      std::string chapalbum;
-
-      std::shared_ptr<CFileItem> item(new CFileItem(url.Get(), false));
-      *item->GetMusicInfoTag() = albumtag;
-
-      auto addRole = [&](const std::string& role, const std::string& value)
-      {
-        if (!value.empty())
-          item->GetMusicInfoTag()->AddArtistRole(role, StringUtils::Split(value, separators));
-      };
-
-      while ((tag = av_dict_get(m_fctx->chapters[i]->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
-      {
-        if (isAudioBook)
-        {
-          if (StringUtils::CompareNoCase(tag->key, "title") == 0)
-            chaptitle = tag->value;
-          else if (StringUtils::CompareNoCase(tag->key, "artist") == 0)
-            chapauthor = tag->value;
-          else if (StringUtils::CompareNoCase(tag->key, "album") == 0)
-            chapalbum = tag->value;
-          // Prefer nero titles if we have them over QT titles and they are different
-          if (neroChapterResult.IsFound() && (i < ns) && (nero[i].title != chaptitle))
-            chaptitle = nero[i].title;
-        }
-        else
-        {
-          std::string key = StringUtils::ToUpper(tag->key);
-          if (key == "TITLE")
-            item->GetMusicInfoTag()->SetTitle(tag->value);
-          else if (key == "ARTIST")
-            item->GetMusicInfoTag()->SetArtist(tag->value);
-          else if (key == "MUSICBRAINZ_TRACKID")
-            item->GetMusicInfoTag()->SetMusicBrainzTrackID(tag->value);
-          else if (key == "ARTISTSORT" || key == "ARTIST SORT")
-            item->GetMusicInfoTag()->SetArtistSort(
-                StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
-          else if (key == "ALBUMARTIST" || key == "ALBUM ARTIST")
-            item->GetMusicInfoTag()->SetAlbumArtist(
-                StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
-          else if (key == "ALBUMARTSTS" || key == "ALBUM ARTISTS")
-            item->GetMusicInfoTag()->SetAlbumArtist(StringUtils::Split(tag->value, separators));
-          else if (key == "ALBUMARTISTSORT" || key == "ALBUM ARTIST SORT")
-            item->GetMusicInfoTag()->SetAlbumArtistSort(
-                StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
-          else if (key == "COMPOSERSORT" || key == "COMPOSER SORT")
-            item->GetMusicInfoTag()->SetComposerSort(
-                StringUtils::Join(StringUtils::Split(tag->value, separators), musicsep));
-          else if (key == "MUSICBRAINZ_ARTISTID")
-            item->GetMusicInfoTag()->SetMusicBrainzArtistID(
-                StringUtils::Split(tag->value, separators));
-          else if (key == "MUSICBRAINZ_ALBUMARTISTID")
-            item->GetMusicInfoTag()->SetMusicBrainzAlbumArtistID(
-                StringUtils::Split(tag->value, separators));
-          else if (key == "MUSICBRAINZ_ALBUMARTIST")
-            item->GetMusicInfoTag()->SetAlbumArtist(tag->value);
-          else if (key == "MUSICBRAINZ_ALBUMID")
-            item->GetMusicInfoTag()->SetMusicBrainzAlbumID(tag->value);
-          else if (key == "MUSICBRAINZ_RELEASEGROUPID")
-            item->GetMusicInfoTag()->SetMusicBrainzReleaseGroupID(tag->value);
-          else if (key == "MUSICBRAINZ_ALBUMSTATUS")
-            item->GetMusicInfoTag()->SetAlbumReleaseStatus(tag->value);
-          else if (key == "MUSICBRAINZ_ALBUMTYPE")
-            item->GetMusicInfoTag()->SetMusicBrainzReleaseType(tag->value);
-          else if (key == "PUBLISHER")
-            item->GetMusicInfoTag()->SetRecordLabel(tag->value);
-          // mp3tag info shows year but the value is stored in date_recorded
-          // equates to TDRC in id3v2.4 ISO 8601 yyyy-mm-dd or part thereof
-          else if (key == "YEAR" || key == "DATE_RELEASED") // proper matroska tag is date_released
-            item->GetMusicInfoTag()->SetReleaseDate(tag->value);
-          // ISO 8601 as above. Equates to TDOR in id3v2.4 (set by mp3tag)
-          else if (key == "ORIGYEAR" || key == "DATE_RECORDED")
-            item->GetMusicInfoTag()->SetOriginalDate(tag->value);
-          else if (key == "COMPOSER")
-            addRole("Composer", tag->value);
-          else if (key == "LYRICIST")
-            addRole("Lyricist", tag->value);
-          else if (key == "CONDUCTOR")
-            addRole("Conductor", tag->value);
-          else if (key == "WRITER")
-            addRole("Writer", tag->value);
-          else if (key == "ARRANGER")
-            addRole("Arranger", tag->value);
-          else if (key == "BAND")
-            addRole("Band", tag->value);
-          else if (key == "ENGINEER")
-            addRole("Engineer", tag->value);
-          else if (key == "PRODUCER")
-            addRole("Producer", tag->value);
-          else if (key == "REMIXED_BY")
-            addRole("Remixer", tag->value);
-          else if (key == "YEAR" || key == "DATE_RECORDED")
-            item->GetMusicInfoTag()->SetReleaseDate(tag->value);
-          else if (key == "ORIGYEAR")
-            item->GetMusicInfoTag()->SetOriginalDate(tag->value);
-          else if (key == "MIXED_BY" || key == "MIXER")
-            addRole("Mixer", tag->value);
-          else if (key == "SUBTITLE" || key == "SETSUBTITLE")
-            item->GetMusicInfoTag()->SetDiscSubtitle(tag->value);
-          else if (key == "COMMENT")
-            item->GetMusicInfoTag()->SetComment(tag->value);
-          else if (key == "MOOD")
-            item->GetMusicInfoTag()->SetMood(tag->value);
-          else if (key == "COMPILATION")
-            item->GetMusicInfoTag()->SetCompilation(true);
-          else if (key == "GENRE")
-          {
-            separators.emplace_back(",");
-            item->GetMusicInfoTag()->SetGenre(StringUtils::Split(tag->value, separators), true);
-            separators.pop_back();
-          }
-          // comma separated list of instrument, person
-          else if (key == "INSTRUMENTS")
-          {
-            tagdata = StringUtils::Split(tag->value, ",");
-            AddCommaDelimitedString(tagdata, separators, *item->GetMusicInfoTag());
-          }
-          /* comma separated list of role, person
-          The key value depends on tagging software but between 'INSTRUMENTS', 'INVOLVEDPEOPLE' and
-          'ACTOR', everything should be covered. For instance https://github.com/Martchus/tageditor
-          (window & linux) shows 'performers' in the gui but names the key 'ACTOR' in the file.
-          mp3tag uses both 'instruments' & 'involvedpeople'
-          https://www.poikosoft.com/metadata-editor (windows only) can create freeform tags as can
-          https://www.videohelp.com/software/chapterEditor (Win & Linux) although it also shows the
-          correct matroska spec tags
-        */
-          else if (key == "INVOLVEDPEOPLE" || key == "ACTOR")
-          {
-            tagdata = StringUtils::Split(tag->value, ",");
-            AddCommaDelimitedString(tagdata, separators, *item->GetMusicInfoTag());
-          }
-        }
-        /* The comma separated lists are outside the Matroska spec
-         (see https://www.matroska.org/technical/tagging.html) as it states to use multiple simple
-         tags for eg 2 or more composers.  However, ffmpeg returns just the last tag and drops the
-         rest (https://trac.ffmpeg.org/ticket/9641).  Therefore until (if) it gets fixed, this is
-         the best solution.
-       */
-      }
-      if (isAudioBook)
-      {
-        item->GetMusicInfoTag()->SetTitle(chaptitle);
-        item->GetMusicInfoTag()->SetAlbum(chapalbum.empty() ? album.empty() ? title : album
-                                                            : chapalbum);
-        item->GetMusicInfoTag()->SetArtist(chapauthor.empty() ? author : chapauthor);
-        if (!desc.empty())
-          item->GetMusicInfoTag()->SetComment(desc);
-      }
-      item->GetMusicInfoTag()->SetTrackNumber(i + 1);
-      item->GetMusicInfoTag()->SetLoaded(true);
-
-      item->SetLabel(StringUtils::Format("{0:02}. {1} - {2}", i + 1,
-                                         item->GetMusicInfoTag()->GetAlbum(),
-                                         item->GetMusicInfoTag()->GetTitle()));
       item->SetStartOffset(CUtil::ConvertSecsToMilliSecs(m_fctx->chapters[i]->start *
                                                          av_q2d(m_fctx->chapters[i]->time_base)));
       item->SetEndOffset(CUtil::ConvertSecsToMilliSecs(m_fctx->chapters[i]->end *
                                                        av_q2d(m_fctx->chapters[i]->time_base)));
-
-      if (item->GetEndOffset() < 0 ||
-          item->GetEndOffset() > CUtil::ConvertMilliSecsToSecs(m_fctx->duration))
-      {
-        if (i < m_fctx->nb_chapters - 1)
-          item->SetEndOffset(CUtil::ConvertSecsToMilliSecs(
-              m_fctx->chapters[i + 1]->start * av_q2d(m_fctx->chapters[i + 1]->time_base)));
-        else
-        {
-          item->SetEndOffset(CUtil::ConvertSecsToMilliSecs(end_time_mka_file)); // mka file
-          if (item->GetEndOffset() < 0)
-            item->SetEndOffset(CUtil::ConvertSecsToMilliSecs(end_time_m4b_file)); // m4b file
-        }
-      }
       item->GetMusicInfoTag()->SetDuration(
           CUtil::ConvertMilliSecsToSecsInt(item->GetEndOffset() - item->GetStartOffset()));
-      item->SetProperty("item_start", item->GetStartOffset());
-      item->SetProperty("audio_bookmark", item->GetStartOffset());
-      if (!thumb.empty() && !chapter_error)
-        item->SetArt("thumb", thumb);
-      items.Add(item);
     }
+    else
+    {
+      // process chapter tags for this track using file-order chapter UID
+      if (i < chapterOrder.size())
+      {
+        auto it = chapterTags.find(std::get<0>(chapterOrder[i]));
+        if (it != chapterTags.end())
+        {
+          for (const auto& Tracktag : it->second)
+            CMusicInfoTagLoaderMatroska::ParseTag(Tracktag.first, Tracktag.second, separators,
+                                                  musicsep, *item->GetMusicInfoTag());
+
+          item->SetStartOffset(CUtil::ConvertSecsToMilliSecs(std::get<2>(chapterOrder[i])));
+          item->SetEndOffset(CUtil::ConvertSecsToMilliSecs(std::get<3>(chapterOrder[i])));
+          item->GetMusicInfoTag()->SetDuration(
+              CUtil::ConvertMilliSecsToSecsInt(item->GetEndOffset() - item->GetStartOffset()));
+        }
+      }
+    }
+
+    item->GetMusicInfoTag()->SetTrackNumber(i + 1);
+    item->GetMusicInfoTag()->SetLoaded(true);
+
+    item->SetLabel(StringUtils::Format("{0:02}. {1} - {2}", i + 1,
+                                       item->GetMusicInfoTag()->GetAlbum(),
+                                       item->GetMusicInfoTag()->GetTitle()));
+
+    item->SetProperty("item_start", item->GetStartOffset());
+    item->SetProperty("audio_bookmark", item->GetStartOffset());
+    if (!thumb.empty() && !chapter_error)
+      item->SetArt("thumb", thumb);
+    items.Add(item);
   }
   return true;
 }
