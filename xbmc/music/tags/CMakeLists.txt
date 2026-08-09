@@ -1,6 +1,5 @@
 set(SOURCES MusicCodecInfoFFmpeg.cpp
             MusicInfoTag.cpp
-            MusicInfoTagLoaderCDDA.cpp
             MusicInfoTagLoaderDatabase.cpp
             MusicInfoTagLoaderFactory.cpp
             MusicInfoTagLoaderFFmpeg.cpp
