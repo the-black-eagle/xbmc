@@ -2309,12 +2309,12 @@ bool CMusicDatabase::AddArtistVideoLinks(const CArtist& artist)
 
     for (const auto& videoURL : artist.videolinks)
     {
-      dbSong = videoURL.title;
+      std::string likeTitle = "%" + videoURL.title + "%"; // Add wildcards here for correct quoting
       std::string strSQL = PrepareSQL(
           "SELECT idSong, strTitle FROM song WHERE strMusicBrainzTrackID = '%s' OR (EXISTS "
           "(SELECT 1 FROM album_artist WHERE album_artist.idAlbum = song.idAlbum AND "
-          "album_artist.idArtist = '%i' AND song.strTitle LIKE '%%%s%%'))",
-          videoURL.mbTrackID.c_str(), artist.idArtist, videoURL.title.c_str());
+          "album_artist.idArtist = '%i' AND song.strTitle LIKE '%s'))",
+          videoURL.mbTrackID.c_str(), artist.idArtist, likeTitle.c_str());
 
       if (!m_pDS->query(strSQL))
         return false;
@@ -2326,7 +2326,7 @@ bool CMusicDatabase::AddArtistVideoLinks(const CArtist& artist)
         const int songId = m_pDS->fv(0).get_asInt();
         std::string strSQL2 = PrepareSQL("UPDATE song SET strVideoURL='%s' WHERE idSong = %i",
                                          videoURL.videoURL.c_str(), songId);
-        CLog::Log(LOGDEBUG, "Adding videolink for song {} with id {}", dbSong, songId);
+        CLog::Log(LOGDEBUG, "Adding videolink for song {} with id {}", videoURL.title, songId);
         m_pDS2->exec(strSQL2);
 
         if (!videoURL.thumbURL.empty())
