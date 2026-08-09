@@ -7,6 +7,7 @@
  */
 
 #include "AudioBookFileDirectory.h"
+
 #include "FileItem.h"
 #include "FileItemList.h"
 #include "IFileTypes.h"
