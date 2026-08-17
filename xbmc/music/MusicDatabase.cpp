@@ -11219,7 +11219,7 @@ int CMusicDatabase::GetArtistCountForRole(const std::string& strRole) const
 int CMusicDatabase::GetConcertsCount()
 {
   std::string strSQL =
-      PrepareSQL("SELECT COUNT (DISTINCT idAlbum) FROM album WHERE strReleaseType like '%s'",
+      PrepareSQL("SELECT COUNT(DISTINCT idAlbum) FROM album WHERE strReleaseType like '%s'",
                  AudioType::ToString(AudioType::Type::Concert).c_str());
   return GetSingleValueInt(strSQL);
 }
@@ -11227,7 +11227,7 @@ int CMusicDatabase::GetConcertsCount()
 int CMusicDatabase::GetAudioBookCount()
 {
   std::string strSQL =
-      "SELECT COUNT (DISTINCT idAlbum) FROM album WHERE album.strType LIKE '%audiobook%'";
+      "SELECT COUNT(DISTINCT idAlbum) FROM album WHERE album.strType LIKE '%audiobook%'";
   return GetSingleValueInt(strSQL);
 }
 
