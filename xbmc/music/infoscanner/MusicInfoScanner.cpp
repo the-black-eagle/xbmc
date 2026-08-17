@@ -604,6 +604,10 @@ CInfoScanner::InfoRet CMusicInfoScanner::ScanTags(const CFileItemList& items,
 
     m_currentItem++;
 
+    bool keepTags = false;
+    if (items.GetURL().HasExtension(".mkv|.mp4|.mka|m4b"))
+      keepTags = true;
+
     CMusicInfoTag& tag = *pItem->GetMusicInfoTag();
     // Forced rescan must re-read tags from disk even if the item arrives with
     // tag.Loaded() already true (e.g. DB-enriched directory listings). The
@@ -611,7 +615,7 @@ CInfoScanner::InfoRet CMusicInfoScanner::ScanTags(const CFileItemList& items,
     // skip, but without this check ScanTags would still reuse cached tag
     // state on a per-file basis, defeating "Do full tag scan even when
     // unchanged".
-    if (!tag.Loaded() || (m_flags & SCAN_RESCAN))
+    if (!tag.Loaded() || ((m_flags & SCAN_RESCAN) && !keepTags))
     {
       std::unique_ptr<IMusicInfoTagLoader> pLoader (CMusicInfoTagLoaderFactory::CreateLoader(*pItem));
       if (nullptr != pLoader)
@@ -703,6 +707,9 @@ void CMusicInfoScanner::FileItemsToAlbums(
       if (it == albums.end())
       {
         CAlbum album(*items[i]);
+        if ((StringUtils::EndsWithNoCase(song.strFileName, "mkv")) or
+            (StringUtils::EndsWithNoCase(song.strFileName, "mp4")))
+          album.releaseType = AudioType::Type::Concert;
         album.songs.push_back(song);
         albums.push_back(album);
       }
@@ -908,6 +915,8 @@ void CMusicInfoScanner::FileItemsToAlbums(
         album.strReleaseDate = k->strReleaseDate,
         album.strLabel = k->strRecordLabel;
         album.strType = k->strAlbumType;
+        if ((StringUtils::EndsWithNoCase(k->strFileName, "mkv")) or (StringUtils::EndsWithNoCase(k->strFileName, "mp4")))
+          album.releaseType = AudioType::Type::Concert;
         album.songs.push_back(*k);
       }
       albums.push_back(album);

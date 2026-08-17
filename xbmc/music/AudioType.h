@@ -19,7 +19,8 @@ public:
   {
     Album = 0,
     Single,
-    AudioBook
+    AudioBook,
+    Concert
   };
 
   static Type FromString(const std::string_view str)
@@ -45,6 +46,8 @@ private:
     const char* name;
   };
 
-  static constexpr ReleaseTypeInfo releaseTypes[] = {
-      {Type::Album, "album"}, {Type::Single, "single"}, {Type::AudioBook, "audiobook"}};
+  static constexpr ReleaseTypeInfo releaseTypes[] = {{Type::Album, "album"},
+                                                     {Type::Single, "single"},
+                                                     {Type::AudioBook, "audiobook"},
+                                                     {Type::Concert, "concert"}};
 };

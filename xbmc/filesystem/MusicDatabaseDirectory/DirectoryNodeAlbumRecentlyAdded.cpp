@@ -7,7 +7,6 @@
  */
 
 #include "DirectoryNodeAlbumRecentlyAdded.h"
-
 #include "FileItem.h"
 #include "FileItemList.h"
 #include "ServiceBroker.h"
@@ -15,9 +14,11 @@
 #include "music/MusicDatabase.h"
 #include "resources/LocalizeStrings.h"
 #include "resources/ResourcesComponent.h"
+#include "music/tags/MusicInfoTag.h"
 #include "utils/StringUtils.h"
 
 using namespace XFILE::MUSICDATABASEDIRECTORY;
+using namespace MUSIC_INFO;
 
 CDirectoryNodeAlbumRecentlyAdded::CDirectoryNodeAlbumRecentlyAdded(const std::string& strName,
                                                                    CDirectoryNode* pParent)
@@ -60,7 +61,9 @@ bool CDirectoryNodeAlbumRecentlyAdded::GetContent(CFileItemList& items) const
   for (const CAlbum& album : albums)
   {
     std::string strDir = StringUtils::Format("{}{}/", BuildPath(), album.idAlbum);
+    std::string albumPath = musicdatabase.GetPathForAlbum(album.idAlbum);
     CFileItemPtr pItem(new CFileItem(strDir, album));
+    pItem->GetMusicInfoTag()->SetURL(albumPath);
     items.Add(pItem);
   }
 

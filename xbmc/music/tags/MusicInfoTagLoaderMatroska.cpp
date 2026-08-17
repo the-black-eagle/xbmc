@@ -469,7 +469,7 @@ void CMusicInfoTagLoaderMatroska::GetMatroskaMusicTags(
           // Skip micro chapters less than 1 second long
           long long durationNs = std::abs(static_cast<long long>(chapter.timeEnd()) -
                                           static_cast<long long>(chapter.timeStart()));
-          if (durationNs < 1000000000LL)
+          if (durationNs < 1000000000LL && (chapter.timeEnd() != 0 && chapter.timeStart() != 0))
             continue;
 
           std::string chapterName;

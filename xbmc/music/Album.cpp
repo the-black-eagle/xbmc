@@ -397,16 +397,6 @@ const std::vector<int> CAlbum::GetArtistIDArray() const
   return artistids;
 }
 
-std::string CAlbum::GetReleaseType() const
-{
-  return AudioType::ToString(releaseType);
-}
-
-void CAlbum::SetReleaseType(const std::string& strReleaseType)
-{
-  releaseType = AudioType::FromString(strReleaseType);
-}
-
 void CAlbum::SetDateAdded(const std::string& strDateAdded)
 {
   dateAdded.SetFromDBDateTime(strDateAdded);
@@ -425,6 +415,16 @@ void CAlbum::SetDateNew(const std::string& strDateNew)
 void CAlbum::SetLastPlayed(const std::string& strLastPlayed)
 {
   lastPlayed.SetFromDBDateTime(strLastPlayed);
+}
+
+std::string CAlbum::GetReleaseType() const
+{
+  return AudioType::ToString(releaseType);
+}
+
+void CAlbum::SetReleaseType(const std::string& strReleaseType)
+{
+  releaseType = AudioType::FromString(strReleaseType);
 }
 
 bool CAlbum::operator<(const CAlbum &a) const

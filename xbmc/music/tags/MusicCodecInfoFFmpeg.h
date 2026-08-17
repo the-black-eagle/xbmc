@@ -5,6 +5,8 @@
  *  SPDX-License-Identifier: GPL-2.0-or-later
  *  See LICENSES/README.md for more information.
  */
+ 
+#pragma once
 
 #pragma once
 
@@ -20,6 +22,7 @@ public:
   int duration = 0;
   std::string codecName;
 };
+
 
 class CMusicCodecInfoFFmpeg
 {

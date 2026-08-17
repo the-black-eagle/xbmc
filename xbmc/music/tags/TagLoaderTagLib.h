@@ -21,6 +21,19 @@ namespace MUSIC_INFO
   class CMusicInfoTag;
 };
 
+enum class MusicCodecType
+{
+  CODEC_TYPE_APE,
+  CODEC_TYPE_FLAC,
+  CODEC_TYPE_AAC,
+  CODEC_TYPE_ALAC,
+  CODEC_TYPE_MPEG,
+  CODEC_TYPE_VORBIS,
+  CODEC_TYPE_OPUS,
+  CODEC_TYPE_TTA,
+  CODEC_TYPE_WAVPACK
+};
+
 class CTagLoaderTagLib : public MUSIC_INFO::IMusicInfoTagLoader
 {
 public:
@@ -57,3 +70,4 @@ protected:
                        // chapter (if any) extends to the end of the file.
                        std::chrono::milliseconds totalLenMs = {});
 };
+  std::string CodecToString(const MusicCodecType& codecType);

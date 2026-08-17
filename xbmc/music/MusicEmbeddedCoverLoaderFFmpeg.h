@@ -10,6 +10,7 @@
 
 #include <string>
 
+
 struct AVFormatContext;
 class EmbeddedArt;
 
@@ -47,5 +48,6 @@ public:
   static bool GetEmbeddedCover(const std::string& strFileName,
                                CMusicInfoTag& tag,
                                EmbeddedArt* art = nullptr);
+
 };
 } // namespace MUSIC_INFO

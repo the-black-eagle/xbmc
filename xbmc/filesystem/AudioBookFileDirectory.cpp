@@ -118,8 +118,6 @@ bool CAudioBookFileDirectory::GetDirectory(const CURL& url, CFileItemList& items
   {
     CMusicInfoTagLoaderMatroska::GetMatroskaMusicTags(url.Get(), fileTags, chapterTags,
                                                       chapterOrder);
-    if (fileTags.empty())
-      return true;
     /*!
      * initially just get the (file) Album level tags to be use in subsequent tracks
      * (chapters) processed below to create Kodi music Songs
